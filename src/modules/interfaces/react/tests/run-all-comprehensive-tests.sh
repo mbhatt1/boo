@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ##############################################################################
-# Comprehensive Test Suite Runner for Cyber-AutoAgent React Interface
+# Comprehensive Test Suite Runner for Boo-AutoAgent React Interface
 #
 # This script runs all types of tests to ensure complete frontend validation:
 # - Unit Tests (Jest-based component tests)
@@ -67,7 +67,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --help)
-            echo -e "${CYAN}Comprehensive Test Suite for Cyber-AutoAgent${NC}\n"
+            echo -e "${CYAN}Comprehensive Test Suite for Boo-AutoAgent${NC}\n"
             echo "Usage: $0 [options]"
             echo ""
             echo "Options:"
@@ -316,7 +316,7 @@ main() {
     mkdir -p "$RESULTS_DIR"
     echo "Comprehensive Test Suite Started at $(date)" > "$LOG_FILE"
     
-    log_message "HEADER" "🧪 Cyber-AutoAgent Comprehensive Test Suite"
+    log_message "HEADER" "🧪 Boo-AutoAgent Comprehensive Test Suite"
     echo ""
     log_message "INFO" "Testing ALL frontend functionality per TEST-VALIDATION-SPECIFICATION.md"
     echo ""

@@ -57,7 +57,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = React.memo(({
           'Full Stack';
         
         // Clear the setup flag
-        delete process.env.CYBER_SHOW_SETUP;
+        delete process.env.BOO_SHOW_SETUP;
         
         onComplete(`${modeDisplayName} setup completed successfully`);
       } catch (error) {
@@ -109,7 +109,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = React.memo(({
             await saveConfig();
             detector.clearCache();
 
-            delete process.env.CYBER_SHOW_SETUP;
+            delete process.env.BOO_SHOW_SETUP;
             setIsExiting(true);
             setTimeout(() => onComplete(`Switched to ${modeDisplayName} deployment`), 0);
             didFastSwitch = true;
@@ -156,7 +156,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = React.memo(({
               // User chose to skip the setup wizard from the welcome screen
               // Clear any forced setup flag so detection does not immediately re-open the wizard
               try {
-                delete (process as any).env?.CYBER_SHOW_SETUP;
+                delete (process as any).env?.BOO_SHOW_SETUP;
               } catch {}
               setIsExiting(true);
               // Defer onComplete to allow the UI to paint the state change cleanly

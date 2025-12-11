@@ -1,10 +1,10 @@
 services:
-  cyber-autoagent:
-    image: cyber-autoagent:latest
+  boo:
+    image: boo:latest
     build:
       context: ../
       dockerfile: docker/Dockerfile
-    container_name: cyber-autoagent
+    container_name: boo
     # React terminal is now the default entrypoint
     # No command override needed - starts interactively
     # Add capabilities for network tools without full root access
@@ -14,8 +14,8 @@ services:
       - SYS_PTRACE   # For process tracing (some exploitation tools)
     environment:
       # Provider Configuration
-      - CYBER_AGENT_PROVIDER=${CYBER_AGENT_PROVIDER:-bedrock}
-      - CYBER_AGENT_LLM_MODEL=${CYBER_AGENT_LLM_MODEL}
+      - BOO_AGENT_PROVIDER=${BOO_AGENT_PROVIDER:-bedrock}
+      - BOO_AGENT_LLM_MODEL=${BOO_AGENT_LLM_MODEL}
 
       # AWS Configuration
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
@@ -54,8 +54,8 @@ services:
       # Observability configuration (auto-detected by default, forced true in compose mode)
       - ENABLE_OBSERVABILITY=${ENABLE_OBSERVABILITY:-true}
       - LANGFUSE_HOST=${LANGFUSE_HOST:-http://langfuse-web:3000}
-      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-cyber-public}
-      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-cyber-secret}
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-boo-public}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-boo-secret}
       
       # Prompt management configuration (enabled by default)
       - ENABLE_LANGFUSE_PROMPTS=${ENABLE_LANGFUSE_PROMPTS:-true}
@@ -81,7 +81,7 @@ services:
     # Network configuration
     networks:
       - default                    # Langfuse observability stack
-      - cyber-autoagent_default    # Challenge targets network
+      - boo-autoagent_default    # Challenge targets network
 
     # Resource limits
     deploy:
@@ -103,7 +103,7 @@ services:
   # Langfuse observability service (self-hosted) 
   langfuse-web:
     image: docker.io/langfuse/langfuse:3
-    container_name: cyber-langfuse
+    container_name: boo-langfuse
     restart: unless-stopped
     depends_on:
       postgres:
@@ -131,7 +131,7 @@ services:
       
       # Security keys - regenerate with: openssl rand -hex 32 & openssl rand -hex 16
       ENCRYPTION_KEY: ${LANGFUSE_ENCRYPTION_KEY:-a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456}
-      SALT: ${LANGFUSE_SALT:-cyber-dev-salt-12345}
+      SALT: ${LANGFUSE_SALT:-boo-dev-salt-12345}
       
       # ClickHouse configuration
       CLICKHOUSE_URL: http://clickhouse:8123
@@ -169,14 +169,14 @@ services:
       LANGFUSE_S3_EVENT_UPLOAD_REGION: us-east-1
       LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: "true"
       
-      # Auto-initialize project for Cyber-AutoAgent
-      LANGFUSE_INIT_ORG_ID: cyber-org-id
-      LANGFUSE_INIT_ORG_NAME: Cyber-AutoAgent
-      LANGFUSE_INIT_PROJECT_ID: cyber-project-id
+      # Auto-initialize project for Boo-AutoAgent
+      LANGFUSE_INIT_ORG_ID: boo-org-id
+      LANGFUSE_INIT_ORG_NAME: Boo-AutoAgent
+      LANGFUSE_INIT_PROJECT_ID: boo-project-id
       LANGFUSE_INIT_PROJECT_NAME: penetration-tests
-      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: cyber-public
-      LANGFUSE_INIT_PROJECT_SECRET_KEY: cyber-secret
-      LANGFUSE_INIT_USER_EMAIL: admin@cyber-autoagent.com
+      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: boo-public
+      LANGFUSE_INIT_PROJECT_SECRET_KEY: boo-secret
+      LANGFUSE_INIT_USER_EMAIL: admin@boo-autoagent.com
       LANGFUSE_INIT_USER_NAME: Admin
       LANGFUSE_INIT_USER_PASSWORD: changeme
       
@@ -213,7 +213,7 @@ services:
 
   langfuse-worker:
     image: docker.io/langfuse/langfuse-worker:3
-    container_name: cyber-langfuse-worker
+    container_name: boo-langfuse-worker
     restart: unless-stopped
     depends_on:
       postgres:
@@ -231,7 +231,7 @@ services:
       
       # Security keys - regenerate with: openssl rand -hex 32 & openssl rand -hex 16
       ENCRYPTION_KEY: ${LANGFUSE_ENCRYPTION_KEY:-a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456}
-      SALT: ${LANGFUSE_SALT:-cyber-dev-salt-12345}
+      SALT: ${LANGFUSE_SALT:-boo-dev-salt-12345}
       
       # ClickHouse configuration
       CLICKHOUSE_URL: http://clickhouse:8123
@@ -281,7 +281,7 @@ services:
 
   postgres:
     image: postgres:15-alpine
-    container_name: cyber-langfuse-postgres
+    container_name: boo-langfuse-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
@@ -297,7 +297,7 @@ services:
 
   clickhouse:
     image: docker.io/clickhouse/clickhouse-server
-    container_name: cyber-langfuse-clickhouse
+    container_name: boo-langfuse-clickhouse
     restart: unless-stopped
     user: "101:101"
     environment:
@@ -316,7 +316,7 @@ services:
 
   redis:
     image: docker.io/redis:7
-    container_name: cyber-langfuse-redis
+    container_name: boo-langfuse-redis
     restart: unless-stopped
     command: --requirepass myredissecret
     healthcheck:
@@ -328,7 +328,7 @@ services:
 
   minio:
     image: docker.io/minio/minio
-    container_name: cyber-langfuse-minio
+    container_name: boo-langfuse-minio
     restart: unless-stopped
     entrypoint: sh
     command: -c 'mkdir -p /data/langfuse && minio server --address ":9000" --console-address ":9001" /data'
@@ -359,5 +359,5 @@ volumes:
 networks:
   default:
     driver: bridge
-  cyber-autoagent_default:
+  boo-autoagent_default:
     driver: bridge

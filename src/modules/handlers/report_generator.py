@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Report Generation Handler Utility for Cyber-AutoAgent
+Report Generation Handler Utility for Boo-AutoAgent
 
 This module provides report generation functionality that is called
 directly by handlers (ReactBridgeHandler) at the
@@ -294,7 +294,7 @@ def _retrieve_evidence_from_memory(_operation_id: str) -> List[Dict[str, Any]]:
             return evidence
 
         # Retrieve memories for this operation
-        memories_response = memory_client.list_memories(user_id="cyber_agent")
+        memories_response = memory_client.list_memories(user_id="boo_agent")
 
         # Parse memory response
         if isinstance(memories_response, dict):

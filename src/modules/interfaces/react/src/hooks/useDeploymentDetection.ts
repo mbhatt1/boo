@@ -36,7 +36,7 @@ export function useDeploymentDetection({
     if (isConfigLoading) return;
     if (appState.isInitializationFlowActive) return;
 
-    const forceSetup = appState.isUserTriggeredSetup || (typeof process !== 'undefined' && process.env.CYBER_SHOW_SETUP === 'true');
+    const forceSetup = appState.isUserTriggeredSetup || (typeof process !== 'undefined' && process.env.BOO_SHOW_SETUP === 'true');
 
     const run = async () => {
       try {

@@ -1,6 +1,6 @@
 /**
  * Module Selector Component
- * Interactive module selection UI for Cyber-AutoAgent
+ * Interactive module selection UI for Boo-AutoAgent
  * Provides arrow key navigation and descriptions for each security module
  */
 

@@ -1287,16 +1287,16 @@ const method = latestInput.method || 'GET';
         if (/^Error:\s*$/.test(l)) return false;
         // For tool outputs (JSON), keep all content
         if (fromToolBuffer) {
-          // Only drop CYBER_EVENT and timestamp logs for tool outputs
-          if (l.startsWith('__CYBER_EVENT__') || l.endsWith('__CYBER_EVENT_END__')) return false;
+          // Only drop BOO_EVENT and timestamp logs for tool outputs
+          if (l.startsWith('__BOO_EVENT__') || l.endsWith('__BOO_EVENT_END__')) return false;
           if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\s+-\s+(INFO|DEBUG|WARNING|ERROR)\s+-\s+/.test(l)) return false;
           // Suppress noisy parser errors that could appear during large report emission
           if (/^Error parsing event:/i.test(l)) return false;
           return true;
         }
         // For non-tool outputs, apply normal filtering
-        // Drop raw CYBER_EVENT payload lines
-        if (l.startsWith('__CYBER_EVENT__') || l.endsWith('__CYBER_EVENT_END__')) return false;
+        // Drop raw BOO_EVENT payload lines
+        if (l.startsWith('__BOO_EVENT__') || l.endsWith('__BOO_EVENT_END__')) return false;
         // Drop ISO timestamped app logs: 2025-08-16 16:59:17 - INFO - ...
         if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}\s+-\s+(INFO|DEBUG|WARNING|ERROR)\s+-\s+/.test(l)) return false;
         // Drop [3:19:46 PM]-style app logs

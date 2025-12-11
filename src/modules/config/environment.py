@@ -100,10 +100,10 @@ def auto_setup(skip_mem0_cleanup: bool = False) -> List[str]:
         "timestamp": datetime.now().isoformat(),
         "message": "Starting cybersecurity tool discovery",
     }
-    print(f"__CYBER_EVENT__{json.dumps(tool_discovery_event)}__CYBER_EVENT_END__")
+    print(f"__BOO_EVENT__{json.dumps(tool_discovery_event)}__BOO_EVENT_END__")
 
     # Check which tools are available and capture their binary paths
-    cyber_tools = {
+    boo_tools = {
         # Core scanners and recon
         "nmap": "Network discovery and security auditing",
         "nikto": "Web server scanner",
@@ -200,7 +200,7 @@ def auto_setup(skip_mem0_cleanup: bool = False) -> List[str]:
     available_tools = []
 
     # Check existing tools using shutil.which
-    for tool_name, description in cyber_tools.items():
+    for tool_name, description in boo_tools.items():
         binary = tool_commands.get(tool_name, tool_name)
         tool_path = shutil.which(binary)
         is_available = tool_path is not None
@@ -219,7 +219,7 @@ def auto_setup(skip_mem0_cleanup: bool = False) -> List[str]:
                 "binary": binary,
                 "path": tool_path,
             }
-            print(f"__CYBER_EVENT__{json.dumps(tool_event)}__CYBER_EVENT_END__")
+            print(f"__BOO_EVENT__{json.dumps(tool_event)}__BOO_EVENT_END__")
         else:
             print_status(f"○ {tool_name:<12} - {description} (not available)", "WARNING")
 
@@ -233,7 +233,7 @@ def auto_setup(skip_mem0_cleanup: bool = False) -> List[str]:
                 "binary": binary,
                 "path": None,
             }
-            print(f"__CYBER_EVENT__{json.dumps(tool_event)}__CYBER_EVENT_END__")
+            print(f"__BOO_EVENT__{json.dumps(tool_event)}__BOO_EVENT_END__")
 
     print_status(f"Environment ready. {len(available_tools)} cyber tools available.", "SUCCESS")
 
@@ -245,7 +245,7 @@ def auto_setup(skip_mem0_cleanup: bool = False) -> List[str]:
         "tool_count": len(available_tools),
         "message": f"Environment ready with {len(available_tools)} cybersecurity tools",
     }
-    print(f"__CYBER_EVENT__{json.dumps(env_ready_event)}__CYBER_EVENT_END__")
+    print(f"__BOO_EVENT__{json.dumps(env_ready_event)}__BOO_EVENT_END__")
     return available_tools
 
 
@@ -327,7 +327,7 @@ class TeeOutput:
         return self.terminal.isatty()
 
 
-def setup_logging(log_file: str = "cyber_operations.log", verbose: bool = False):
+def setup_logging(log_file: str = "boo_operations.log", verbose: bool = False):
     """Configure unified logging for all operations with complete terminal capture"""
     # Ensure the directory exists
     log_dir = os.path.dirname(log_file)
@@ -337,7 +337,7 @@ def setup_logging(log_file: str = "cyber_operations.log", verbose: bool = False)
     # Create header in log file
     with open(log_file, "a", encoding="utf-8") as f:
         f.write("\n" + "=" * 80 + "\n")
-        f.write(f"CYBER-AUTOAGENT SESSION STARTED: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+        f.write(f"BOO-AUTOAGENT SESSION STARTED: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
         f.write("=" * 80 + "\n\n")
 
     # Set up stdout and stderr redirection to capture ALL terminal output
@@ -369,12 +369,12 @@ def setup_logging(log_file: str = "cyber_operations.log", verbose: bool = False)
     console_handler.setFormatter(formatter)
 
     # Configure the logger specifically
-    cyber_logger = logging.getLogger("CyberAutoAgent")
-    cyber_logger.setLevel(logging.INFO)
-    cyber_logger.addHandler(file_handler)
+    boo_logger = logging.getLogger("BooAutoAgent")
+    boo_logger.setLevel(logging.INFO)
+    boo_logger.addHandler(file_handler)
     if verbose:
-        cyber_logger.addHandler(console_handler)
-    cyber_logger.propagate = False  # Don't propagate to root logger
+        boo_logger.addHandler(console_handler)
+    boo_logger.propagate = False  # Don't propagate to root logger
 
     # Suppress Strands framework error logging for expected step limit termination
     strands_event_loop_logger = logging.getLogger("strands.event_loop.event_loop")
@@ -393,4 +393,4 @@ def setup_logging(log_file: str = "cyber_operations.log", verbose: bool = False)
     logging.getLogger("botocore").setLevel(logging.WARNING)
     logging.getLogger("urllib3").setLevel(logging.WARNING)
 
-    return cyber_logger
+    return boo_logger

@@ -1,5 +1,5 @@
 /**
- * Module Context for Cyber-AutoAgent
+ * Module Context for Boo-AutoAgent
  * Manages security modules and their capabilities
  */
 

@@ -370,7 +370,7 @@ class TestConfigManager:
         assert vector_store_config["config"]["port"] == 443
         assert vector_store_config["config"]["collection_name"] == "mem0_memories"
 
-    @patch.dict(os.environ, {"CYBER_AGENT_LLM_MODEL": "custom-llm"})
+    @patch.dict(os.environ, {"BOO_AGENT_LLM_MODEL": "custom-llm"})
     def test_environment_variable_override(self):
         """Test that environment variables override default config."""
         # Clear cache to force re-evaluation
@@ -388,7 +388,7 @@ class TestConfigManager:
         config = self.config_manager.get_server_config("ollama")
         assert config.evaluation.llm.model_id == "custom-evaluator"
 
-    @patch.dict(os.environ, {"CYBER_AGENT_SWARM_MODEL": "custom-swarm-model"})
+    @patch.dict(os.environ, {"BOO_AGENT_SWARM_MODEL": "custom-swarm-model"})
     def test_swarm_model_environment_variable_override(self):
         """Test that swarm model can be overridden with environment variables."""
         # Clear cache to force re-evaluation
@@ -398,9 +398,9 @@ class TestConfigManager:
         assert config.swarm.llm.model_id == "custom-swarm-model"
 
     @patch.dict(os.environ, {
-        "CYBER_AGENT_PROVIDER": "litellm",
-        "CYBER_AGENT_LLM_MODEL": "xai/grok-4-fast-reasoning",
-        "CYBER_AGENT_EMBEDDING_MODEL": "bedrock/amazon.titan-embed-text-v2:0",
+        "BOO_AGENT_PROVIDER": "litellm",
+        "BOO_AGENT_LLM_MODEL": "xai/grok-4-fast-reasoning",
+        "BOO_AGENT_EMBEDDING_MODEL": "bedrock/amazon.titan-embed-text-v2:0",
         "XAI_API_KEY": "test-key",
         "AWS_BEARER_TOKEN_BEDROCK": "test-token",
         "AWS_REGION": "us-east-1",
@@ -732,9 +732,9 @@ class TestEnvironmentIntegration:
     def test_multiple_environment_overrides(self):
         """Test multiple environment variable overrides."""
         env_vars = {
-            "CYBER_AGENT_LLM_MODEL": "custom-llm",
-            "CYBER_AGENT_EMBEDDING_MODEL": "custom-embedding",
-            "CYBER_AGENT_EVALUATION_MODEL": "custom-evaluator",
+            "BOO_AGENT_LLM_MODEL": "custom-llm",
+            "BOO_AGENT_EMBEDDING_MODEL": "custom-embedding",
+            "BOO_AGENT_EVALUATION_MODEL": "custom-evaluator",
             "AWS_REGION": "us-west-2",
         }
 
@@ -750,7 +750,7 @@ class TestEnvironmentIntegration:
     def test_legacy_environment_variable_precedence(self):
         """Test that new environment variables take precedence over legacy ones."""
         env_vars = {
-            "CYBER_AGENT_EVALUATION_MODEL": "new-evaluator",
+            "BOO_AGENT_EVALUATION_MODEL": "new-evaluator",
             "RAGAS_EVALUATOR_MODEL": "legacy-evaluator",
         }
 
@@ -931,8 +931,8 @@ class TestOutputConfigIntegration:
     @patch.dict(
         os.environ,
         {
-            "CYBER_AGENT_OUTPUT_DIR": "/env/outputs",
-            "CYBER_AGENT_ENABLE_UNIFIED_OUTPUT": "true",
+            "BOO_AGENT_OUTPUT_DIR": "/env/outputs",
+            "BOO_AGENT_ENABLE_UNIFIED_OUTPUT": "true",
         },
     )
     def test_get_output_config_with_env_vars(self):
@@ -954,7 +954,7 @@ class TestOutputConfigIntegration:
 
     def test_output_config_precedence(self):
         """Test that overrides take precedence over environment variables."""
-        with patch.dict(os.environ, {"CYBER_AGENT_OUTPUT_DIR": "/env/outputs"}):
+        with patch.dict(os.environ, {"BOO_AGENT_OUTPUT_DIR": "/env/outputs"}):
             config_manager = ConfigManager()
             output_config = config_manager.get_output_config("bedrock", output_dir="/override/outputs")
 

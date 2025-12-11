@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Cyber-AutoAgent Evaluation Module
+Boo-AutoAgent Evaluation Module
 =================================
 
 Evaluation system using Ragas metrics integrated with Langfuse.
@@ -44,13 +44,13 @@ DEFAULT_SECURITY_TOPICS = [
 ]
 
 
-class CyberAgentEvaluator:
+class BooAgentEvaluator:
     """
     Evaluation system for cybersecurity agent traces using Ragas metrics.
 
     Features:
     - Multi-turn conversation support for complex agent interactions
-    - Cybersecurity-specific AspectCritic metrics for tool selection and evidence quality
+    - Boosecurity-specific AspectCritic metrics for tool selection and evidence quality
     - Agent performance metrics without ground truth requirements
     - Graduated assessment using rubrics for nuanced scoring
     - Langfuse integration with categorized metadata
@@ -59,8 +59,8 @@ class CyberAgentEvaluator:
     def __init__(self):
         """Initialize evaluator with Langfuse and evaluation metrics."""
         self.langfuse = Langfuse(
-            public_key=os.getenv("LANGFUSE_PUBLIC_KEY", "cyber-public"),
-            secret_key=os.getenv("LANGFUSE_SECRET_KEY", "cyber-secret"),
+            public_key=os.getenv("LANGFUSE_PUBLIC_KEY", "boo-public"),
+            secret_key=os.getenv("LANGFUSE_SECRET_KEY", "boo-secret"),
             host=os.getenv(
                 "LANGFUSE_HOST",
                 (
@@ -140,7 +140,7 @@ class CyberAgentEvaluator:
         """Configure evaluation metrics using ragas prebuilt capabilities."""
         logger.info("Setting up evaluation metrics")
 
-        # Cybersecurity-specific AspectCritic metrics with nuanced LLM scoring
+        # Boosecurity-specific AspectCritic metrics with nuanced LLM scoring
         self.tool_selection_accuracy = AspectCritic(
             name="tool_selection_accuracy",
             definition=(
@@ -639,7 +639,7 @@ class CyberAgentEvaluator:
                         # Use structured equality checks only
                         agent_role = attrs.get("agent.role")
                         agent_name = attrs.get("agent.name")
-                        if agent_role == "report_generation" or agent_name == "Cyber-ReportGenerator":
+                        if agent_role == "report_generation" or agent_name == "Boo-ReportGenerator":
                             is_report_trace = True
                 except Exception:
                     pass

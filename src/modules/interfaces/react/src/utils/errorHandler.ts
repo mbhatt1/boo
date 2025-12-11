@@ -33,7 +33,7 @@ export interface ErrorContext {
   metadata?: Record<string, unknown>;
 }
 
-export class CyberAgentError extends Error {
+export class BooAgentError extends Error {
   public readonly severity: ErrorSeverity;
   public readonly category: ErrorCategory;
   public readonly context?: ErrorContext;
@@ -51,7 +51,7 @@ export class CyberAgentError extends Error {
     }
   ) {
     super(message);
-    this.name = 'CyberAgentError';
+    this.name = 'BooAgentError';
     this.severity = options?.severity || ErrorSeverity.MEDIUM;
     this.category = options?.category || ErrorCategory.UNKNOWN;
     this.context = options?.context;
@@ -64,7 +64,7 @@ export class CyberAgentError extends Error {
 
     // Maintain proper stack trace for where our error was thrown
     if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, CyberAgentError);
+      Error.captureStackTrace(this, BooAgentError);
     }
   }
 
@@ -87,11 +87,11 @@ export class CyberAgentError extends Error {
  * Global error handler for uncaught errors
  */
 export const handleError = (
-  error: Error | CyberAgentError,
+  error: Error | BooAgentError,
   context?: ErrorContext
 ): void => {
   // Determine severity based on error type
-  const severity = error instanceof CyberAgentError 
+  const severity = error instanceof BooAgentError 
     ? error.severity 
     : ErrorSeverity.HIGH;
 
@@ -116,8 +116,8 @@ export const handleError = (
     reportErrorToMonitoring(error, context);
   }
   
-  // Store context in error if it's a CyberAgentError
-  if (error instanceof CyberAgentError && context && !error.context) {
+  // Store context in error if it's a BooAgentError
+  if (error instanceof BooAgentError && context && !error.context) {
     (error as any).context = context;
   }
 };
@@ -126,7 +126,7 @@ export const handleError = (
  * Report error to monitoring service (placeholder)
  */
 const reportErrorToMonitoring = (
-  error: Error | CyberAgentError,
+  error: Error | BooAgentError,
   context?: ErrorContext
 ): void => {
   // This would integrate with services like Sentry, Datadog, etc.
@@ -163,8 +163,8 @@ export const createError = (
   message: string,
   category: ErrorCategory,
   context?: ErrorContext
-): CyberAgentError => {
-  return new CyberAgentError(message, {
+): BooAgentError => {
+  return new BooAgentError(message, {
     category,
     context,
     severity: ErrorSeverity.MEDIUM,
@@ -176,7 +176,7 @@ export const createError = (
  */
 export const Errors = {
   network: (message: string, context?: ErrorContext) =>
-    new CyberAgentError(message, {
+    new BooAgentError(message, {
       category: ErrorCategory.NETWORK,
       severity: ErrorSeverity.HIGH,
       context,
@@ -184,7 +184,7 @@ export const Errors = {
     }),
 
   configuration: (message: string, context?: ErrorContext) =>
-    new CyberAgentError(message, {
+    new BooAgentError(message, {
       category: ErrorCategory.CONFIGURATION,
       severity: ErrorSeverity.HIGH,
       context,
@@ -192,7 +192,7 @@ export const Errors = {
     }),
 
   timeout: (message: string, context?: ErrorContext) =>
-    new CyberAgentError(message, {
+    new BooAgentError(message, {
       category: ErrorCategory.TIMEOUT,
       severity: ErrorSeverity.MEDIUM,
       context,
@@ -200,7 +200,7 @@ export const Errors = {
     }),
 
   validation: (message: string, context?: ErrorContext) =>
-    new CyberAgentError(message, {
+    new BooAgentError(message, {
       category: ErrorCategory.VALIDATION,
       severity: ErrorSeverity.LOW,
       context,
@@ -208,7 +208,7 @@ export const Errors = {
     }),
 
   permission: (message: string, context?: ErrorContext) =>
-    new CyberAgentError(message, {
+    new BooAgentError(message, {
       category: ErrorCategory.PERMISSION,
       severity: ErrorSeverity.CRITICAL,
       context,
@@ -216,7 +216,7 @@ export const Errors = {
     }),
 
   execution: (message: string, context?: ErrorContext) =>
-    new CyberAgentError(message, {
+    new BooAgentError(message, {
       category: ErrorCategory.EXECUTION,
       severity: ErrorSeverity.HIGH,
       context,

@@ -30,14 +30,14 @@ async function wait(ms) { return new Promise((r) => setTimeout(r, ms)); }
 function ensureTestConfig() {
   const os = require('os');
   const path = require('path');
-  const configDir = path.join(os.homedir(), '.cyber-autoagent');
+  const configDir = path.join(os.homedir(), '.boo-autoagent');
   try { fs.mkdirSync(configDir, { recursive: true }); } catch {}
   const configPath = path.join(configDir, 'config.json');
   const config = {
     modelProvider: 'bedrock',
     modelId: 'us.anthropic.claude-sonnet-4-20250514-v1:0',
     awsRegion: 'us-east-1',
-    dockerImage: 'cyber-autoagent:latest',
+    dockerImage: 'boo-autoagent:latest',
     dockerTimeout: 300,
     volumes: [],
     iterations: 25,
@@ -71,8 +71,8 @@ function ensureTestConfig() {
     NO_COLOR: '1',
     CI: 'true',
     NODE_ENV: 'test',
-    CYBER_TEST_MODE: 'true',
-    CYBER_TEST_EXECUTION: 'mock'
+    BOO_TEST_MODE: 'true',
+    BOO_TEST_EXECUTION: 'mock'
   };
 
   const term = spawn('node', [appPath, '--headless', '--deployment-mode', 'local-cli'], {

@@ -62,7 +62,7 @@ export const DeploymentWarning: React.FC<DeploymentWarningProps> = ({
         </Text>
         {unusedDeployments.map(dep => (
           <Text key={`${dep.mode}-cmd`} color={theme.muted}>
-            • {dep.mode === 'local-cli' ? 'Deactivate venv or quit CLI' : dep.mode === 'single-container' ? 'docker stop cyber-autoagent' : 'docker compose down'}
+            • {dep.mode === 'local-cli' ? 'Deactivate venv or quit CLI' : dep.mode === 'single-container' ? 'docker stop boo-autoagent' : 'docker compose down'}
           </Text>
         ))}
       </Box>

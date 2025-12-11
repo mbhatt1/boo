@@ -1,4 +1,4 @@
-"""Tools module for Cyber-AutoAgent."""
+"""Tools module for Boo-AutoAgent."""
 
 from modules.tools.memory import Mem0ServiceClient, get_memory_client, initialize_memory_system, mem0_memory
 from modules.tools.prompt_optimizer import prompt_optimizer

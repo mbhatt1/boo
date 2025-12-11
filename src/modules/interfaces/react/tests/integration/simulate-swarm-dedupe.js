@@ -31,7 +31,7 @@ function resolveAppTarget() {
 }
 
 function writeSwarmEventsFile() {
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cyber-swarm-'));
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'boo-swarm-'));
   const file = path.join(tmpDir, 'events.jsonl');
   const lines = [];
 
@@ -108,7 +108,7 @@ function writeSwarmEventsFile() {
 }
 
 function ensureTestConfig() {
-  const configDir = path.join(os.homedir(), '.cyber-autoagent');
+  const configDir = path.join(os.homedir(), '.boo-autoagent');
   try { fs.mkdirSync(configDir, { recursive: true }); } catch {}
   const configPath = path.join(configDir, 'config.json');
   const config = {
@@ -136,9 +136,9 @@ async function wait(ms) { return new Promise((r) => setTimeout(r, ms)); }
     NO_COLOR: '1',
     CI: 'true',
     NODE_ENV: 'test',
-    CYBER_TEST_MODE: 'true',
-    CYBER_TEST_EXECUTION: 'mock',
-    CYBER_TEST_EVENTS_PATH: eventsPath,
+    BOO_TEST_MODE: 'true',
+    BOO_TEST_EXECUTION: 'mock',
+    BOO_TEST_EVENTS_PATH: eventsPath,
   };
 
   const args = runner === 'node'

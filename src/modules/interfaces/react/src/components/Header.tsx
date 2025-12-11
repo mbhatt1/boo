@@ -26,7 +26,7 @@ const longAsciiLogo = `
  ╚═════╝   ╚═╝   ╚═════╝ ╚══════╝╚═╝  ╚═╝    ╚═╝  ╚═╝ ╚═════╝    ╚═╝    ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝   
 `;
 
-const compactLogo = `🔐 Cyber-AutoAgent`;
+const compactLogo = `🔐 Boo-AutoAgent`;
 const ultraCompactLogo = `🔐 CAA`;
 
 export const Header: React.FC<HeaderProps> = React.memo(({ 
@@ -96,7 +96,7 @@ export const Header: React.FC<HeaderProps> = React.memo(({
             {nightly && (
               <Text color={theme.warning}> | NIGHTLY</Text>
             )}
-            <Text color={theme.muted}> | Full Spectrum Cyber Operations</Text>
+            <Text color={theme.muted}> | Full Spectrum Boo Operations</Text>
           </Box>
         </Box>
       )}
@@ -104,7 +104,7 @@ export const Header: React.FC<HeaderProps> = React.memo(({
       {/* Version and subtitle for ASCII art mode */}
       {isAsciiArt && (
         <Box key="ascii-subtitle" flexDirection="row" justifyContent="flex-start" flexGrow={1}>
-          <Text color={theme.muted}>Full Spectrum Cyber Operations v{version}</Text>
+          <Text color={theme.muted}>Full Spectrum Boo Operations v{version}</Text>
           {nightly && (
             <Text color={theme.warning}> | NIGHTLY</Text>
           )}
@@ -114,7 +114,7 @@ export const Header: React.FC<HeaderProps> = React.memo(({
       {/* Optional exit notice under the header */}
       {exitNotice && (
         <Box key="exit-notice" flexGrow={1}>
-          <Text color={theme.danger}>🔴 ESC — Exiting Cyber-AutoAgent</Text>
+          <Text color={theme.danger}>🔴 ESC — Exiting Boo-AutoAgent</Text>
         </Box>
       )}
 

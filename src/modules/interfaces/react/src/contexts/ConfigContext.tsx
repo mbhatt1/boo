@@ -1,5 +1,5 @@
 /**
- * Cyber-AutoAgent Configuration Context - Settings Management
+ * Boo-AutoAgent Configuration Context - Settings Management
  * 
  * Provides centralized configuration management for all application settings including
  * AI model providers, Docker execution parameters, memory backends, observability,
@@ -39,7 +39,7 @@ export type EnvironmentMap = RawEnvironmentMap;
 /**
  * Main Configuration Interface - Complete Settings Schema
  * 
- * Defines the complete configuration structure for Cyber-AutoAgent with
+ * Defines the complete configuration structure for Boo-AutoAgent with
  * comprehensive type safety and detailed documentation for each setting.
  * All sensitive credentials support environment variable integration.
  */
@@ -397,7 +397,7 @@ export const defaultConfig: Config = {
   azureApiVersion: process.env.AZURE_API_VERSION,
   
   // Docker Settings
-  dockerImage: 'cyber-autoagent:latest',
+  dockerImage: 'boo-autoagent:latest',
   dockerTimeout: 300,
   volumes: [],
   
@@ -448,8 +448,8 @@ export const defaultConfig: Config = {
   observability: deploymentDefaults.observabilityDefault || false, // Smart defaults based on deployment mode
   langfuseHost: process.env.LANGFUSE_HOST || deploymentDefaults.langfuseHost || 'http://localhost:3000',
   langfuseHostOverride: false, // Let container auto-detect by default
-  langfusePublicKey: process.env.LANGFUSE_PUBLIC_KEY || 'cyber-public',
-  langfuseSecretKey: process.env.LANGFUSE_SECRET_KEY || 'cyber-secret',
+  langfusePublicKey: process.env.LANGFUSE_PUBLIC_KEY || 'boo-public',
+  langfuseSecretKey: process.env.LANGFUSE_SECRET_KEY || 'boo-secret',
   langfuseEncryptionKey: process.env.LANGFUSE_ENCRYPTION_KEY,
   langfuseSalt: process.env.LANGFUSE_SALT,
   enableLangfusePrompts: deploymentDefaults.observabilityDefault || false,
@@ -489,7 +489,7 @@ export const ConfigContext = createContext<ConfigContextType | undefined>(undefi
 export const ConfigProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [config, setConfig] = useState<Config>(defaultConfig);
   const [isConfigLoading, setIsConfigLoading] = useState(true);
-  const configFilePath = useMemo(() => path.join(os.homedir(), '.cyber-autoagent', 'config.json'), []);
+  const configFilePath = useMemo(() => path.join(os.homedir(), '.boo-autoagent', 'config.json'), []);
 
   // Use a ref to get the latest config in callbacks without adding a dependency
   const configRef = useRef(config);

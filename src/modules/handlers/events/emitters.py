@@ -17,7 +17,7 @@ class EventEmitter(Protocol):
 
 
 class StdoutEventEmitter:
-    """Emits events to stdout using the existing __CYBER_EVENT__ protocol.
+    """Emits events to stdout using the existing __BOO_EVENT__ protocol.
 
     This maintains 100% backward compatibility with the React UI while
     adding intelligent deduplication to prevent duplicate events.
@@ -136,7 +136,7 @@ class StdoutEventEmitter:
                     }
                     json_str = json.dumps(error_event, ensure_ascii=True)
 
-        print(f"__CYBER_EVENT__{json_str}__CYBER_EVENT_END__\n", end="", flush=True)
+        print(f"__BOO_EVENT__{json_str}__BOO_EVENT_END__\n", end="", flush=True)
 
         # Track for deduplication (except tool events and metrics updates)
         if event_type not in (

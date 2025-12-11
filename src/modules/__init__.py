@@ -1,6 +1,6 @@
-"""Cyber-AutoAgent modules package."""
+"""Boo-AutoAgent modules package."""
 
 __version__ = "0.1.3"
-__author__ = "Cyber-AutoAgent Team"
+__author__ = "Boo-AutoAgent Team"
 
 __all__ = []

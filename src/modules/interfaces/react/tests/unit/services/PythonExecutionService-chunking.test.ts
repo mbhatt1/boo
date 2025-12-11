@@ -5,7 +5,7 @@ import { describe, it, expect } from '@jest/globals';
 import { PythonExecutionService } from '../../../src/services/PythonExecutionService.js';
 
 function wrapEvent(obj: any): string {
-  return `__CYBER_EVENT__${JSON.stringify(obj)}__CYBER_EVENT_END__`;
+  return `__BOO_EVENT__${JSON.stringify(obj)}__BOO_EVENT_END__`;
 }
 
 describe('PythonExecutionService chunked raw-output emission', () => {

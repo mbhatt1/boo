@@ -33,8 +33,8 @@ The React-based terminal interface is now the **default UI**, providing interact
 
 ```bash
 # Clone and setup
-git clone https://github.com/westonbrown/Cyber-AutoAgent.git
-cd Cyber-AutoAgent
+git clone https://github.com/westonbrown/Boo-AutoAgent.git
+cd Boo-AutoAgent
 
 # Build React terminal interface
 cd src/modules/interfaces/react
@@ -66,7 +66,7 @@ docker run -it --rm \
   -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
   -e AWS_REGION=${AWS_REGION:-us-east-1} \
   -v $(pwd)/outputs:/app/outputs \
-  cyber-autoagent
+  boo-autoagent
 
 # Or start directly with parameters
 docker run -it --rm \
@@ -74,7 +74,7 @@ docker run -it --rm \
   -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
   -e AWS_REGION=${AWS_REGION:-us-east-1} \
   -v $(pwd)/outputs:/app/outputs \
-  cyber-autoagent \
+  boo-autoagent \
   --target "http://testphp.vulnweb.com" \
   --objective "Identify SQL injection vulnerabilities" \
   --auto-run
@@ -92,8 +92,8 @@ cp .env.example .env
 
 Example `.env` for LiteLLM:
 ```bash
-CYBER_AGENT_PROVIDER=litellm
-CYBER_AGENT_LLM_MODEL=gemini/gemini-2.5-flash
+BOO_AGENT_PROVIDER=litellm
+BOO_AGENT_LLM_MODEL=gemini/gemini-2.5-flash
 GEMINI_API_KEY=your_api_key_here
 ```
 
@@ -101,16 +101,16 @@ GEMINI_API_KEY=your_api_key_here
 
 ```bash
 # Run with React terminal UI and full observability
-docker compose -f docker/docker-compose.yml run --rm cyber-autoagent
+docker compose -f docker/docker-compose.yml run --rm boo-autoagent
 
 # With root access for dynamic tool installation
-docker compose -f docker/docker-compose.yml run --user root --rm cyber-autoagent
+docker compose -f docker/docker-compose.yml run --user root --rm boo-autoagent
 ```
 
 **Note:** The `.env` file in the project root is automatically loaded by docker-compose.
 
 The compose stack automatically provides:
-- **Langfuse observability** at http://localhost:3000 (login: admin@cyber-autoagent.com / changeme)
+- **Langfuse observability** at http://localhost:3000 (login: admin@boo-autoagent.com / changeme)
 - **Persistent databases** (PostgreSQL, ClickHouse, Redis, MinIO)
 - **Network access** to challenge containers
 - **React terminal UI** as the default interface
@@ -146,7 +146,7 @@ The compose stack automatically provides:
 
 ```mermaid
 graph LR
-    A[User Input<br/>Target & Objective] --> B[Cyber-AutoAgent]
+    A[User Input<br/>Target & Objective] --> B[Boo-AutoAgent]
     B --> C[AI Models<br/>Remote/Local]
     B --> D[Agent Tools<br/>shell, swarm, editor, etc.]
     B --> E[Evidence Storage<br/>Memory System]
@@ -239,7 +239,7 @@ flowchart TD
     A[Think: Analyze Current State] --> B{Select Tool Type}
 
     B --> |Basic Task| C[Shell Commands]
-    B --> |Security Task| D[Cyber Tools via Shell]
+    B --> |Security Task| D[Boo Tools via Shell]
     B --> |Complex Task| E[Create Meta-Tool]
     B --> |Parallel Task| P[Swarm Orchestration]
 
@@ -274,7 +274,7 @@ flowchart TD
 
 ***Design Philosophy: Meta-Everything Architecture***
 
-At the core of Cyber-AutoAgent is a "meta-everything" design philosophy that enables dynamic adaptation and scaling:
+At the core of Boo-AutoAgent is a "meta-everything" design philosophy that enables dynamic adaptation and scaling:
 
 - **Meta-Agent**: The swarm capability deploys dynamic agents as tools, each tailored for specific subtasks with their own reasoning loops
 - **Meta-Tooling**: Through the editor and load_tool capabilities, the agent can create, modify, and deploy new tools at runtime to address novel challenges
@@ -304,7 +304,7 @@ This meta-architecture allows the system to transcend static tool limitations an
 
 ## Model Providers
 
-Cyber-AutoAgent supports multiple model providers for maximum flexibility:
+Boo-AutoAgent supports multiple model providers for maximum flexibility:
 
 ### Bedrock Provider (Direct AWS)
 - **Best for**: Production use, high-quality results, no local GPU requirements
@@ -338,7 +338,7 @@ Cyber-AutoAgent supports multiple model providers for maximum flexibility:
 
 > **[Complete Observability & Evaluation Guide](docs/observability-evaluation.md)** - Langfuse tracing, Ragas metrics, and automated performance evaluation
 
-Cyber-AutoAgent includes **built-in observability and evaluation** using self-hosted Langfuse for tracing and Ragas for automated performance metrics. This provides complete visibility into agent operations and continuous assessment of cybersecurity effectiveness.
+Boo-AutoAgent includes **built-in observability and evaluation** using self-hosted Langfuse for tracing and Ragas for automated performance metrics. This provides complete visibility into agent operations and continuous assessment of cybersecurity effectiveness.
 
 ### Key Features
 
@@ -366,7 +366,7 @@ cd docker
 docker-compose up -d
 
 # Access Langfuse UI at http://localhost:3000
-# Login: admin@cyber-autoagent.com / changeme
+# Login: admin@boo-autoagent.com / changeme
 
 # Enable evaluation for your operations
 export ENABLE_AUTO_EVALUATION=true
@@ -490,11 +490,11 @@ ollama pull mxbai-embed-large
 
 ```bash
 # Clone repository
-git clone https://github.com/cyber-autoagent/cyber-autoagent.git
-cd cyber-autoagent
+git clone https://github.com/boo-autoagent/boo-autoagent.git
+cd boo-autoagent
 
 # Build image
-docker build -f docker/Dockerfile -t cyber-autoagent .
+docker build -f docker/Dockerfile -t boo-autoagent .
 
 # Using environment variables
 docker run --rm \
@@ -504,7 +504,7 @@ docker run --rm \
   -e AWS_REGION=${AWS_REGION:-us-east-1} \
   -v $(pwd)/outputs:/app/outputs \
   -v $(pwd)/tools:/app/tools \
-  cyber-autoagent \
+  boo-autoagent \
   --target "x.x.x.x" \
   --objective "Identify vulnerabilities" \
   --iterations 50
@@ -514,8 +514,8 @@ docker run --rm \
 
 ```bash
 # Clone repository
-git clone https://github.com/cyber-autoagent/cyber-autoagent.git
-cd cyber-autoagent
+git clone https://github.com/boo-autoagent/boo-autoagent.git
+cd boo-autoagent
 
 # Create virtual environment
 python -m venv venv
@@ -545,7 +545,7 @@ python src/cyberautoagent.py \
 
 ### Data Storage
 
-**Unified Output Structure** (default, enabled by `CYBER_AGENT_ENABLE_UNIFIED_OUTPUT=true`):
+**Unified Output Structure** (default, enabled by `BOO_AGENT_ENABLE_UNIFIED_OUTPUT=true`):
 | Data Type | Location |
 |-----------|----------|
 | Evidence  | `./outputs/<target>/OP_<id>/` |
@@ -597,17 +597,17 @@ python src/cyberautoagent.py \
 # Docker with full observability, evaluation and root access (for package installation)
 docker run --rm \
   --user root \
-  --network cyber-autoagent_default \
+  --network boo-autoagent_default \
   -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
   -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
   -e AWS_REGION=${AWS_REGION:-us-east-1} \
   -e LANGFUSE_HOST=http://langfuse-web:3000 \
-  -e LANGFUSE_PUBLIC_KEY=cyber-public \
-  -e LANGFUSE_SECRET_KEY=cyber-secret \
+  -e LANGFUSE_PUBLIC_KEY=boo-public \
+  -e LANGFUSE_SECRET_KEY=boo-secret \
   -e ENABLE_AUTO_EVALUATION=true \
   -v $(pwd)/outputs:/app/outputs \
   -v $(pwd)/tools:/app/tools \
-  cyber-autoagent:dev \
+  boo-autoagent:dev \
   --target "http://testphp.vulnweb.com" \
   --objective "Comprehensive SQL injection and XSS assessment" \
   --iterations 25
@@ -619,7 +619,7 @@ By default, the agent runs as a non-root user (`cyberagent`) for security. This 
 
 ```bash
 # Small example, full command above
-docker run --user root cyber-autoagent
+docker run --user root boo-autoagent
 ```
 
 **Note**: Running as root reduces security isolation but enables full system access for tool installation.
@@ -646,7 +646,7 @@ The `.env.example` file contains detailed configuration options with inline comm
 
 - `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_BEARER_TOKEN_BEDROCK`, `AWS_REGION` for remote mode (AWS Bedrock)
 - `OLLAMA_HOST` for local mode (Ollama)
-- `CYBER_AGENT_OUTPUT_DIR`, `CYBER_AGENT_ENABLE_UNIFIED_OUTPUT` for output management
+- `BOO_AGENT_OUTPUT_DIR`, `BOO_AGENT_ENABLE_UNIFIED_OUTPUT` for output management
 - `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY` for observability
 - `MEM0_API_KEY` or `OPENSEARCH_HOST` for memory backends
 
@@ -675,12 +675,12 @@ uv run pytest --cov=src
 ## Project Structure
 
 ```
-cyber-autoagent/
+boo-autoagent/
 ├── src/                       # Source code
 │   ├── cyberautoagent.py      # Main entry point and CLI
 │   └── modules/               # Core modules (modular architecture)
 │       ├── agents/            # Agent implementations
-│       │   ├── cyber_autoagent.py  # Main Strands agent creation
+│       │   ├── boo_autoagent.py  # Main Strands agent creation
 │       │   └── report_agent.py     # Dedicated report generation
 │       ├── config/            # Configuration management
 │       │   ├── manager.py     # Centralized configuration system
@@ -717,7 +717,7 @@ cyber-autoagent/
 │   └── <target>/            # Target-specific organization
 │       ├── OP_<id>/        # Operation-specific files
 │       │   ├── report.md   # Security findings (when generated)
-│       │   ├── cyber_operations.log  # Operation log
+│       │   ├── boo_operations.log  # Operation log
 │       │   ├── artifacts/  # Ad-hoc files
 │       │   └── tools/      # Custom tools created by agent
 │       └── memory/         # Cross-operation memory
@@ -731,7 +731,7 @@ cyber-autoagent/
 | File | Purpose |
 |------|---------|
 | `src/cyberautoagent.py` | CLI entry point, observability setup |
-| `src/modules/agents/cyber_autoagent.py` | Strands agent creation, model configuration |
+| `src/modules/agents/boo_autoagent.py` | Strands agent creation, model configuration |
 | `src/modules/agents/report_agent.py` | Report generation agent |
 | `src/modules/config/manager.py` | Centralized configuration system |
 | `src/modules/tools/memory.py` | Unified Mem0 tool (FAISS/OpenSearch/Platform) |
@@ -863,7 +863,7 @@ curl -X POST http://localhost:11434/api/generate \
 ```
 
 **Docker Networking (Local Mode)**
-Cyber-AutoAgent automatically detects the correct Ollama host for your environment:
+Boo-AutoAgent automatically detects the correct Ollama host for your environment:
 
 ```bash
 # Ensure Ollama is running on your host

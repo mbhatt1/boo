@@ -107,14 +107,14 @@ export class DeploymentDetector {
       const containers = await this.getRunningContainers();
       
       // Single container (tolerate docker-compose project prefixes)
-      const hasAgent = containers.some(name => name.includes('cyber-autoagent'));
+      const hasAgent = containers.some(name => name.includes('boo-autoagent'));
       if (hasAgent) {
         deployments.push({
           mode: 'single-container',
           isHealthy: true,
           details: { 
             dockerRunning: true,
-            containersRunning: containers.filter(n => n.includes('cyber-autoagent'))
+            containersRunning: containers.filter(n => n.includes('boo-autoagent'))
           }
         });
       } else {
@@ -126,8 +126,8 @@ export class DeploymentDetector {
       }
       
       // Full stack - requires at least langfuse to be considered full-stack
-      // Tolerate docker-compose prefixes (e.g., <project>_cyber-langfuse_1)
-      const fullStackIndicators = ['cyber-langfuse', 'langfuse', 'cyber-langfuse-postgres', 'cyber-langfuse-redis'];
+      // Tolerate docker-compose prefixes (e.g., <project>_boo-langfuse_1)
+      const fullStackIndicators = ['boo-langfuse', 'langfuse', 'boo-langfuse-postgres', 'boo-langfuse-redis'];
       const hasFullStack = containers.some(name => fullStackIndicators.some(ind => name.includes(ind)));
       
       deployments.push({
@@ -135,7 +135,7 @@ export class DeploymentDetector {
         isHealthy: hasFullStack,
         details: { 
           dockerRunning: true,
-          containersRunning: containers.filter(name => fullStackIndicators.some(ind => name.includes(ind)) || name.includes('cyber-autoagent'))
+          containersRunning: containers.filter(name => fullStackIndicators.some(ind => name.includes(ind)) || name.includes('boo-autoagent'))
         }
       });
     } else {
@@ -233,12 +233,12 @@ export class DeploymentDetector {
 
   /**
    * Find project .venv directory using robust path resolution
-   * Priority: 1) CYBER_PROJECT_ROOT env var, 2) Search upward for project markers, 3) Fallback to relative paths
+   * Priority: 1) BOO_PROJECT_ROOT env var, 2) Search upward for project markers, 3) Fallback to relative paths
    */
   private async findProjectVenv(): Promise<string | null> {
     // Priority 1: Check environment variable (for advanced users)
-    if (process.env.CYBER_PROJECT_ROOT) {
-      const envVenvPath = path.join(process.env.CYBER_PROJECT_ROOT, '.venv');
+    if (process.env.BOO_PROJECT_ROOT) {
+      const envVenvPath = path.join(process.env.BOO_PROJECT_ROOT, '.venv');
       try {
         const stats = await fs.stat(envVenvPath);
         if (stats.isDirectory()) {

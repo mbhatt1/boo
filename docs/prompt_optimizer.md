@@ -91,7 +91,7 @@ prompt_optimizer(
 
 ### 1. Hook Registration
 ```python
-# agents/cyber_autoagent.py
+# agents/boo_autoagent.py
 from modules.handlers.prompt_rebuild_hook import PromptRebuildHook
 
 hook_instance = PromptRebuildHook(
@@ -132,7 +132,7 @@ def check_if_rebuild_needed(self, event: BeforeModelInvocationEvent):
 def _auto_optimize_execution_prompt(self):
     # Phase 1: Retrieve recent memories without preprocessing
     recent_memories = memory.list_memories(
-        user_id="cyber_agent",
+        user_id="boo_agent",
         limit=30
     )
 
@@ -310,7 +310,7 @@ def _query_memory_overview(self) -> Optional[Dict[str, Any]]:
 
     # Retrieve recent memories for contextual analysis
     results = self.memory.list_memories(
-        user_id="cyber_agent",
+        user_id="boo_agent",
         limit=30
     )
 
@@ -401,7 +401,7 @@ outputs/<target>/OP_<id>/
 ├── execution_prompt_optimized.txt  # Copied from module template, then evolves
 ├── adaptive_prompt.json            # Optional overlay directives
 ├── report.md                       # Final assessment report
-├── cyber_operations.log            # Operation log with all events
+├── boo_operations.log            # Operation log with all events
 ├── artifacts/                      # Ad-hoc files created during operation
 └── tools/                          # Custom tools created by agent
 
@@ -426,7 +426,7 @@ src/modules/operation_plugins/<module>/
 |-----------|------|---------|
 | **Hook** | `handlers/prompt_rebuild_hook.py` | Triggers and orchestration |
 | **Optimizer** | `tools/prompt_optimizer.py` | LLM rewriting logic |
-| **Agent** | `agents/cyber_autoagent.py` | Hook integration |
+| **Agent** | `agents/boo_autoagent.py` | Hook integration |
 | **Config** | `config/manager.py` | Prompt copying |
 | **Factory** | `prompts/factory.py` | Prompt initialization |
 
@@ -450,12 +450,12 @@ src/modules/operation_plugins/<module>/
 
 ```bash
 # Prompt optimization control
-CYBER_PROMPT_REBUILD_INTERVAL=20           # Steps between automatic optimizations
-CYBER_ENABLE_PROMPT_OPTIMIZATION=true      # Enable/disable optimization
-CYBER_MEMORY_QUERY_LIMIT=30               # Number of recent memories to retrieve
+BOO_PROMPT_REBUILD_INTERVAL=20           # Steps between automatic optimizations
+BOO_ENABLE_PROMPT_OPTIMIZATION=true      # Enable/disable optimization
+BOO_MEMORY_QUERY_LIMIT=30               # Number of recent memories to retrieve
 
 # Operation root directory (set automatically)
-CYBER_OPERATION_ROOT=/path/to/outputs/<target>/OP_<id>
+BOO_OPERATION_ROOT=/path/to/outputs/<target>/OP_<id>
 
 # Overlay deduplication
 REASONING_DEDUPE_TTL_S=20                  # Seconds for reasoning deduplication

@@ -1,6 +1,6 @@
 /**
  * Documentation Viewer Component
- * Interactive documentation browser for Cyber-AutoAgent
+ * Interactive documentation browser for Boo-AutoAgent
  */
 
 import React, { useState, useEffect } from 'react';
@@ -33,7 +33,7 @@ export const DocumentationViewer: React.FC<DocumentationViewerProps> = React.mem
     { 
       name: 'User Instructions', 
       file: 'user-instructions.md', 
-      description: 'Complete guide for using Cyber-AutoAgent effectively' 
+      description: 'Complete guide for using Boo-AutoAgent effectively' 
     },
     { 
       name: 'Architecture Overview', 
@@ -78,15 +78,15 @@ export const DocumentationViewer: React.FC<DocumentationViewerProps> = React.mem
   const getFallbackContent = (filename: string): string => {
     switch (filename) {
       case 'user-instructions.md':
-        return `# Cyber-AutoAgent User Instructions
+        return `# Boo-AutoAgent User Instructions
 
 ## ▶ Getting Started
 
-Welcome to Cyber-AutoAgent, an autonomous cybersecurity assessment tool.
+Welcome to Boo-AutoAgent, an autonomous cybersecurity assessment tool.
 
 ### First Time Setup
 
-When you first launch Cyber-AutoAgent, you'll be presented with a deployment mode selection:
+When you first launch Boo-AutoAgent, you'll be presented with a deployment mode selection:
 
 1. **Local CLI** - Minimal setup, runs directly in Python
 2. **Single Container** - Docker isolation without observability  
@@ -103,7 +103,7 @@ When you first launch Cyber-AutoAgent, you'll be presented with a deployment mod
 
 ## ■ Safety & Authorization
 
-**CRITICAL**: Only use Cyber-AutoAgent on systems you have explicit authorization to test.
+**CRITICAL**: Only use Boo-AutoAgent on systems you have explicit authorization to test.
 
 ### Authorization Flow
 1. **Target Confirmation**: Shows exact target and module
@@ -131,11 +131,11 @@ When you first launch Cyber-AutoAgent, you'll be presented with a deployment mod
 For complete documentation, see the /docs folder in your installation.`;
 
       case 'architecture.md':
-        return `# Cyber-AutoAgent Architecture
+        return `# Boo-AutoAgent Architecture
 
 ## System Overview
 
-Cyber-AutoAgent is built on a modern, scalable architecture:
+Boo-AutoAgent is built on a modern, scalable architecture:
 
 - **Python Backend**: Strands SDK framework
 - **React CLI**: Terminal interface with Ink
@@ -276,7 +276,7 @@ Use /help for available commands or refer to the project repository for complete
   const renderDocumentList = () => (
     <Box flexDirection="column">
       <Box marginBottom={1}>
-        <Text color={theme.primary} bold>■ Cyber-AutoAgent Documentation</Text>
+        <Text color={theme.primary} bold>■ Boo-AutoAgent Documentation</Text>
       </Box>
       
       <Box borderStyle="single" borderColor={theme.accent} paddingX={1} flexDirection="column">

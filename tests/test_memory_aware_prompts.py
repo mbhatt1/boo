@@ -39,7 +39,7 @@ class TestMemoryContextGuidance:
         assert "## MEMORY CONTEXT" in result
         assert "Continuing assessment with 0 existing memories" in result
         assert (
-            '**CRITICAL FIRST ACTION**: Load all memories with mem0_memory(action="list", user_id="cyber_agent")'
+            '**CRITICAL FIRST ACTION**: Load all memories with mem0_memory(action="list", user_id="boo_agent")'
             in result
         )
         assert "Analyze retrieved memories before taking any actions" in result
@@ -52,7 +52,7 @@ class TestMemoryContextGuidance:
         assert "## MEMORY CONTEXT" in result
         assert "Continuing assessment with 0 existing memories" in result
         assert (
-            '**CRITICAL FIRST ACTION**: Load all memories with mem0_memory(action="list", user_id="cyber_agent")'
+            '**CRITICAL FIRST ACTION**: Load all memories with mem0_memory(action="list", user_id="boo_agent")'
             in result
         )
         assert "Analyze retrieved memories before taking any actions" in result
@@ -85,7 +85,7 @@ class TestMemoryContextGuidance:
         assert "## MEMORY CONTEXT" in result
         assert "Continuing assessment with 5 existing memories" in result
         assert (
-            '**CRITICAL FIRST ACTION**: Load all memories with mem0_memory(action="list", user_id="cyber_agent")'
+            '**CRITICAL FIRST ACTION**: Load all memories with mem0_memory(action="list", user_id="boo_agent")'
             in result
         )
         assert "Analyze retrieved memories before taking any actions" in result
@@ -110,7 +110,7 @@ class TestMemoryContextGuidance:
         assert "## MEMORY CONTEXT" in result
         assert "Continuing assessment with 0 existing memories" in result
         assert (
-            '**CRITICAL FIRST ACTION**: Load all memories with mem0_memory(action="list", user_id="cyber_agent")'
+            '**CRITICAL FIRST ACTION**: Load all memories with mem0_memory(action="list", user_id="boo_agent")'
             in result
         )
 
@@ -156,7 +156,7 @@ class TestMemoryAwareSystemPrompts:
         assert "## MEMORY CONTEXT" in result
         assert "Continuing assessment with 0 existing memories" in result
         assert (
-            '**CRITICAL FIRST ACTION**: Load all memories with mem0_memory(action="list", user_id="cyber_agent")'
+            '**CRITICAL FIRST ACTION**: Load all memories with mem0_memory(action="list", user_id="boo_agent")'
             in result
         )
 
@@ -184,7 +184,7 @@ class TestMemoryAwareSystemPrompts:
         assert "## MEMORY CONTEXT" in result
         assert "Continuing assessment with 5 existing memories" in result
         assert (
-            '**CRITICAL FIRST ACTION**: Load all memories with mem0_memory(action="list", user_id="cyber_agent")'
+            '**CRITICAL FIRST ACTION**: Load all memories with mem0_memory(action="list", user_id="boo_agent")'
             in result
         )
 
@@ -221,7 +221,7 @@ class TestMemoryAwareSystemPrompts:
         assert "## MEMORY CONTEXT" in result
         assert "Continuing assessment with 8 existing memories" in result
         assert (
-            '**CRITICAL FIRST ACTION**: Load all memories with mem0_memory(action="list", user_id="cyber_agent")'
+            '**CRITICAL FIRST ACTION**: Load all memories with mem0_memory(action="list", user_id="boo_agent")'
             in result
         )
         assert "Analyze retrieved memories before taking any actions" in result
@@ -339,7 +339,7 @@ Leverage these tools directly via shell.
 
         # Should have both memory context and dynamic instruction
         assert (
-            '**CRITICAL FIRST ACTION**: Load all memories with mem0_memory(action="list", user_id="cyber_agent")'
+            '**CRITICAL FIRST ACTION**: Load all memories with mem0_memory(action="list", user_id="boo_agent")'
             in result_with_memories
         )
 
@@ -389,7 +389,7 @@ class TestMemoryAwarePromptIntegration:
         assert "OP_20240101_120000" in result
         assert "Continuing assessment with 3 existing memories" in result
         assert (
-            '**CRITICAL FIRST ACTION**: Load all memories with mem0_memory(action="list", user_id="cyber_agent")'
+            '**CRITICAL FIRST ACTION**: Load all memories with mem0_memory(action="list", user_id="boo_agent")'
             in result
         )
 

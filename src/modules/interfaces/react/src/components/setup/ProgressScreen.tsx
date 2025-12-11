@@ -35,7 +35,7 @@ const SETUP_STEPS = {
     { name: 'preflight', label: 'Initializing setup', detail: 'Loading configuration and environment checks' },
     { name: 'docker-check', label: 'Checking Docker', detail: 'Verifying Docker Desktop is running' },
     { name: 'pull', label: 'Images availability', detail: 'Checking/pulling cyberautoagent:latest if missing' },
-    { name: 'containers-start', label: 'Starting container', detail: 'docker run cyber-autoagent' },
+    { name: 'containers-start', label: 'Starting container', detail: 'docker run boo-autoagent' },
     { name: 'network-setup', label: 'Setting up network', detail: 'Configuring port mappings' },
     { name: 'validation', label: 'Health check', detail: 'Verifying container is responsive' }
   ],
@@ -64,7 +64,7 @@ const INSTALLATION_INFO = {
   'single-container': {
     title: 'Docker Container',
     items: [
-      '🐳 cyber-autoagent container',
+      '🐳 boo-autoagent container',
       '📦 Pre-configured Python environment',
       '🔧 Basic security tools',
       '⚙️ Container networking'
@@ -73,7 +73,7 @@ const INSTALLATION_INFO = {
   'full-stack': {
     title: 'Enterprise Stack',
     items: [
-      '🐳 cyber-autoagent (main agent)',
+      '🐳 boo-autoagent (main agent)',
       '📊 Langfuse (observability)',
       '🗄️ PostgreSQL (database)',
       '⚡ Redis (caching)',

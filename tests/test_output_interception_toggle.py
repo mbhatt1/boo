@@ -14,12 +14,12 @@ def _minimal_server_config():
 
 
 @patch("modules.handlers.output_interceptor.setup_output_interception")
-@patch("modules.agents.cyber_autoagent.get_config_manager")
-@patch("modules.agents.cyber_autoagent._create_remote_model")
+@patch("modules.agents.boo_autoagent.get_config_manager")
+@patch("modules.agents.boo_autoagent._create_remote_model")
 @patch("modules.handlers.react.hooks.ReactHooks")
 @patch("modules.handlers.react.react_bridge_handler.ReactBridgeHandler")
-@patch("modules.agents.cyber_autoagent.initialize_memory_system")
-@patch("modules.agents.cyber_autoagent.get_memory_client", return_value=None)
+@patch("modules.agents.boo_autoagent.initialize_memory_system")
+@patch("modules.agents.boo_autoagent.get_memory_client", return_value=None)
 def test_output_interception_react_only(
     mock_get_memory_client,
     mock_init_memory,
@@ -45,14 +45,14 @@ def test_output_interception_react_only(
     }
     mock_get_cfg.return_value = mock_cfg
 
-    from modules.agents.cyber_autoagent import create_agent
+    from modules.agents.boo_autoagent import create_agent
 
     # CLI mode: should NOT setup interception
-    monkeypatch.setenv("CYBER_UI_MODE", "cli")
+    monkeypatch.setenv("BOO_UI_MODE", "cli")
     create_agent(target="t", objective="o", provider="bedrock", op_id="OP_TEST")
     assert mock_setup_intercept.call_count == 0
 
     # React mode: should setup interception
-    monkeypatch.setenv("CYBER_UI_MODE", "react")
+    monkeypatch.setenv("BOO_UI_MODE", "react")
     create_agent(target="t2", objective="o2", provider="bedrock", op_id="OP_TEST2")
     assert mock_setup_intercept.call_count == 1

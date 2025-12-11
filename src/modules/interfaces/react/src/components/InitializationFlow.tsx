@@ -262,7 +262,7 @@ export const InitializationFlow: React.FC<InitializationFlowProps> = ({ onComple
     const health = await monitor.checkHealth();
     setHealthStatus(health);
     
-    const criticalServices = ['cyber-langfuse'];
+    const criticalServices = ['boo-langfuse'];
     const criticalRunning = health.services
       .filter(s => criticalServices.includes(s.name))
       .every(s => s.status === 'running');
@@ -318,7 +318,7 @@ export const InitializationFlow: React.FC<InitializationFlowProps> = ({ onComple
       
       // If user explicitly ran /setup, show them the continue option instead of auto-completing
       // This allows them to reconfigure deployment mode even if already configured
-      if (process.env.CYBER_SHOW_SETUP === 'true') {
+      if (process.env.BOO_SHOW_SETUP === 'true') {
         setShowContinue(true);
       } else {
         setCurrentStep('setup-complete');
@@ -362,7 +362,7 @@ export const InitializationFlow: React.FC<InitializationFlowProps> = ({ onComple
       
       // First check if containers exist but are stopped
       const { stdout: psOutput } = await execAsync('docker ps -a --format "{{.Names}}"');
-      const existingContainers = psOutput.split('\n').filter(name => name.includes('cyber-'));
+      const existingContainers = psOutput.split('\n').filter(name => name.includes('boo-'));
       
       if (existingContainers.length > 0) {
         // Try to start existing containers
@@ -560,7 +560,7 @@ export const InitializationFlow: React.FC<InitializationFlowProps> = ({ onComple
         <Box borderStyle="round" borderColor={theme.primary} padding={2} marginY={2}>
           <Box flexDirection="column">
             <Text bold color={theme.foreground}>
-              Welcome to Cyber-AutoAgent Setup
+              Welcome to Boo-AutoAgent Setup
             </Text>
             <Box marginTop={1}>
               <Text color={theme.muted}>
@@ -681,7 +681,7 @@ export const InitializationFlow: React.FC<InitializationFlowProps> = ({ onComple
       
       <Box marginTop={2} marginBottom={2}>
         <Text bold color={theme.primary}>
-          Cyber-AutoAgent Initialization
+          Boo-AutoAgent Initialization
         </Text>
         <Text color={theme.muted}> ({deploymentMode})</Text>
       </Box>

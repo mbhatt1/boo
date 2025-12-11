@@ -43,7 +43,7 @@ export function detectTerminalBackground(): BackgroundType {
   // iTerm2 - check for light theme indicators
   if (termProgram === 'iterm.app') {
     // iTerm2 doesn't set COLORFGBG reliably, default to dark
-    // Users can override with CYBER_THEME env var if needed
+    // Users can override with BOO_THEME env var if needed
     return 'dark';
   }
 
@@ -59,10 +59,10 @@ export function detectTerminalBackground(): BackgroundType {
   }
 
   // Method 3: Check for explicit user preference via environment variable
-  const cyberTheme = process.env.CYBER_THEME?.toLowerCase();
-  if (cyberTheme === 'light') {
+  const booTheme = process.env.BOO_THEME?.toLowerCase();
+  if (booTheme === 'light') {
     return 'light';
-  } else if (cyberTheme === 'dark') {
+  } else if (booTheme === 'dark') {
     return 'dark';
   }
 

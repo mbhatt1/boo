@@ -1,5 +1,5 @@
 /**
- * Icon Components for Cyber-AutoAgent
+ * Icon Components for Boo-AutoAgent
  * 
  * Provides consistent, accessible status indicators and icons
  * for terminal UI display.

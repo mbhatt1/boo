@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Centralized model configuration management for Cyber-AutoAgent.
+Centralized model configuration management for Boo-AutoAgent.
 
 This module provides a unified configuration system for all model-related
 settings, including LLM models, embedding models, and provider configurations.
@@ -563,7 +563,7 @@ class ConfigManager:
             if "evaluation_llm" in defaults and isinstance(defaults["evaluation_llm"], LLMConfig):
                 defaults["evaluation_llm"].model_id = user_model
             # Don't override swarm LLM with user model - keep swarm using v2 for better performance
-            # Swarm model can be overridden via CYBER_AGENT_SWARM_MODEL env var if needed
+            # Swarm model can be overridden via BOO_AGENT_SWARM_MODEL env var if needed
             # For Ollama, also use the same model for embeddings if mxbai-embed-large is not available
             if provider == "ollama" and "embedding" in defaults and isinstance(defaults["embedding"], EmbeddingConfig):
                 # Check if the default embedding model is available
@@ -980,7 +980,7 @@ class ConfigManager:
         """Apply environment variable overrides to default configuration."""
         llm_cfg = defaults.get("llm") if isinstance(defaults.get("llm"), LLMConfig) else None
 
-        llm_model = os.getenv("CYBER_AGENT_LLM_MODEL")
+        llm_model = os.getenv("BOO_AGENT_LLM_MODEL")
         if llm_model and llm_cfg is not None:
             llm_cfg = LLMConfig(
                 provider=llm_cfg.provider,
@@ -991,25 +991,25 @@ class ConfigManager:
             )
             defaults["llm"] = llm_cfg
 
-        temperature_override = os.getenv("CYBER_AGENT_TEMPERATURE")
+        temperature_override = os.getenv("BOO_AGENT_TEMPERATURE")
         if temperature_override and llm_cfg is not None:
             try:
                 temperature = float(temperature_override)
                 llm_cfg.temperature = temperature
                 llm_cfg.parameters["temperature"] = temperature
             except ValueError:
-                logger.warning("Invalid CYBER_AGENT_TEMPERATURE=%s - ignoring", temperature_override)
+                logger.warning("Invalid BOO_AGENT_TEMPERATURE=%s - ignoring", temperature_override)
 
-        top_p_override = os.getenv("CYBER_AGENT_TOP_P")
+        top_p_override = os.getenv("BOO_AGENT_TOP_P")
         if top_p_override and llm_cfg is not None:
             try:
                 top_p = float(top_p_override)
                 llm_cfg.top_p = top_p
                 llm_cfg.parameters["top_p"] = top_p
             except ValueError:
-                logger.warning("Invalid CYBER_AGENT_TOP_P=%s - ignoring", top_p_override)
+                logger.warning("Invalid BOO_AGENT_TOP_P=%s - ignoring", top_p_override)
 
-        max_tokens_override = os.getenv("CYBER_AGENT_MAX_TOKENS") or os.getenv("MAX_TOKENS")
+        max_tokens_override = os.getenv("BOO_AGENT_MAX_TOKENS") or os.getenv("MAX_TOKENS")
         if max_tokens_override and llm_cfg is not None:
             try:
                 max_tokens = int(float(max_tokens_override))
@@ -1018,18 +1018,18 @@ class ConfigManager:
             except ValueError:
                 logger.warning("Invalid MAX_TOKENS override=%s - ignoring", max_tokens_override)
 
-        embedding_model = os.getenv("CYBER_AGENT_EMBEDDING_MODEL")
+        embedding_model = os.getenv("BOO_AGENT_EMBEDDING_MODEL")
         if embedding_model and isinstance(defaults.get("embedding"), EmbeddingConfig):
             embedding_cfg = defaults["embedding"]
             embedding_cfg.model_id = embedding_model
             embedding_cfg.parameters["dimensions"] = embedding_cfg.dimensions
 
-        eval_model = os.getenv("CYBER_AGENT_EVALUATION_MODEL") or os.getenv("RAGAS_EVALUATOR_MODEL")
+        eval_model = os.getenv("BOO_AGENT_EVALUATION_MODEL") or os.getenv("RAGAS_EVALUATOR_MODEL")
         if eval_model and isinstance(defaults.get("evaluation_llm"), LLMConfig):
             evaluation_cfg = defaults["evaluation_llm"]
             evaluation_cfg.model_id = eval_model
 
-        swarm_model = os.getenv("CYBER_AGENT_SWARM_MODEL")
+        swarm_model = os.getenv("BOO_AGENT_SWARM_MODEL")
         if swarm_model and isinstance(defaults.get("swarm_llm"), LLMConfig):
             swarm_cfg = defaults["swarm_llm"]
             swarm_cfg.model_id = swarm_model
@@ -1106,7 +1106,7 @@ class ConfigManager:
                 str(e)
             )
 
-        embed_override = os.getenv("CYBER_AGENT_EMBEDDING_MODEL")
+        embed_override = os.getenv("BOO_AGENT_EMBEDDING_MODEL")
 
         for key in ("memory_llm", "evaluation_llm", "swarm_llm"):
             cfg = defaults.get(key)
@@ -1158,7 +1158,7 @@ class ConfigManager:
                 if importlib.util.find_spec("google.genai") is None:
                     logger.error(
                         "LiteLLM provider '%s' requires optional dependency 'google-genai'. "
-                        "Install it or set CYBER_AGENT_EMBEDDING_MODEL to a supported embedding.",
+                        "Install it or set BOO_AGENT_EMBEDDING_MODEL to a supported embedding.",
                         provider_prefix,
                     )
                     raise ImportError("google-genai is required for Gemini embeddings")
@@ -1166,7 +1166,7 @@ class ConfigManager:
                 if importlib.util.find_spec("sentence_transformers") is None:
                     logger.error(
                         "LiteLLM provider '%s' requires optional dependency 'sentence-transformers'. "
-                        "Install it or set CYBER_AGENT_EMBEDDING_MODEL to a supported embedding.",
+                        "Install it or set BOO_AGENT_EMBEDDING_MODEL to a supported embedding.",
                         provider_prefix,
                     )
                     raise ImportError("sentence-transformers is required for Hugging Face embeddings")
@@ -1206,7 +1206,7 @@ class ConfigManager:
     def _get_output_config(self, _server: str, _defaults: Dict[str, Any], overrides: Dict[str, Any]) -> OutputConfig:
         """Get output configuration with environment variable and override support."""
         # Get base output directory
-        base_dir = overrides.get("output_dir") or os.getenv("CYBER_AGENT_OUTPUT_DIR") or get_default_base_dir()
+        base_dir = overrides.get("output_dir") or os.getenv("BOO_AGENT_OUTPUT_DIR") or get_default_base_dir()
 
         # Get target name
         target_name = overrides.get("target_name")
@@ -1217,7 +1217,7 @@ class ConfigManager:
         # Get feature flags - unified output is now enabled by default
         enable_unified_output = (
             overrides.get("enable_unified_output", True)
-            or os.getenv("CYBER_AGENT_ENABLE_UNIFIED_OUTPUT", "true").lower() == "true"
+            or os.getenv("BOO_AGENT_ENABLE_UNIFIED_OUTPUT", "true").lower() == "true"
         )
 
         return OutputConfig(
@@ -1337,7 +1337,7 @@ class ConfigManager:
         """
         # Get default LiteLLM model ID
         litellm_config = self._default_configs.get("litellm", {})
-        model_id = os.getenv("CYBER_AGENT_LLM_MODEL")
+        model_id = os.getenv("BOO_AGENT_LLM_MODEL")
         if not model_id:
             llm_cfg = litellm_config.get("llm")
             model_id = llm_cfg.model_id if hasattr(llm_cfg, "model_id") else ""

@@ -1,13 +1,13 @@
 # Observability & Evaluation Guide
 
-Cyber-AutoAgent provides built-in observability via Langfuse tracing and automated evaluation using Ragas metrics to monitor and improve penetration testing operations.
+Boo-AutoAgent provides built-in observability via Langfuse tracing and automated evaluation using Ragas metrics to monitor and improve penetration testing operations.
 
 ## Architecture Overview
 
 ### Observability Stack
 ```mermaid
 graph LR
-    A[Cyber-AutoAgent<br/>Strands SDK] -->|OTLP/HTTP| B[Langfuse OTLP<br/>Endpoint]
+    A[Boo-AutoAgent<br/>Strands SDK] -->|OTLP/HTTP| B[Langfuse OTLP<br/>Endpoint]
     
     B --> C[Langfuse Web UI]
     
@@ -77,14 +77,14 @@ docker-compose up -d
 
 # 2. Run with full observability
 docker run --rm \
-  --network cyber-autoagent_default \
+  --network boo-autoagent_default \
   -e LANGFUSE_HOST=http://langfuse-web:3000 \
   -e ENABLE_AUTO_EVALUATION=true \
-  cyber-autoagent \
+  boo-autoagent \
   --target "http://testphp.vulnweb.com" \
   --objective "Find SQL injection vulnerabilities"
 
-# 3. View at http://localhost:3000 (admin@cyber-autoagent.com / changeme)
+# 3. View at http://localhost:3000 (admin@boo-autoagent.com / changeme)
 ```
 
 **What you get:**
@@ -138,8 +138,8 @@ The system automatically evaluates 6 core metrics after each operation to assess
 ENABLE_OBSERVABILITY=true        # Default: true
 ENABLE_AUTO_EVALUATION=false     # Default: false (enable for scoring)
 LANGFUSE_HOST=http://langfuse-web:3000
-LANGFUSE_PUBLIC_KEY=cyber-public
-LANGFUSE_SECRET_KEY=cyber-secret
+LANGFUSE_PUBLIC_KEY=boo-public
+LANGFUSE_SECRET_KEY=boo-secret
 
 # For production, generate secure keys:
 export LANGFUSE_ENCRYPTION_KEY=$(openssl rand -hex 32)
@@ -162,12 +162,12 @@ export LANGFUSE_ADMIN_PASSWORD=$(openssl rand -base64 32)
 ```bash
 # Debug commands
 curl -I http://localhost:3000/api/public/otel/v1/traces
-docker logs cyber-autoagent 2>&1 | grep -i evaluation
+docker logs boo-autoagent 2>&1 | grep -i evaluation
 ```
 
 ## Advanced
 
-- **Custom metrics**: Extend `CyberAgentEvaluator` in `src/modules/evaluation/evaluation.py`
+- **Custom metrics**: Extend `BooAgentEvaluator` in `src/modules/evaluation/evaluation.py`
 - **Performance**: Scale with `langfuse-worker` replicas
 - **Export data**: Coming in next release
 

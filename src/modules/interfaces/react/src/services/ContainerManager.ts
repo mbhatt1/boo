@@ -32,7 +32,7 @@ export interface DeploymentConfig {
 
 /**
  * Container Manager - Professional Docker orchestration service
- * Manages deployment modes and container lifecycle for Cyber-AutoAgent
+ * Manages deployment modes and container lifecycle for Boo-AutoAgent
  */
 export class ContainerManager extends EventEmitter {
   private static instance: ContainerManager;
@@ -43,15 +43,15 @@ export class ContainerManager extends EventEmitter {
   // Configurable constants - can be overridden via environment variables
   private readonly config = {
     // Container startup timeout in milliseconds (5 minutes for complex deployments)
-    containerStartupTimeout: parseInt(process.env.CYBER_CONTAINER_TIMEOUT || '300000'),
+    containerStartupTimeout: parseInt(process.env.BOO_CONTAINER_TIMEOUT || '300000'),
     // Full stack mode detection threshold (minimum containers for full-stack)
-    fullStackThreshold: parseInt(process.env.CYBER_FULLSTACK_THRESHOLD || '4'),
+    fullStackThreshold: parseInt(process.env.BOO_FULLSTACK_THRESHOLD || '4'),
     // Container readiness check interval in milliseconds
-    readinessCheckInterval: parseInt(process.env.CYBER_READINESS_INTERVAL || '2000'),
+    readinessCheckInterval: parseInt(process.env.BOO_READINESS_INTERVAL || '2000'),
     // Maximum directory depth for project root search
-    maxProjectSearchDepth: parseInt(process.env.CYBER_PROJECT_SEARCH_DEPTH || '10'),
+    maxProjectSearchDepth: parseInt(process.env.BOO_PROJECT_SEARCH_DEPTH || '10'),
     // Docker command timeout for individual operations
-    dockerCommandTimeout: parseInt(process.env.CYBER_DOCKER_CMD_TIMEOUT || '2000')
+    dockerCommandTimeout: parseInt(process.env.BOO_DOCKER_CMD_TIMEOUT || '2000')
   };
 
   private readonly deploymentConfigs: Record<DeploymentMode, DeploymentConfig> = {
@@ -63,14 +63,14 @@ export class ContainerManager extends EventEmitter {
     },
     'single-container': {
       mode: 'single-container',
-      services: ['cyber-autoagent'],
-      composeFile: 'docker-compose.yml', // Use same file, but only start cyber-autoagent service
+      services: ['boo-autoagent'],
+      composeFile: 'docker-compose.yml', // Use same file, but only start boo-autoagent service
       description: 'Core agent container only'
     },
     'full-stack': {
       mode: 'full-stack',
       services: [
-        'cyber-autoagent',
+        'boo-autoagent',
         'langfuse-web',
         'langfuse-worker',
         'postgres',
@@ -320,7 +320,7 @@ export class ContainerManager extends EventEmitter {
       
       return stdout
         .split('\n')
-        .filter(line => line.trim() && line.includes('cyber-'))
+        .filter(line => line.trim() && line.includes('boo-'))
         .map(line => {
           const [name, status] = line.split('\t');
           return {
@@ -423,10 +423,10 @@ export class ContainerManager extends EventEmitter {
   }
 
   /**
-   * Stop all running cyber-autoagent containers
+   * Stop all running boo-autoagent containers
    */
   private async stopAllContainers(): Promise<void> {
-    this.logger.info('Stopping all cyber-autoagent containers');
+    this.logger.info('Stopping all boo-autoagent containers');
 
     return await RetryConfigs.docker.execute(async () => {
       const containers = await this.getRunningContainers();
@@ -509,10 +509,10 @@ export class ContainerManager extends EventEmitter {
           });
 
           // For build commands, poll for image existence to detect hung processes
-          if (args[0] === 'build' && args[1] === 'cyber-autoagent') {
+          if (args[0] === 'build' && args[1] === 'boo-autoagent') {
             const pollInterval = setInterval(async () => {
               try {
-                const { stdout } = await execAsync('docker images -q cyber-autoagent:latest');
+                const { stdout } = await execAsync('docker images -q boo-autoagent:latest');
                 if (stdout.trim()) {
                   clearInterval(pollInterval);
                   child.kill();
@@ -534,10 +534,10 @@ export class ContainerManager extends EventEmitter {
       };
 
       // For single-container mode we can skip dependencies in up, but we still pull if needed
-      // Check if cyber-autoagent image exists locally first
+      // Check if boo-autoagent image exists locally first
       let needsBuild = false;
       try {
-        const { stdout } = await execAsync('docker images -q cyber-autoagent:latest');
+        const { stdout } = await execAsync('docker images -q boo-autoagent:latest');
         needsBuild = !stdout.trim();
       } catch {
         needsBuild = true;
@@ -550,16 +550,16 @@ export class ContainerManager extends EventEmitter {
       // Prepare parallel operations for building and pulling
       const parallelOperations: Promise<void>[] = [];
 
-      // Build cyber-autoagent if needed
-      if (needsBuild && config.services.includes('cyber-autoagent')) {
-        this.emit('progress', `◆ Building cyber-autoagent image (first time setup)...`);
+      // Build boo-autoagent if needed
+      if (needsBuild && config.services.includes('boo-autoagent')) {
+        this.emit('progress', `◆ Building boo-autoagent image (first time setup)...`);
 
-        const buildWithVerification = runCompose(['build', 'cyber-autoagent'], 'Building cyber-autoagent…', ['cyber-autoagent'])
+        const buildWithVerification = runCompose(['build', 'boo-autoagent'], 'Building boo-autoagent…', ['boo-autoagent'])
           .catch(async (e) => {
             // Build process may hang but image could still be created
             // Check if image exists before failing
             try {
-              const { stdout } = await execAsync('docker images -q cyber-autoagent:latest');
+              const { stdout } = await execAsync('docker images -q boo-autoagent:latest');
               if (stdout.trim()) {
                 this.logger.info('Build process hung but image exists, continuing');
                 this.emit('progress', '✓ Image build completed (process hung, detected via image check)');
@@ -567,15 +567,15 @@ export class ContainerManager extends EventEmitter {
               }
             } catch {}
 
-            this.logger.error('Failed to build cyber-autoagent image', e as Error);
-            throw new Error(`Failed to build cyber-autoagent image. Ensure Docker has enough resources and all files are present.`);
+            this.logger.error('Failed to build boo-autoagent image', e as Error);
+            throw new Error(`Failed to build boo-autoagent image. Ensure Docker has enough resources and all files are present.`);
           });
 
         parallelOperations.push(buildWithVerification);
       }
 
       // Pull external service images in parallel with build
-      const externalServices = config.services.filter(s => s !== 'cyber-autoagent');
+      const externalServices = config.services.filter(s => s !== 'boo-autoagent');
       if (externalServices.length > 0) {
         const pullOperation = runCompose(['pull', ...externalServices], 'Downloading service images…', externalServices)
           .catch(e => {
@@ -640,13 +640,13 @@ export class ContainerManager extends EventEmitter {
   private isServiceContainerMatch(containerName: string, serviceName: string): boolean {
     // Handle our specific docker-compose.yml container_name mappings
     const serviceToContainerMap: Record<string, string> = {
-      'cyber-autoagent': 'cyber-autoagent',
-      'langfuse-web': 'cyber-langfuse',
-      'langfuse-worker': 'cyber-langfuse-worker',
-      'postgres': 'cyber-langfuse-postgres',
-      'clickhouse': 'cyber-langfuse-clickhouse',
-      'redis': 'cyber-langfuse-redis',
-      'minio': 'cyber-langfuse-minio'
+      'boo-autoagent': 'boo-autoagent',
+      'langfuse-web': 'boo-langfuse',
+      'langfuse-worker': 'boo-langfuse-worker',
+      'postgres': 'boo-langfuse-postgres',
+      'clickhouse': 'boo-langfuse-clickhouse',
+      'redis': 'boo-langfuse-redis',
+      'minio': 'boo-langfuse-minio'
     };
     
     // Check if we have an explicit mapping
@@ -661,7 +661,7 @@ export class ContainerManager extends EventEmitter {
     
     // Pattern 2: Docker Compose naming with number suffix (project_service_1 or project-service-1)
     // This handles cases where container_name is not explicitly set
-    const normalizedService = serviceName.replace('cyber-', '');
+    const normalizedService = serviceName.replace('boo-', '');
     
     // Check for underscore format: project_service_1
     const underscorePattern = new RegExp(`_${normalizedService}_\\d+$`);
@@ -699,12 +699,12 @@ export class ContainerManager extends EventEmitter {
    */
   private getComposePath(filename: string): string {
     // Priority order for finding project root:
-    // 1. CYBER_PROJECT_ROOT environment variable (explicit override)
+    // 1. BOO_PROJECT_ROOT environment variable (explicit override)
     // 2. Search upward from current directory for package.json or docker directory
     // 3. Fallback to relative path calculation
     
-    if (process.env.CYBER_PROJECT_ROOT) {
-      return path.join(process.env.CYBER_PROJECT_ROOT, 'docker', filename);
+    if (process.env.BOO_PROJECT_ROOT) {
+      return path.join(process.env.BOO_PROJECT_ROOT, 'docker', filename);
     }
     
     // Search upward from current directory for project markers
@@ -740,7 +740,7 @@ export class ContainerManager extends EventEmitter {
     }
     
     // Fallback to relative path calculation (legacy behavior)
-    this.logger.warn('Using fallback relative path calculation - consider setting CYBER_PROJECT_ROOT');
+    this.logger.warn('Using fallback relative path calculation - consider setting BOO_PROJECT_ROOT');
     const fallbackProjectRoot = path.join(process.cwd(), '..', '..', '..', '..');
     return path.join(fallbackProjectRoot, 'docker', filename);
   }
@@ -785,10 +785,10 @@ export class ContainerManager extends EventEmitter {
   
   /**
    * Ensure required external Docker networks exist
-   * Creates cyber-autoagent_default network if missing
+   * Creates boo-autoagent_default network if missing
    */
   private async ensureNetworksExist(): Promise<void> {
-    const requiredNetworks = ['cyber-autoagent_default'];
+    const requiredNetworks = ['boo-autoagent_default'];
 
     for (const networkName of requiredNetworks) {
       try {

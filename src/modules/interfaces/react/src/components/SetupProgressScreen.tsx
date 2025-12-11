@@ -51,7 +51,7 @@ export const SetupProgressScreen: React.FC<SetupProgressScreenProps> = ({
   const [startTime] = useState<Date>(new Date());
   const [elapsed, setElapsed] = useState<string>('0:00');
   const autoContinuedRef = React.useRef(false);
-  const isStableProfile = process.env.CYBER_PREPULL === 'true' || process.env.CYBER_SETUP_PROFILE === 'stable';
+  const isStableProfile = process.env.BOO_PREPULL === 'true' || process.env.BOO_SETUP_PROFILE === 'stable';
 
   // Determine steps based on deployment mode
   useEffect(() => {

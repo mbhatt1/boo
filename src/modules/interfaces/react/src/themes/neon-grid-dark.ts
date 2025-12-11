@@ -5,9 +5,9 @@
  * True black background with matrix green accents for maximum professionalism.
  */
 
-import { CyberTheme } from './types.js';
+import { BooTheme } from './types.js';
 
-export const NeonGridDark: CyberTheme = {
+export const NeonGridDark: BooTheme = {
   type: 'dark',
   name: 'Terminal Pro',
 

@@ -12,8 +12,8 @@ const child = spawn(process.execPath, ['dist/index.js'], {
   env: {
     ...process.env,
     // Ensure we don't auto-start tests or operations
-    CYBER_TEST_MODE: '',
-    CYBER_TEST_EXECUTION: '',
+    BOO_TEST_MODE: '',
+    BOO_TEST_EXECUTION: '',
   },
 });
 

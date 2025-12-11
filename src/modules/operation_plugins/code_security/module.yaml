@@ -1,7 +1,7 @@
 name: code_security
 version: 1.0.0
 description: Static code analysis for security vulnerabilities and supply chain risks
-author: Cyber-AutoAgent Team
+author: Boo-AutoAgent Team
 license: MIT
 cognitive_level: 4
 configuration:

@@ -1,7 +1,7 @@
 name: ctf
 version: 1.0.0
 description: CTF module with broad vulnerability coverage and flag extraction
-author: Cyber-AutoAgent Team
+author: Boo-AutoAgent Team
 license: MIT
 cognitive_level: 4
 configuration:

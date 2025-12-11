@@ -1,7 +1,7 @@
 name: threat_emulation
 version: 1.0.0
 description: APT and threat actor emulation following MITRE ATT&CK framework
-author: Cyber-AutoAgent Team
+author: Boo-AutoAgent Team
 license: MIT
 cognitive_level: 4
 configuration:

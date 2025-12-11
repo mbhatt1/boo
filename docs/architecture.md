@@ -1,6 +1,6 @@
 # Agent Architecture
 
-Cyber-AutoAgent implements a **Single Agent Meta-Everything Architecture** using the Strands framework for autonomous penetration testing.
+Boo-AutoAgent implements a **Single Agent Meta-Everything Architecture** using the Strands framework for autonomous penetration testing.
 
 ## Design Philosophy: Single Agent Meta-Everything Architecture
 
@@ -25,7 +25,7 @@ This meta-architecture allows the system to transcend static tool limitations an
 
 ```mermaid
 graph TB
-    A[User Input] --> B[Cyber-AutoAgent]
+    A[User Input] --> B[Boo-AutoAgent]
     B --> C[Agent]
     C --> D[Tool Registry]
     C --> E[Memory System]
@@ -267,7 +267,7 @@ graph TB
 - operation_init: Operation metadata and configuration
 ```
 
-Events flow from the Python agent through stdout using the `__CYBER_EVENT__` protocol, enabling real-time monitoring without tight coupling between backend and frontend.
+Events flow from the Python agent through stdout using the `__BOO_EVENT__` protocol, enabling real-time monitoring without tight coupling between backend and frontend.
 
 ## Evaluation System
 

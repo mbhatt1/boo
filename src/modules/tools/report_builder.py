@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Report Builder Tool for Cyber-AutoAgent
+Report Builder Tool for Boo-AutoAgent
 
 A single, comprehensive tool that the report agent can use to build
 security assessment reports from operation evidence.
@@ -164,7 +164,7 @@ def build_report_sections(
 
         if memory_client:
             try:
-                memories = memory_client.list_memories(user_id="cyber_agent")
+                memories = memory_client.list_memories(user_id="boo_agent")
                 raw_memories = []
                 if isinstance(memories, dict):
                     raw_memories = memories.get("results", []) or memories.get("memories", []) or []
@@ -389,15 +389,15 @@ def build_report_sections(
         metrics_cost = None
         try:
             safe_target_name = sanitize_target_for_path(target)
-            log_path = os.path.join("outputs", safe_target_name, operation_id, "cyber_operations.log")
+            log_path = os.path.join("outputs", safe_target_name, operation_id, "boo_operations.log")
             if os.path.exists(log_path):
                 with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
                     for line in f:
-                        if "__CYBER_EVENT__" in line and '"type": "metrics_update"' in line:
+                        if "__BOO_EVENT__" in line and '"type": "metrics_update"' in line:
                             # Extract JSON between markers
                             try:
-                                start = line.index("__CYBER_EVENT__") + len("__CYBER_EVENT__")
-                                end = line.index("__CYBER_EVENT_END__")
+                                start = line.index("__BOO_EVENT__") + len("__BOO_EVENT__")
+                                end = line.index("__BOO_EVENT_END__")
                                 payload = json.loads(line[start:end])
                                 m = payload.get("metrics", {}) if isinstance(payload, dict) else {}
                                 # Prefer the most recent values (overwrite as we go)

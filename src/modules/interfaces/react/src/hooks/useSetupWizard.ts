@@ -33,7 +33,7 @@ type SetupAction =
 
 const getInitialStep = (): SetupStep => {
   // If user explicitly triggered setup (via /setup command), skip welcome
-  if (typeof process !== 'undefined' && process.env.CYBER_SHOW_SETUP === 'true') {
+  if (typeof process !== 'undefined' && process.env.BOO_SHOW_SETUP === 'true') {
     return 'deployment';
   }
   return 'welcome';

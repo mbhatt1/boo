@@ -1,8 +1,8 @@
-# Cyber-AutoAgent Prompts Module
+# Boo-AutoAgent Prompts Module
 
 ## Overview
 
-The `prompts` module is the central nervous system for all language-based instructions given to the Cyber-AutoAgent. It is responsible for dynamically constructing and serving every prompt, from the agent's core persona and system instructions to the detailed, context-aware prompts required for specialized operational modules and final report generation.
+The `prompts` module is the central nervous system for all language-based instructions given to the Boo-AutoAgent. It is responsible for dynamically constructing and serving every prompt, from the agent's core persona and system instructions to the detailed, context-aware prompts required for specialized operational modules and final report generation.
 
 This module is designed for maximum modularity and extensibility, allowing developers to easily create, modify, and plug in new capabilities without altering the core agent logic.
 

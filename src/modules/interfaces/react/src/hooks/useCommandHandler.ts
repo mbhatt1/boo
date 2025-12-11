@@ -57,7 +57,7 @@ export function useCommandHandler({
     if (!userInput.trim()) return;
 
     // Emit test marker for input capture in PTY tests
-    try { if (process.env.CYBER_TEST_MODE === 'true') { console.log(`[TEST_EVENT] input ${userInput}`); } } catch {}
+    try { if (process.env.BOO_TEST_MODE === 'true') { console.log(`[TEST_EVENT] input ${userInput}`); } } catch {}
     
     // Check if user handoff is active - send input to container
     if (appState.userHandoffActive && appState.executionService) {
@@ -245,7 +245,7 @@ export function useCommandHandler({
         openConfig();
         // In test mode, emit a plain-text marker so PTY tests can assert reliably
         try {
-          if (process.env.CYBER_TEST_MODE === 'true') {
+          if (process.env.BOO_TEST_MODE === 'true') {
             // slight delay to allow modal mount
             setTimeout(() => loggingService.info('Configuration Editor'), 100);
           }
@@ -261,7 +261,7 @@ export function useCommandHandler({
       case 'help':
         // Display comprehensive help message
         const helpMessage = `
-▣ Cyber-AutoAgent Command Reference
+▣ Boo-AutoAgent Command Reference
 
 ASSESSMENT COMMANDS:
   target <url>          - Set assessment target
@@ -329,7 +329,7 @@ For detailed instructions, use: /docs`;
         break;
       case 'setup':
         // Clean transition to setup wizard
-        process.env.CYBER_SHOW_SETUP = 'true';
+        process.env.BOO_SHOW_SETUP = 'true';
         // Single, atomic clear via Ink-managed refresh
         refreshStatic();
         // Enter initialization flow immediately (userTriggered=true)
@@ -399,7 +399,7 @@ For detailed instructions, use: /docs`;
     if (result.error) {
       addOperationHistoryEntry('error', result.error);
     } else if (result.success) {
-      try { if (process.env.CYBER_TEST_MODE === 'true') { console.log('[TEST_EVENT] flow_success'); } } catch {}
+      try { if (process.env.BOO_TEST_MODE === 'true') { console.log('[TEST_EVENT] flow_success'); } } catch {}
       // Add success message to operation history
       addOperationHistoryEntry('info', result.message);
       
@@ -426,7 +426,7 @@ For detailed instructions, use: /docs`;
       // (e.g., user typed "execute" or "execute <objective>" during objective step)
       if (result.readyToExecute && assessmentFlowManager.isReadyForAssessmentExecution()) {
         const state = assessmentFlowManager.getState();
-        try { if (process.env.CYBER_TEST_MODE === 'true') { console.log('[TEST_EVENT] safety_open'); } } catch {}
+        try { if (process.env.BOO_TEST_MODE === 'true') { console.log('[TEST_EVENT] safety_open'); } } catch {}
         openSafetyWarning({
           module: state.module!,
           target: state.target!,
@@ -439,7 +439,7 @@ For detailed instructions, use: /docs`;
     // Check if ready after processing (e.g., after setting objective with empty input)
     if (assessmentFlowManager.isReadyForAssessmentExecution() && input === '') {
       const state = assessmentFlowManager.getState();
-      try { if (process.env.CYBER_TEST_MODE === 'true') { console.log('[TEST_EVENT] safety_open'); } } catch {}
+      try { if (process.env.BOO_TEST_MODE === 'true') { console.log('[TEST_EVENT] safety_open'); } } catch {}
       openSafetyWarning({
         module: state.module!,
         target: state.target!,

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Prompt Factory for Cyber-AutoAgent
+Prompt Factory for Boo-AutoAgent
 
 This module constructs all prompts for the agent, including the system prompt,
 report generation prompts, and module-specific prompts.
@@ -68,8 +68,8 @@ def _lf_host() -> str:
 
 
 def _lf_auth_header() -> str:
-    pk = os.getenv("LANGFUSE_PUBLIC_KEY", "cyber-public")
-    sk = os.getenv("LANGFUSE_SECRET_KEY", "cyber-secret")
+    pk = os.getenv("LANGFUSE_PUBLIC_KEY", "boo-public")
+    sk = os.getenv("LANGFUSE_SECRET_KEY", "boo-secret")
     token = base64.b64encode(f"{pk}:{sk}".encode()).decode()
     return f"Basic {token}"
 
@@ -127,7 +127,7 @@ def _lf_create_prompt_version(*, name: str, prompt_text: str, label: str, tags: 
         "name": name,
         "prompt": prompt_text,
         "labels": [label],
-        "tags": tags or ["cyber-autoagent"],
+        "tags": tags or ["boo-autoagent"],
         "commitMessage": commit,
     }
     try:
@@ -394,7 +394,7 @@ def _plan_first_directive(has_existing_memories: bool) -> str:
     if has_existing_memories:
         return dedent(
             """
-            **CRITICAL FIRST ACTION**: Load all memories with mem0_memory(action="list", user_id="cyber_agent")
+            **CRITICAL FIRST ACTION**: Load all memories with mem0_memory(action="list", user_id="boo_agent")
             NEXT: Retrieve the active plan with mem0_memory(action="get_plan"); if none, create one via mem0_memory(action="store_plan") before other tools
             """
         ).strip()

@@ -22,10 +22,10 @@ class PromptOptimizerError(Exception):
 
 
 def _operation_root() -> str:
-    root = os.getenv("CYBER_OPERATION_ROOT")
+    root = os.getenv("BOO_OPERATION_ROOT")
     if not root:
         raise PromptOptimizerError(
-            "CYBER_OPERATION_ROOT is not set. prompt_optimizer requires an active operation context."
+            "BOO_OPERATION_ROOT is not set. prompt_optimizer requires an active operation context."
         )
     return root
 
@@ -206,8 +206,8 @@ def prompt_optimizer(
         )
 
     overlay_file = _overlay_path()
-    operation_id = os.getenv("CYBER_OPERATION_ID")
-    target_name = os.getenv("CYBER_TARGET_NAME")
+    operation_id = os.getenv("BOO_OPERATION_ID")
+    target_name = os.getenv("BOO_TARGET_NAME")
     existing_overlay = _load_overlay(overlay_file)
 
     if action_normalised == "view":
@@ -240,7 +240,7 @@ def prompt_optimizer(
     if action_normalised == "reset":
         if os.path.exists(overlay_file):
             os.remove(overlay_file)
-        os.environ.pop("CYBER_PROMPT_OVERLAY_LAST_STEP", None)
+        os.environ.pop("BOO_PROMPT_OVERLAY_LAST_STEP", None)
         return {
             "status": "success",
             "action": "reset",
@@ -265,7 +265,7 @@ def prompt_optimizer(
 
     # Mutating paths beyond this point
     if current_step is not None:
-        last_step_raw = os.environ.get("CYBER_PROMPT_OVERLAY_LAST_STEP")
+        last_step_raw = os.environ.get("BOO_PROMPT_OVERLAY_LAST_STEP")
         try:
             if last_step_raw is not None and current_step - int(last_step_raw) < 8:
                 raise PromptOptimizerError(
@@ -273,7 +273,7 @@ def prompt_optimizer(
                 )
         except ValueError:
             pass
-        os.environ["CYBER_PROMPT_OVERLAY_LAST_STEP"] = str(current_step)
+        os.environ["BOO_PROMPT_OVERLAY_LAST_STEP"] = str(current_step)
 
     overlay_payload: Optional[Dict[str, Any]] = None
 
@@ -485,7 +485,7 @@ def _llm_rewrite_execution_prompt(
     """
     import os
     from modules.config.manager import get_config_manager
-    from modules.agents.cyber_autoagent import (
+    from modules.agents.boo_agent import (
         _create_local_model,
         _create_remote_model,
         _create_litellm_model,
@@ -496,8 +496,8 @@ def _llm_rewrite_execution_prompt(
     config_manager = get_config_manager()
     provider = (
         os.getenv("PROVIDER")
-        or os.getenv("CYBER_PROVIDER")
-        or os.getenv("CYBER_AGENT_PROVIDER")
+        or os.getenv("BOO_PROVIDER")
+        or os.getenv("BOO_AGENT_PROVIDER")
         or "ollama"
     ).lower()
 

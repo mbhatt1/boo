@@ -1,5 +1,5 @@
 /**
- * Cyber-AutoAgent React Application
+ * Boo-AutoAgent React Application
  * 
  * Main entry point for the React-based CLI interface.
  * Manages application state, services, and UI rendering.
@@ -442,7 +442,7 @@ const AppContent: React.FC<AppProps> = ({
   const testAutoStartedRef = React.useRef(false);
   useEffect(() => {
     if (testAutoStartedRef.current) return;
-    const isTest = process.env.CYBER_TEST_MODE === 'true' && process.env.CYBER_TEST_EXECUTION === 'mock';
+    const isTest = process.env.BOO_TEST_MODE === 'true' && process.env.BOO_TEST_EXECUTION === 'mock';
     if (!isTest) return;
     if (appState.activeOperation) return; // already running
     if (activeModal !== ModalType.NONE) return; // wait for modals to close

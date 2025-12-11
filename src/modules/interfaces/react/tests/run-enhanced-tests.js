@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Enhanced Test Runner for Cyber-AutoAgent React Interface
+ * Enhanced Test Runner for Boo-AutoAgent React Interface
  * 
  * Orchestrates all testing types:
  * - Unit tests (Jest-based component tests)
@@ -446,7 +446,7 @@ class EnhancedTestRunner {
 async function runEnhancedTests(options = {}) {
   const runner = new EnhancedTestRunner();
   
-  console.log(chalk.bold.magenta('\n🧪 Cyber-AutoAgent Enhanced Test Suite\n'));
+  console.log(chalk.bold.magenta('\n🧪 Boo-AutoAgent Enhanced Test Suite\n'));
   console.log(chalk.gray('Comprehensive testing of all frontend functionality'));
   console.log(chalk.gray('Aligned with TEST-VALIDATION-SPECIFICATION.md\n'));
   console.log(chalk.gray('━'.repeat(60)));
@@ -510,7 +510,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   if (args.includes('--skip-performance')) options.skip = [...(options.skip || []), 'performance'];
   
   if (args.includes('--help')) {
-    console.log(chalk.cyan('Enhanced Test Runner for Cyber-AutoAgent\n'));
+    console.log(chalk.cyan('Enhanced Test Runner for Boo-AutoAgent\n'));
     console.log('Usage: run-enhanced-tests.js [options]\n');
     console.log('Options:');
     console.log('  --skip-unit          Skip Jest unit tests');

@@ -44,7 +44,7 @@ export function useKeyboardHandlers({
           onEscapeExit();
         } else {
           // Fallback behavior
-          loggingService.info('\n🔴 Exiting Cyber-AutoAgent... Goodbye!');
+          loggingService.info('\n🔴 Exiting Boo-AutoAgent... Goodbye!');
           exit();
         }
       }
@@ -57,7 +57,7 @@ export function useKeyboardHandlers({
         onAssessmentPause();
       } else {
         // If no operation running, exit gracefully
-        loggingService.info('\n🔴 Exiting Cyber-AutoAgent... Goodbye!');
+        loggingService.info('\n🔴 Exiting Boo-AutoAgent... Goodbye!');
         exit();
       }
       return;
@@ -85,7 +85,7 @@ export function useKeyboardHandlers({
         if (onEscapeExit) {
           onEscapeExit();
         } else {
-          loggingService.info('\n🔴 Exiting Cyber-AutoAgent... Goodbye!');
+          loggingService.info('\n🔴 Exiting Boo-AutoAgent... Goodbye!');
           exit();
         }
       }

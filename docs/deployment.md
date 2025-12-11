@@ -1,6 +1,6 @@
 # Deployment Guide
 
-This guide covers deployment options for Cyber-AutoAgent in various environments.
+This guide covers deployment options for Boo-AutoAgent in various environments.
 
 ## Quick Start
 
@@ -8,8 +8,8 @@ This guide covers deployment options for Cyber-AutoAgent in various environments
 
 ```bash
 # Clone the repository
-git clone https://github.com/cyber-autoagent/cyber-autoagent.git
-cd cyber-autoagent
+git clone https://github.com/boo-autoagent/boo-autoagent.git
+cd boo-autoagent
 
 # Build and run with Docker Compose (includes observability)
 cd docker
@@ -17,14 +17,14 @@ docker-compose up -d
 
 # Run a penetration test
 docker run --rm \
-  --network cyber-autoagent_default \
+  --network boo-autoagent_default \
   -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
   -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
   -e LANGFUSE_HOST=http://langfuse-web:3000 \
-  -e LANGFUSE_PUBLIC_KEY=cyber-public \
-  -e LANGFUSE_SECRET_KEY=cyber-secret \
+  -e LANGFUSE_PUBLIC_KEY=boo-public \
+  -e LANGFUSE_SECRET_KEY=boo-secret \
   -v $(pwd)/outputs:/app/outputs \
-  cyber-autoagent \
+  boo-autoagent \
   --target "example.com" \
   --objective "Web application security assessment"
 ```
@@ -35,7 +35,7 @@ For just the agent without observability:
 
 ```bash
 # Build the image
-docker build -t cyber-autoagent -f docker/Dockerfile .
+docker build -t boo-autoagent -f docker/Dockerfile .
 
 # Run with AWS Bedrock
 docker run --rm \
@@ -43,7 +43,7 @@ docker run --rm \
   -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
   -e AWS_REGION=${AWS_REGION:-us-east-1} \
   -v $(pwd)/outputs:/app/outputs \
-  cyber-autoagent \
+  boo-autoagent \
   --target "192.168.1.100" \
   --objective "Network security assessment" \
   --provider bedrock
@@ -52,7 +52,7 @@ docker run --rm \
 docker run --rm \
   -e OLLAMA_HOST=http://host.docker.internal:11434 \
   -v $(pwd)/outputs:/app/outputs \
-  cyber-autoagent \
+  boo-autoagent \
   --target "testsite.local" \
   --objective "Basic security scan" \
   --provider ollama \
@@ -96,20 +96,20 @@ Example deployment manifest:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: cyber-autoagent
+  name: boo-autoagent
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: cyber-autoagent
+      app: boo-autoagent
   template:
     metadata:
       labels:
-        app: cyber-autoagent
+        app: boo-autoagent
     spec:
       containers:
-      - name: cyber-autoagent
-        image: cyber-autoagent:latest
+      - name: boo-autoagent
+        image: boo-autoagent:latest
         env:
         - name: AWS_ACCESS_KEY_ID
           valueFrom:
@@ -133,7 +133,7 @@ spec:
 ## Monitoring
 
 - Access Langfuse UI at http://localhost:3000
-- Default credentials: admin@cyber-autoagent.com / changeme
+- Default credentials: admin@boo-autoagent.com / changeme
 - View real-time traces of agent operations
 - Export results for reporting
 
@@ -161,7 +161,7 @@ Access the interface at `http://localhost:3000` when using full-stack deployment
 
 ## Memory Backend Configuration
 
-Cyber-AutoAgent supports three memory backends with automatic selection:
+Boo-AutoAgent supports three memory backends with automatic selection:
 
 | Backend | Priority | Environment Variable | Use Case |
 |---------|----------|---------------------|----------|
@@ -175,7 +175,7 @@ Memory persists in `outputs/<target>/memory/` for cross-operation learning.
 
 Common deployment issues:
 
-1. **Container fails to start**: Check Docker logs with `docker logs cyber-autoagent`
+1. **Container fails to start**: Check Docker logs with `docker logs boo-autoagent`
 2. **AWS credentials error**: Ensure IAM role has Bedrock access and correct region
 3. **Ollama connection failed**: Verify Ollama is running and accessible at specified host
 4. **Out of memory**: Increase Docker memory limits or reduce `--iterations` parameter

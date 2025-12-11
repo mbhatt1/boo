@@ -1,12 +1,12 @@
 {
-  "name": "cyber-autoagent-cli",
+  "name": "boo-autoagent-cli",
   "version": "0.1.3",
-  "description": "Cyber-AutoAgent CLI with React + Ink",
+  "description": "Boo-AutoAgent CLI with React + Ink",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "cyber-react": "dist/index.js",
-    "cyber-native": "dist/index-native.js"
+    "boo-react": "dist/index.js",
+    "boo-native": "dist/index-native.js"
   },
   "scripts": {
     "build": "tsc",

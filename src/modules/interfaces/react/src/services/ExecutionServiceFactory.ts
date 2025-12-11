@@ -114,7 +114,7 @@ export class ExecutionServiceFactory {
     if (this.initialized) return;
 
     // In test mode, optionally override Python service with mock
-    const testMode = process.env.CYBER_TEST_MODE === 'true' && process.env.CYBER_TEST_EXECUTION === 'mock';
+    const testMode = process.env.BOO_TEST_MODE === 'true' && process.env.BOO_TEST_EXECUTION === 'mock';
 
     // Register Python execution service
     this.services.set(ExecutionMode.PYTHON_CLI, async () => {

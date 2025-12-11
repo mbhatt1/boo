@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Prompts module for Cyber-AutoAgent.
+Prompts module for Boo-AutoAgent.
 
 This module provides a centralized factory for creating and managing
 all prompts used by the agent, including system prompts, report generation

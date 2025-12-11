@@ -5,9 +5,9 @@
  * Bright background with deep green accents for visibility and professionalism.
  */
 
-import { CyberTheme } from './types.js';
+import { BooTheme } from './types.js';
 
-export const NeonGridLight: CyberTheme = {
+export const NeonGridLight: BooTheme = {
   type: 'light',
   name: 'Terminal Pro Light',
 

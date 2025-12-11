@@ -2,7 +2,7 @@
  * ErrorBoundary Component
  * 
  * React error boundary to catch and handle JavaScript errors anywhere in the component tree.
- * Provides graceful error handling with recovery options for the Cyber-AutoAgent interface.
+ * Provides graceful error handling with recovery options for the Boo-AutoAgent interface.
  */
 
 import React, { Component, ReactNode } from 'react';
@@ -95,7 +95,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 <Text color={theme.muted}>
                   {isWasmMemoryError
                     ? 'Yoga layout engine WASM memory exhausted after large operation'
-                    : 'Cyber-AutoAgent encountered an unexpected error'}
+                    : 'Boo-AutoAgent encountered an unexpected error'}
                 </Text>
               </Box>
             </Box>
@@ -153,7 +153,7 @@ export class ErrorBoundary extends Component<Props, State> {
               If this error persists, please report it at:
             </Text>
             <Text color={theme.primary}>
-              https://github.com/westonbrown/Cyber-AutoAgent/issues
+              https://github.com/westonbrown/Boo-AutoAgent/issues
             </Text>
           </Box>
           </Box>

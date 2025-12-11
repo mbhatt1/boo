@@ -27,9 +27,9 @@ def test_emitter_appends_newline_and_serializes_output():
 
     out = buf.getvalue()
     assert out.endswith("\n"), "Emitter must end each event with a newline"
-    assert "__CYBER_EVENT__" in out and "__CYBER_EVENT_END__" in out
+    assert "__BOO_EVENT__" in out and "__BOO_EVENT_END__" in out
     # Validate JSON payload parses
-    payload_str = out.split("__CYBER_EVENT__", 1)[1].split("__CYBER_EVENT_END__", 1)[0]
+    payload_str = out.split("__BOO_EVENT__", 1)[1].split("__BOO_EVENT_END__", 1)[0]
     payload = json.loads(payload_str)
     assert payload["type"] == "output"
     assert payload["content"] == "hello"
@@ -48,7 +48,7 @@ def test_emitter_deduplicates_non_tool_events():
 
     out = buf.getvalue()
     # Only one event should be present for duplicate
-    occurrences = out.count("__CYBER_EVENT__")
+    occurrences = out.count("__BOO_EVENT__")
     assert occurrences == 1, f"Expected 1 event, got {occurrences}"
 
 
@@ -73,7 +73,7 @@ def test_emitter_always_json_format():
     out = buf.getvalue()
 
     # All events should be JSON formatted with markers
-    event_count = out.count("__CYBER_EVENT__")
+    event_count = out.count("__BOO_EVENT__")
     assert event_count == len(events), f"Expected {len(events)} events, got {event_count}"
 
     # No human-readable formatting (CLI mode removed)
@@ -84,9 +84,9 @@ def test_emitter_always_json_format():
     assert "❌ Error:" not in out
 
     # All output should be valid JSON
-    event_matches = out.split("__CYBER_EVENT__")[1:]
+    event_matches = out.split("__BOO_EVENT__")[1:]
     for match in event_matches:
-        json_str = match.split("__CYBER_EVENT_END__")[0]
+        json_str = match.split("__BOO_EVENT_END__")[0]
         parsed = json.loads(json_str)  # Should not raise
         assert "type" in parsed
         assert "id" in parsed

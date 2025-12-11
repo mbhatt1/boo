@@ -9,11 +9,11 @@ from modules.tools.prompt_optimizer import PromptOptimizerError, prompt_optimize
 def _setup_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     root = tmp_path / "outputs" / "target" / "OP_TEST"
     root.mkdir(parents=True, exist_ok=True)
-    monkeypatch.setenv("CYBER_OPERATION_ROOT", str(root))
-    monkeypatch.setenv("CYBER_OPERATION_ID", "OP_TEST")
-    monkeypatch.setenv("CYBER_TARGET_NAME", "target")
+    monkeypatch.setenv("BOO_OPERATION_ROOT", str(root))
+    monkeypatch.setenv("BOO_OPERATION_ID", "OP_TEST")
+    monkeypatch.setenv("BOO_TARGET_NAME", "target")
     # Clear cooldown tracking to avoid cross-test interference
-    monkeypatch.delenv("CYBER_PROMPT_OVERLAY_LAST_STEP", raising=False)
+    monkeypatch.delenv("BOO_PROMPT_OVERLAY_LAST_STEP", raising=False)
     return root
 
 

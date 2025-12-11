@@ -697,7 +697,7 @@ export const ConfigEditor: React.FC<ConfigEditorProps> = ({ onClose }) => {
   const startEditing = useCallback((field: ConfigField) => {
     // Prevent editing of read-only fields
     if (field.key === 'modelPricingInfo') {
-      showMessage('Model pricing is configured in ~/.cyber-autoagent/config.json under "modelPricing"', 'info');
+      showMessage('Model pricing is configured in ~/.boo-autoagent/config.json under "modelPricing"', 'info');
       return;
     }
 

@@ -3,7 +3,7 @@
 /**
  * Comprehensive Terminal Capture System
  * 
- * Tests every screen and interaction possibility in Cyber-AutoAgent
+ * Tests every screen and interaction possibility in Boo-AutoAgent
  * Ensures consistent branding, no flickering, proper alignment
  */
 
@@ -50,7 +50,7 @@ class Journey {
     
     // Set up config file if needed
     if (this.config) {
-      const configDir = join(os.homedir(), '.cyber-autoagent');
+      const configDir = join(os.homedir(), '.boo-autoagent');
       const configPath = join(configDir, 'config.json');
       
       // Create directory if it doesn't exist
@@ -160,8 +160,8 @@ class Journey {
       '## Quality Checklist',
       '',
       '### Branding & Headers',
-      '- [ ] CYBER ASCII art appears only once per screen',
-      '- [ ] "Full Spectrum Cyber Operations" tagline is consistent',
+      '- [ ] BOO ASCII art appears only once per screen',
+      '- [ ] "Full Spectrum Boo Operations" tagline is consistent',
       '- [ ] Version number displayed correctly',
       '',
       '### UI Consistency',
@@ -1130,7 +1130,7 @@ function createMasterReport(results) {
   const reportPath = join(capturesDir, 'MASTER-VALIDATION-REPORT.md');
   
   const report = [
-    '# Cyber-AutoAgent UI Validation Report',
+    '# Boo-AutoAgent UI Validation Report',
     '',
     `**Generated:** ${new Date().toISOString()}`,
     `**Total Journeys:** ${results.length}`,
@@ -1148,8 +1148,8 @@ function createMasterReport(results) {
     '## Key Validation Points',
     '',
     '### 1. Branding Consistency',
-    '- Check each journey for consistent CYBER ASCII art',
-    '- Verify "Full Spectrum Cyber Operations" tagline',
+    '- Check each journey for consistent BOO ASCII art',
+    '- Verify "Full Spectrum Boo Operations" tagline',
     '- Ensure version number is displayed correctly',
     '',
     '### 2. UI Quality',

@@ -44,69 +44,69 @@ export class HealthMonitor {
   // Maps docker-compose service names to container names and display info
   private readonly serviceDefinitions = {
     // Direct container names
-    'cyber-autoagent': {
-      name: 'cyber-autoagent',
+    'boo-autoagent': {
+      name: 'boo-autoagent',
       displayName: 'Agent',
       critical: true
     },
-    'cyber-langfuse': {
-      name: 'cyber-langfuse',
+    'boo-langfuse': {
+      name: 'boo-langfuse',
       displayName: 'Langfuse',
       port: 3000,
       url: 'http://localhost:3000',
       critical: true
     },
-    'cyber-langfuse-worker': {
-      name: 'cyber-langfuse-worker',
+    'boo-langfuse-worker': {
+      name: 'boo-langfuse-worker',
       displayName: 'Langfuse Worker',
       critical: false
     },
-    'cyber-langfuse-postgres': {
-      name: 'cyber-langfuse-postgres',
+    'boo-langfuse-postgres': {
+      name: 'boo-langfuse-postgres',
       displayName: 'PostgreSQL',
       critical: false
     },
-    'cyber-langfuse-clickhouse': {
-      name: 'cyber-langfuse-clickhouse',
+    'boo-langfuse-clickhouse': {
+      name: 'boo-langfuse-clickhouse',
       displayName: 'ClickHouse',
       critical: false
     },
-    'cyber-langfuse-redis': {
-      name: 'cyber-langfuse-redis',
+    'boo-langfuse-redis': {
+      name: 'boo-langfuse-redis',
       displayName: 'Redis',
       critical: false
     },
-    'cyber-langfuse-minio': {
-      name: 'cyber-langfuse-minio',
+    'boo-langfuse-minio': {
+      name: 'boo-langfuse-minio',
       displayName: 'MinIO Storage',
       port: 9090,
       critical: false
     },
     // Docker-compose service names mapping to container names
     'langfuse-web': {
-      name: 'cyber-langfuse',
+      name: 'boo-langfuse',
       displayName: 'Langfuse',
       port: 3000,
       url: 'http://localhost:3000',
       critical: true
     },
     'postgres': {
-      name: 'cyber-langfuse-postgres',
+      name: 'boo-langfuse-postgres',
       displayName: 'PostgreSQL',
       critical: false
     },
     'clickhouse': {
-      name: 'cyber-langfuse-clickhouse',
+      name: 'boo-langfuse-clickhouse',
       displayName: 'ClickHouse',
       critical: false
     },
     'redis': {
-      name: 'cyber-langfuse-redis',
+      name: 'boo-langfuse-redis',
       displayName: 'Redis',
       critical: false
     },
     'minio': {
-      name: 'cyber-langfuse-minio',
+      name: 'boo-langfuse-minio',
       displayName: 'MinIO Storage',
       port: 9090,
       critical: false
@@ -328,10 +328,10 @@ export class HealthMonitor {
         }
       } catch {
         // If exact name fails, try to find by image name
-        if (service.name === 'cyber-autoagent') {
+        if (service.name === 'boo-autoagent') {
           try {
             const { stdout: containerId } = await execAsync(
-              `docker ps --filter "ancestor=cyber-autoagent:latest" --format "{{.ID}}" | head -1`
+              `docker ps --filter "ancestor=boo-autoagent:latest" --format "{{.ID}}" | head -1`
             );
             if (containerId.trim()) {
               const { stdout } = await execAsync(
@@ -413,11 +413,11 @@ export class HealthMonitor {
 
     // Generate recommendations based on status
     if (!status.dockerRunning) {
-      recommendations.push('Start Docker Desktop to enable Cyber-AutoAgent');
+      recommendations.push('Start Docker Desktop to enable Boo-AutoAgent');
     }
 
     status.services.forEach(svc => {
-      if (svc.status === 'stopped' && svc.name === 'cyber-autoagent') {
+      if (svc.status === 'stopped' && svc.name === 'boo-autoagent') {
         recommendations.push('Run "docker-compose up -d" to start the agent');
       } else if (svc.status === 'stopped' && svc.displayName === 'Langfuse') {
         recommendations.push('Langfuse is stopped. Observability features will be unavailable');

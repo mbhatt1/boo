@@ -91,18 +91,18 @@ export const DeploymentRecovery: React.FC<DeploymentRecoveryProps> = ({
 
     try {
       // First check if container is already running
-      const { stdout: runningCheck } = await execAsync('docker ps --filter name=cyber-autoagent --format "{{.Names}}"');
-      if (runningCheck.trim() === 'cyber-autoagent') {
+      const { stdout: runningCheck } = await execAsync('docker ps --filter name=boo-autoagent --format "{{.Names}}"');
+      if (runningCheck.trim() === 'boo-autoagent') {
         setRecoveryMessage('Container already running, using existing...');
         await new Promise(resolve => setTimeout(resolve, 1000));
         return; // Container is already running, nothing to do
       }
 
       // Check if container exists but is stopped
-      const { stdout } = await execAsync('docker ps -a --filter name=cyber-autoagent --format "{{.Status}}"');
+      const { stdout } = await execAsync('docker ps -a --filter name=boo-autoagent --format "{{.Status}}"');
       if (stdout.includes('Exited')) {
         setRecoveryMessage('Starting stopped container...');
-        await execAsync('docker start cyber-autoagent');
+        await execAsync('docker start boo-autoagent');
       } else if (!stdout) {
         setRecoveryMessage('Creating new container...');
         // Get project root directory (4 levels up from this component)
@@ -111,10 +111,10 @@ export const DeploymentRecovery: React.FC<DeploymentRecoveryProps> = ({
         const toolsPath = path.join(projectRoot, 'tools');
 
         // Create container with proper volume mounts for service mode
-        const dockerCmd = `docker run -d --name cyber-autoagent ` +
+        const dockerCmd = `docker run -d --name boo-autoagent ` +
           `-v ${outputsPath}:/app/outputs ` +
           `-v ${toolsPath}:/app/tools ` +
-          `cyber-autoagent:latest --service-mode`;
+          `boo-autoagent:latest --service-mode`;
 
         await execAsync(dockerCmd);
       }

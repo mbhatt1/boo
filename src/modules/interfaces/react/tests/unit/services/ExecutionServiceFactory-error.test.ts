@@ -9,12 +9,12 @@ describe('ExecutionServiceSelectionError', () => {
     const attempts: RejectedServiceInfo[] = [
       {
         mode: ExecutionMode.DOCKER_STACK,
-        reason: 'Docker image cyber-autoagent:latest not found',
+        reason: 'Docker image boo-autoagent:latest not found',
         issues: [
           {
             type: 'docker',
             severity: 'error',
-            message: 'cyber-autoagent:latest image is missing',
+            message: 'boo-autoagent:latest image is missing',
             suggestion: 'Run `docker compose build` before starting the UI'
           }
         ],
@@ -37,7 +37,7 @@ describe('ExecutionServiceSelectionError', () => {
 
     const firstDiagnostics = error.diagnostics[0];
     expect(firstDiagnostics).toContain('Full Stack');
-    expect(firstDiagnostics).toContain('cyber-autoagent:latest image is missing');
+    expect(firstDiagnostics).toContain('boo-autoagent:latest image is missing');
     expect(firstDiagnostics).toContain('docker compose build');
 
     const secondDiagnostics = error.diagnostics[1];

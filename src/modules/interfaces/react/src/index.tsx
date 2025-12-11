@@ -23,33 +23,33 @@ try {
 const env = process.env.NODE_ENV || 'production';
   // Treat anything except explicit 'development' as production by default
   const isProd = env !== 'development';
-  const debugOn = process.env.DEBUG === 'true' || process.env.CYBER_DEBUG === 'true' || process.env.CYBER_TEST_MODE === 'true';
+  const debugOn = process.env.DEBUG === 'true' || process.env.BOO_DEBUG === 'true' || process.env.BOO_TEST_MODE === 'true';
   if (isProd && !debugOn) {
     enableConsoleSilence();
   }
 } catch {}
 
 // Set project root if not already set (helps ContainerManager find docker-compose.yml)
-if (!process.env.CYBER_PROJECT_ROOT) {
+if (!process.env.BOO_PROJECT_ROOT) {
   // Navigate up from src/modules/interfaces/react/dist to project root
   const currentFileUrl = import.meta.url;
   const currentDir = path.dirname(currentFileUrl.replace('file://', ''));
   const projectRoot = path.resolve(currentDir, '..', '..', '..', '..', '..');
   if (fs.existsSync(path.join(projectRoot, 'docker', 'docker-compose.yml'))) {
-    process.env.CYBER_PROJECT_ROOT = projectRoot;
+    process.env.BOO_PROJECT_ROOT = projectRoot;
   }
 }
 
 // Earliest possible test hint to ensure PTY capture sees a welcome line
 try {
-  if (process.env.CYBER_TEST_MODE === 'true') {
-    loggingService.info('Welcome to Cyber-AutoAgent');
+  if (process.env.BOO_TEST_MODE === 'true') {
+    loggingService.info('Welcome to Boo-AutoAgent');
   }
 } catch {}
 
 const cli = meow(`
   Usage
-    $ cyber-react [options]
+    $ boo-react [options]
 
   Options
     --target, -t         Target system/network to assess
@@ -68,10 +68,10 @@ const cli = meow(`
     --deployment-mode   Deployment mode: local-cli, single-container, full-stack
 
   Examples
-    $ cyber-react
-    $ cyber-react --module general
-    $ cyber-react --target example.com --objective "vulnerability scan" --auto-run
-    $ cyber-react -t 192.168.1.100 -o "port scan and service enumeration" -i 25 --auto-approve
+    $ boo-react
+    $ boo-react --module general
+    $ boo-react --target example.com --objective "vulnerability scan" --auto-run
+    $ boo-react -t 192.168.1.100 -o "port scan and service enumeration" -i 25 --auto-approve
 `, {
   importMeta: import.meta,
   flags: {
@@ -137,12 +137,12 @@ const cli = meow(`
 
 // Emit an immediate welcome line in headless test mode to aid terminal capture timing
   try {
-  if (process.env.CYBER_TEST_MODE === 'true' && cli.flags.headless && !cli.flags.autoRun) {
-    const configDir = path.join(os.homedir(), '.cyber-autoagent');
+  if (process.env.BOO_TEST_MODE === 'true' && cli.flags.headless && !cli.flags.autoRun) {
+    const configDir = path.join(os.homedir(), '.boo-autoagent');
     const configPath = path.join(configDir, 'config.json');
     const firstLaunch = !fs.existsSync(configPath);
     if (firstLaunch) {
-      loggingService.info('Welcome to Cyber-AutoAgent');
+      loggingService.info('Welcome to Boo-AutoAgent');
       try { console.log('[TEST_EVENT] welcome'); } catch {}
     }
   }
@@ -182,7 +182,7 @@ const runAutoAssessment = async () => {
         evaluationModel: 'us.anthropic.claude-3-5-sonnet-20241022-v2:0',
         swarmModel: 'us.anthropic.claude-3-5-sonnet-20241022-v2:0',
         awsRegion: 'us-east-1',
-        dockerImage: 'cyber-autoagent:latest',
+        dockerImage: 'boo-autoagent:latest',
         dockerTimeout: 300,
         volumes: [],
         iterations: 100,
@@ -210,8 +210,8 @@ const runAutoAssessment = async () => {
         observability: false,  // Default to disabled for CLI mode
         langfuseHost: 'http://localhost:3000',
         langfuseHostOverride: false,
-        langfusePublicKey: 'cyber-public',
-        langfuseSecretKey: 'cyber-secret',
+        langfusePublicKey: 'boo-public',
+        langfuseSecretKey: 'boo-secret',
         enableLangfusePrompts: false,  // Default to disabled for CLI mode
         langfusePromptLabel: 'production',
         langfusePromptCacheTTL: 300,
@@ -288,7 +288,7 @@ function renderReactApp() {
   if (!isRawModeSupported && !cli.flags.headless && !cli.flags.autoRun) {
     loggingService.info('⚠️  Running in non-interactive mode. Use --headless flag for scripting.');
     loggingService.info('💡 For interactive mode, run directly in a terminal.');
-    loggingService.info('\nUsage: cyber-react --target <target> --auto-run');
+    loggingService.info('\nUsage: boo-react --target <target> --auto-run');
     process.exit(1);
   }
   
@@ -298,12 +298,12 @@ function renderReactApp() {
     loggingService.info('🔧 Running in headless mode');
     // Emit a fast welcome banner for first-launch so integration tests can capture it
     try {
-      const configDir = path.join(os.homedir(), '.cyber-autoagent');
+      const configDir = path.join(os.homedir(), '.boo-autoagent');
       const configPath = path.join(configDir, 'config.json');
       const firstLaunch = !fs.existsSync(configPath);
       if (firstLaunch) {
-        loggingService.info('Welcome to Cyber-AutoAgent');
-        if (process.env.CYBER_TEST_MODE === 'true') {
+        loggingService.info('Welcome to Boo-AutoAgent');
+        if (process.env.BOO_TEST_MODE === 'true') {
           // Help the PTY-based journey test capture key screens as plain text markers
           setTimeout(() => {
             loggingService.info('Select Deployment Mode');

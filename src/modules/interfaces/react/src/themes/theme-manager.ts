@@ -4,16 +4,16 @@
  * Automatically detects terminal background and selects appropriate theme
  */
 
-import { CyberTheme, ThemeConfig } from './types.js';
-import { CyberDarkTheme } from './cyber-dark.js';
-import { CyberLightTheme } from './cyber-light.js';
+import { BooTheme, ThemeConfig } from './types.js';
+import { BooDarkTheme } from './boo-dark.js';
+import { BooLightTheme } from './boo-light.js';
 import { getRecommendedThemeType, supportsRichColors } from './terminal-detector.js';
 
 class ThemeManager {
-  private currentTheme: CyberTheme;
+  private currentTheme: BooTheme;
   private config: ThemeConfig;
-  private darkTheme: CyberTheme = CyberDarkTheme;
-  private lightTheme: CyberTheme = CyberLightTheme;
+  private darkTheme: BooTheme = BooDarkTheme;
+  private lightTheme: BooTheme = BooLightTheme;
 
   constructor() {
     // Auto-detect terminal background and select appropriate theme
@@ -30,7 +30,7 @@ class ThemeManager {
     };
   }
 
-  getCurrentTheme(): CyberTheme {
+  getCurrentTheme(): BooTheme {
     return this.currentTheme;
   }
 
@@ -38,7 +38,7 @@ class ThemeManager {
     return this.config;
   }
 
-  setTheme(theme: CyberTheme): void {
+  setTheme(theme: BooTheme): void {
     this.currentTheme = theme;
     this.config.theme = theme;
   }

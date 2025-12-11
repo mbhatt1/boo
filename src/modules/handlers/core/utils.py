@@ -173,8 +173,8 @@ def print_banner():
     import os
 
     if (
-        os.getenv("CYBERAGENT_NO_BANNER", "").lower() in ("1", "true", "yes")
-        or os.getenv("CYBER_UI_MODE", "cli").lower() == "react"
+        os.getenv("BOOAGENT_NO_BANNER", "").lower() in ("1", "true", "yes")
+        or os.getenv("BOO_UI_MODE", "cli").lower() == "react"
     ):
         # Banner disabled - return early (React UI mode suppresses banner)
         return
@@ -195,7 +195,7 @@ def print_banner():
         r"╚═╝  ╚═╝ ╚═════╝    ╚═╝    ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝   ",
     ]
 
-    subtitle = "-- Autonomous Cyber Agent --"
+    subtitle = "-- Autonomous Boo Agent --"
 
     banner_art_width = 0
     if banner_lines:
@@ -217,8 +217,8 @@ def print_section(title, content, color=Colors.BLUE, emoji=""):
     import os
 
     if (
-        os.getenv("CYBERAGENT_NO_BANNER", "").lower() in ("1", "true", "yes")
-        or os.getenv("CYBER_UI_MODE", "cli").lower() == "react"
+        os.getenv("BOOAGENT_NO_BANNER", "").lower() in ("1", "true", "yes")
+        or os.getenv("BOO_UI_MODE", "cli").lower() == "react"
     ):
         # Output disabled - return early (React UI mode suppresses CLI sections)
         return
@@ -236,8 +236,8 @@ def print_status(message, status="INFO"):
     import os
 
     if (
-        os.getenv("CYBERAGENT_NO_BANNER", "").lower() in ("1", "true", "yes")
-        or os.getenv("CYBER_UI_MODE", "cli").lower() == "react"
+        os.getenv("BOOAGENT_NO_BANNER", "").lower() in ("1", "true", "yes")
+        or os.getenv("BOO_UI_MODE", "cli").lower() == "react"
     ):
         # Output disabled - return early (React UI mode suppresses CLI status lines)
         return
@@ -269,7 +269,7 @@ def print_status(message, status="INFO"):
 
 
 @dataclass
-class CyberEvent:
+class BooEvent:
     """Structured event for terminal output."""
 
     type: str  # 'step_start', 'command', 'command_array', 'output', 'error', 'status', 'complete'
@@ -279,7 +279,7 @@ class CyberEvent:
 
     def to_json(self) -> str:
         """Convert event to JSON with special markers for parsing."""
-        return f"__CYBER_EVENT__{json.dumps(asdict(self), separators=(',', ':'))}__CYBER_EVENT_END__"
+        return f"__BOO_EVENT__{json.dumps(asdict(self), separators=(',', ':'))}__BOO_EVENT_END__"
 
 
 def emit_event(event_type: str, content: Union[str, List[str]], **metadata) -> None:
@@ -293,7 +293,7 @@ def emit_event(event_type: str, content: Union[str, List[str]], **metadata) -> N
         content: Event content (string or list of strings)
         **metadata: Additional metadata (step number, tool name, etc.)
     """
-    event = CyberEvent(type=event_type, content=content, metadata=metadata)
+    event = BooEvent(type=event_type, content=content, metadata=metadata)
     # Use print with flush to ensure immediate output
     print(event.to_json(), flush=True)
 

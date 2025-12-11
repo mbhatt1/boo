@@ -162,19 +162,19 @@ export class DockerExecutionServiceAdapter extends EventEmitter implements Execu
         const { exec } = await import('node:child_process');
         const { promisify } = await import('node:util');
         const execAsync = promisify(exec);
-        await execAsync('docker image inspect cyber-autoagent:latest');
+        await execAsync('docker image inspect boo-autoagent:latest');
         logger.info('Docker image validation: SUCCESS');
       } catch (error) {
         logger.error('Docker image validation: FAILED', error);
         // In development, this should be a warning, not an error
         const isDevelopment = process.env.NODE_ENV === 'development' || process.env.DEV === 'true';
         if (isDevelopment) {
-          warnings.push('Docker image cyber-autoagent:latest not found. Build with: docker build -t cyber-autoagent:latest .');
+          warnings.push('Docker image boo-autoagent:latest not found. Build with: docker build -t boo-autoagent:latest .');
         } else {
           issues.push({
             type: 'docker',
             severity: 'error',
-            message: 'Cyber-AutoAgent Docker image not found',
+            message: 'Boo-AutoAgent Docker image not found',
             suggestion: 'Build the Docker image or pull from registry'
           });
         }

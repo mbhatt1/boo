@@ -1,6 +1,6 @@
 # Terminal Interface Architecture
 
-The Cyber-AutoAgent terminal interface provides real-time streaming of agent operations through a React-based presentation layer built on Ink and TypeScript.
+The Boo-AutoAgent terminal interface provides real-time streaming of agent operations through a React-based presentation layer built on Ink and TypeScript.
 
 ## Design Overview
 
@@ -49,7 +49,7 @@ graph TB
 Python agent emits structured events through stdout:
 
 ```
-__CYBER_EVENT__{"type":"tool_start","tool_name":"shell","tool_input":{...}}__CYBER_EVENT_END__
+__BOO_EVENT__{"type":"tool_start","tool_name":"shell","tool_input":{...}}__BOO_EVENT_END__
 ```
 
 **Event Types:**
@@ -118,7 +118,7 @@ src/modules/interfaces/react/
 
 ## Configuration Management
 
-Configuration persists to `~/.cyber-autoagent/config.json`:
+Configuration persists to `~/.boo-autoagent/config.json`:
 
 **Managed Settings:**
 - Model provider selection (Bedrock, Ollama, LiteLLM)
@@ -170,7 +170,7 @@ Persistent configuration enables:
 ### Event Structure
 
 ```typescript
-interface CyberEvent {
+interface BooEvent {
   type: string;
   timestamp: string;
   data: Record<string, any>;
@@ -181,14 +181,14 @@ interface CyberEvent {
 
 Python agent emits events using:
 ```python
-print(f"__CYBER_EVENT__{json.dumps(event)}__CYBER_EVENT_END__\n", end="", flush=True)
+print(f"__BOO_EVENT__{json.dumps(event)}__BOO_EVENT_END__\n", end="", flush=True)
 ```
 
 ### Event Parsing
 
 Interface extracts events using pattern matching:
 ```typescript
-const eventPattern = /__CYBER_EVENT__(.*?)__CYBER_EVENT_END__/;
+const eventPattern = /__BOO_EVENT__(.*?)__BOO_EVENT_END__/;
 const match = buffer.match(eventPattern);
 if (match) {
   const event = JSON.parse(match[1]);

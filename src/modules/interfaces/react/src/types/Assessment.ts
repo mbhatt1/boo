@@ -1,5 +1,5 @@
 /**
- * Type definitions for the Cyber-AutoAgent assessment system
+ * Type definitions for the Boo-AutoAgent assessment system
  */
 
 export interface AssessmentParams {

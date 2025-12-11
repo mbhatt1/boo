@@ -117,7 +117,7 @@ export const ObservabilityConfig: React.FC<ObservabilityConfigProps> = ({
                 type="text"
                 value={config.langfusePublicKey || ''}
                 onChange={(e) => onConfigChange({ langfusePublicKey: e.target.value })}
-                placeholder="cyber-public"
+                placeholder="boo-public"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
               />
               {!config.langfusePublicKey && (
@@ -132,7 +132,7 @@ export const ObservabilityConfig: React.FC<ObservabilityConfigProps> = ({
                 type="password"
                 value={config.langfuseSecretKey || ''}
                 onChange={(e) => onConfigChange({ langfuseSecretKey: e.target.value })}
-                placeholder="cyber-secret"
+                placeholder="boo-secret"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
               />
               {!config.langfuseSecretKey && (

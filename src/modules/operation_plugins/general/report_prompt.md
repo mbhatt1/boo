@@ -54,7 +54,7 @@ analysis: Analyze findings through the lens of OWASP Top 10 vulnerabilities, sec
 immediate: Address critical authentication bypasses and input validation flaws within 48 hours. Implement Web Application Firewall (WAF) rules for active exploitation attempts. Patch all critical vulnerabilities with available fixes
 short_term: Deploy comprehensive security headers (CSP, HSTS, X-Frame-Options), enhance logging and monitoring capabilities, implement rate limiting on sensitive endpoints, conduct security code review for critical functions
 long_term: Adopt secure Software Development Life Cycle (SDLC) practices, implement automated security testing in CI/CD pipeline, establish comprehensive vulnerability management program, deploy runtime application self-protection (RASP)
-framework: OWASP Top 10 2021, NIST Cybersecurity Framework, CWE/SANS Top 25
+framework: OWASP Top 10 2021, NIST Boosecurity Framework, CWE/SANS Top 25
 </domain_lens>
 
 <assessment_focus>

@@ -128,8 +128,8 @@ class TestOutputDisplayIntegration:
             assert log_path == case["expected"]
 
             # Test full log file path
-            log_file = os.path.join(log_path, "cyber_operations.log")
-            expected_log_file = os.path.join(case["expected"], "cyber_operations.log")
+            log_file = os.path.join(log_path, "boo_operations.log")
+            expected_log_file = os.path.join(case["expected"], "boo_operations.log")
             assert log_file == expected_log_file
 
 

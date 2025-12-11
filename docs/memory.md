@@ -1,6 +1,6 @@
 # Memory System
 
-Cyber-AutoAgent implements persistent memory using Mem0 with automatic reflection, strategic planning, and evidence categorization. The system supports multiple backend configurations for different deployment scenarios.
+Boo-AutoAgent implements persistent memory using Mem0 with automatic reflection, strategic planning, and evidence categorization. The system supports multiple backend configurations for different deployment scenarios.
 
 ## Architecture
 
@@ -91,7 +91,7 @@ Evidence storage employs structured metadata for efficient retrieval and analysi
 mem0_memory(
     action="store",
     content="[WHAT] SQL injection [WHERE] /login [IMPACT] Auth bypass [EVIDENCE] payload",
-    user_id="cyber_agent",
+    user_id="boo_agent",
     metadata={
         "category": "finding",
         "severity": "critical",
@@ -188,7 +188,7 @@ mem0_memory(
 ./outputs/<target>/OP_<timestamp>/
 ├── report.md            # Final assessment report
 ├── logs/               # Operation logs
-│   └── cyber_operations.log
+│   └── boo_operations.log
 └── utils/              # Operation artifacts
 ```
 
@@ -209,7 +209,7 @@ mem0_memory(
 mem0_memory(action="retrieve", query="SQL injection")
 
 # List all memories
-mem0_memory(action="list", user_id="cyber_agent")
+mem0_memory(action="list", user_id="boo_agent")
 
 # Get specific memory
 mem0_memory(action="get", memory_id="mem_123")

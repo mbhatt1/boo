@@ -1,6 +1,6 @@
 # Module-Based Prompt System
 
-Cyber-AutoAgent uses a modular prompt architecture that enables specialized security assessments with domain-specific expertise, tools, and reporting.
+Boo-AutoAgent uses a modular prompt architecture that enables specialized security assessments with domain-specific expertise, tools, and reporting.
 
 ## Architecture Overview
 
@@ -132,7 +132,7 @@ The loader checks for operation-specific optimized prompts first (created by the
 ### Base + Module Prompt Composition
 
 ```python
-# modules/agents/cyber_autoagent.py - Agent creation
+# modules/agents/boo_autoagent.py - Agent creation
 def create_agent(module: str = "general"):
     # Load module-specific execution prompt
     module_loader = get_module_loader()
@@ -173,7 +173,7 @@ graph LR
 ### Example: General Module Integration
 
 ```text
-# Ghost - Cyber Operations Specialist
+# Ghost - Boo Operations Specialist
 [Base system prompt with core behaviors]
 
 ## MODULE-SPECIFIC GUIDANCE
@@ -343,7 +343,7 @@ The report generation uses a dedicated `build_report_sections` tool that retriev
 ### Agent Creation with Modules
 
 ```python
-# modules/agents/cyber_autoagent.py
+# modules/agents/boo_autoagent.py
 agent, callback_handler = create_agent(
     target=args.target,
     objective=args.objective,
@@ -360,4 +360,4 @@ agent, callback_handler = create_agent(
 ```
 
 
-The module system provides a powerful way to specialize Cyber-AutoAgent for different security domains while maintaining consistent core functionality and user experience.
+The module system provides a powerful way to specialize Boo-AutoAgent for different security domains while maintaining consistent core functionality and user experience.

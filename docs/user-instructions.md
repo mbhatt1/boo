@@ -1,6 +1,6 @@
 # User Guide
 
-Cyber-AutoAgent is an autonomous security assessment tool with a React-based terminal interface providing real-time operation monitoring and interactive configuration.
+Boo-AutoAgent is an autonomous security assessment tool with a React-based terminal interface providing real-time operation monitoring and interactive configuration.
 
 ## Prerequisites
 
@@ -36,7 +36,7 @@ Select during setup or change via `/setup` command.
 
 ## Configuration
 
-Configuration persists to `~/.cyber-autoagent/config.json`.
+Configuration persists to `~/.boo-autoagent/config.json`.
 
 ### Model Providers
 
@@ -86,7 +86,7 @@ execute              # Start assessment
 ### Command Line Mode
 
 ```bash
-cyber-react \
+boo-react \
   --target "https://testphp.vulnweb.com" \
   --objective "Identify OWASP Top 10 vulnerabilities" \
   --module general \
@@ -129,7 +129,7 @@ cyber-react \
 
 ```
 URL: http://localhost:3000
-Login: admin@cyber-autoagent.com / changeme
+Login: admin@boo-autoagent.com / changeme
 ```
 
 ## Output Structure
@@ -140,7 +140,7 @@ outputs/
     ├── OP_<timestamp>/
     │   ├── report.md              # Assessment report
     │   ├── logs/
-    │   │   └── cyber_operations.log
+    │   │   └── boo_operations.log
     │   └── utils/
     └── memory/                    # Persistent across operations
 ```
@@ -191,13 +191,13 @@ Requirements: Python 3.10+, dependencies installed
 ### Docker Standalone
 
 ```bash
-docker build -t cyber-autoagent .
+docker build -t boo-autoagent .
 
 docker run --rm \
   -e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} \
   -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} \
   -v $(pwd)/outputs:/app/outputs \
-  cyber-autoagent \
+  boo-autoagent \
   --target "http://example.com" \
   --objective "Security assessment"
 ```
@@ -209,7 +209,7 @@ docker run --rm \
 | Problem | Solution |
 |---------|----------|
 | React app won't start | `rm -rf node_modules && npm install && npm run build` |
-| Configuration errors | `rm ~/.cyber-autoagent/config.json && cyber-react` |
+| Configuration errors | `rm ~/.boo-autoagent/config.json && boo-react` |
 | Docker connectivity | `docker info` to verify daemon running |
 | Node version issues | Verify Node.js 20+ with `node --version` |
 
@@ -235,7 +235,7 @@ docker run --rm \
 ### Web Application Assessment
 
 ```bash
-cyber-react \
+boo-react \
   -m general \
   -t "https://testphp.vulnweb.com" \
   -o "OWASP Top 10 assessment" \
@@ -245,7 +245,7 @@ cyber-react \
 ### API Security Testing
 
 ```bash
-cyber-react \
+boo-react \
   -m general \
   -t "https://api.example.com" \
   -o "Authentication testing" \
@@ -256,7 +256,7 @@ cyber-react \
 ### CTF Challenge
 
 ```bash
-cyber-react \
+boo-react \
   -m ctf \
   -t "http://challenge.ctf:8080" \
   -o "Extract flag" \
@@ -266,7 +266,7 @@ cyber-react \
 ### Automated Scan
 
 ```bash
-cyber-react \
+boo-react \
   -t "192.168.1.100" \
   -o "Network security assessment" \
   --auto-run \

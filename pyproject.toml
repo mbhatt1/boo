@@ -3,24 +3,24 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "cyber-autoagent"
+name = "boo"
 version = "0.1.3"
-description = "Autonomous cybersecurity agent designed for ethical security assessments"
+description = "Autonomous agent platform rebranded as Boo for ethical security assessments"
 readme = "README.md"
 authors = [
-    {name = "Cyber-AutoAgent Team", email = "aaron.weston.brown@gmail.com"}
+    {name = "Boo Team", email = "info@boo.com"}
 ]
 license = {text = "MIT"}
-keywords = ["cybersecurity", "penetration-testing", "autonomous", "ai-agent", "security-assessment"]
+keywords = ["boo", "autonomous", "ai-agent", "security-assessment"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Information Technology",
-    "Intended Audience :: System Administrators", 
+    "Intended Audience :: System Administrators",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10", 
+    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Security",
@@ -60,13 +60,13 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/cyber-autoagent/cyber-autoagent"
-Repository = "https://github.com/cyber-autoagent/cyber-autoagent"
-Documentation = "https://github.com/cyber-autoagent/cyber-autoagent#readme"
-"Bug Tracker" = "https://github.com/cyber-autoagent/cyber-autoagent/issues"
+Homepage = "https://github.com/boo-ai/boo"
+Repository = "https://github.com/boo-ai/boo"
+Documentation = "https://github.com/boo-ai/boo#readme"
+"Bug Tracker" = "https://github.com/boo-ai/boo/issues"
 
 [project.scripts]
-cyber-autoagent = "cyberautoagent:main"
+boo = "boo:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

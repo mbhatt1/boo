@@ -146,7 +146,7 @@ export class PythonExecutionServiceAdapter extends EventEmitter implements Execu
         }
 
         if (!envStatus.packageInstalled) {
-          warnings.push('Cyber-AutoAgent package will be installed during setup');
+          warnings.push('Boo-AutoAgent package will be installed during setup');
         }
       }
 

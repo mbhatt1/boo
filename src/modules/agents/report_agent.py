@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Report Generation Utilities for Cyber-AutoAgent
+Report Generation Utilities for Boo-AutoAgent
 
 This module provides utility functions for report generation that work
 with the report generation tool to maintain clean architecture and
@@ -113,10 +113,10 @@ class ReportGenerator:
         trace_attrs = {
             # Core identification - CRITICAL for trace continuity
             "langfuse.session.id": operation_id,
-            "langfuse.user.id": f"cyber-agent-{target}" if target else "cyber-agent",
+            "langfuse.user.id": f"boo-agent-{target}" if target else "boo-agent",
             # Agent identification
             "langfuse.agent.type": "report_generator",
-            "agent.name": "Cyber-ReportGenerator",
+            "agent.name": "Boo-ReportGenerator",
             "agent.role": "report_generation",
             # Operation context
             "operation.id": operation_id,
@@ -131,7 +131,7 @@ class ReportGenerator:
         # The report will be returned and handled by the caller
         return Agent(
             model=model,
-            name="Cyber-ReportGenerator",
+            name="Boo-ReportGenerator",
             system_prompt=get_report_agent_system_prompt(),
             tools=[build_report_sections],
             trace_attributes=trace_attrs if operation_id else None,

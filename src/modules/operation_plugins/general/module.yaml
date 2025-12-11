@@ -1,7 +1,7 @@
 name: general
 version: 1.0.0
 description:  Generalized web application security assessment 
-author: Cyber-AutoAgent Team
+author: Boo-AutoAgent Team
 license: MIT
 configuration:
   approach: Intelligence-driven web application security assessment leveraging specialized external tools

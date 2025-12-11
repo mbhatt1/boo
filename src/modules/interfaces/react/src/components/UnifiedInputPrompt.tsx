@@ -44,7 +44,7 @@ export const UnifiedInputPrompt: React.FC<UnifiedInputPromptProps> = ({
 }) => {
   // Access global app state via a lightweight event bridge to avoid circular deps
   // We'll read from process.env-like bridge exposed on actions; App passes actions down
-  const appStateRef = (global as any).CYBER_APP_STATE_REF as { getCommandHistory?: () => string[] } | undefined;
+  const appStateRef = (global as any).BOO_APP_STATE_REF as { getCommandHistory?: () => string[] } | undefined;
   const theme = themeManager.getCurrentTheme();
   const { exit } = useApp();
   const { currentModule, availableModules: contextModules } = useModule();
@@ -344,7 +344,7 @@ export const UnifiedInputPrompt: React.FC<UnifiedInputPromptProps> = ({
         // Local history update
         setHistory(prev => (prev.length === 0 || prev[prev.length - 1] !== submittedValue) ? [...prev, submittedValue] : prev);
         // Push into global application history (used by other components)
-        try { (global as any).CYBER_APP_STATE_ACTIONS?.pushCommandHistory?.(submittedValue); } catch {}
+        try { (global as any).BOO_APP_STATE_ACTIONS?.pushCommandHistory?.(submittedValue); } catch {}
       }
       setHistoryIndex(null);
       draftBeforeHistoryRef.current = '';

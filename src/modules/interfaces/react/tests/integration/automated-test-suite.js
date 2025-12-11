@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Automated Test Suite for Cyber-AutoAgent React Interface
+ * Automated Test Suite for Boo-AutoAgent React Interface
  * 
  * Comprehensive automated testing of all UI components, user journeys,
  * and interactive features with validation against TEST-VALIDATION-SPECIFICATION.
@@ -74,7 +74,7 @@ class AutomatedTestRunner {
       NO_COLOR: '1',
       CI: 'true',
       NODE_ENV: 'test',
-      CYBER_TEST_MODE: 'true',
+      BOO_TEST_MODE: 'true',
       ...envOverrides
     };
 
@@ -126,7 +126,7 @@ class AutomatedTestRunner {
    * Setup test configuration
    */
   async setupTestConfig(config) {
-    const configDir = join(os.homedir(), '.cyber-autoagent');
+    const configDir = join(os.homedir(), '.boo-autoagent');
     const configPath = join(configDir, 'config.json');
     
     if (!fs.existsSync(configDir)) {
@@ -365,10 +365,10 @@ async function testSetupWizardFlow() {
     await test.start();
     
     // Test Welcome Screen
-    await test.waitForText('Welcome to Cyber-AutoAgent');
-    test.assertContains('CYBER', 'ASCII art displays');
-    test.assertOccurrenceCount('CYBER', 1, 'ASCII art appears only once');
-    test.assertContains('Full Spectrum Cyber Operations', 'Tagline displays');
+    await test.waitForText('Welcome to Boo-AutoAgent');
+    test.assertContains('BOO', 'ASCII art displays');
+    test.assertOccurrenceCount('BOO', 1, 'ASCII art appears only once');
+    test.assertContains('Full Spectrum Boo Operations', 'Tagline displays');
     test.assertContains('Press ENTER to begin', 'Instructions display');
     
     // Navigate to deployment selection
@@ -777,7 +777,7 @@ async function testMemoryAndState() {
  * Main Test Runner
  */
 async function runAllTests() {
-  console.log(chalk.bold.cyan('\n🚀 Cyber-AutoAgent Automated Test Suite\n'));
+  console.log(chalk.bold.cyan('\n🚀 Boo-AutoAgent Automated Test Suite\n'));
   console.log(chalk.gray('━'.repeat(50)));
   
   const results = [];

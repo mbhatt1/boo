@@ -398,7 +398,7 @@ export function useOperationManager({
       const handleExecutionEvent = (event: any) => {
         // Emit plain test markers for PTY-based integration tests as soon as events arrive
         try {
-          if (process.env.CYBER_TEST_MODE === 'true') {
+          if (process.env.BOO_TEST_MODE === 'true') {
             const t = event?.type || 'unknown';
             // Include some details for key types
             if (t === 'step_header') {

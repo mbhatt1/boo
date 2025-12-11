@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Python CLI smoke test (opt-in via CYBER_PY_SMOKE=1)
+ * Python CLI smoke test (opt-in via BOO_PY_SMOKE=1)
  *
  * Validates that a minimal end-to-end stream can run using the real Python CLI.
  * Skips gracefully if not opted-in or if prerequisites are missing.
@@ -10,17 +10,17 @@ const path = require('path');
 
 (async () => {
   try {
-    if (process.env.CYBER_PY_SMOKE !== '1') {
-      console.log('Skipping Python CLI smoke test (set CYBER_PY_SMOKE=1 to enable).');
+    if (process.env.BOO_PY_SMOKE !== '1') {
+      console.log('Skipping Python CLI smoke test (set BOO_PY_SMOKE=1 to enable).');
       process.exit(0);
     }
 
     const projectRoot = path.resolve(__dirname, '../../../../..');
-    const script = path.join(projectRoot, 'src', 'cyberautoagent.py');
+    const script = path.join(projectRoot, 'src', 'boo.py');
 
     // Prefer uv, fallback to python if available
-    const cmd = process.env.CYBER_USE_UV === '0' ? 'python' : 'uv';
-    const args = process.env.CYBER_USE_UV === '0'
+    const cmd = process.env.BOO_USE_UV === '0' ? 'python' : 'uv';
+    const args = process.env.BOO_USE_UV === '0'
       ? [script, '--target', 'http://testphp.vulnweb.com', '--objective', 'quick check', '--iterations', '1']
       : ['run', 'python', script, '--target', 'http://testphp.vulnweb.com', '--objective', 'quick check', '--iterations', '1'];
 

@@ -1,6 +1,6 @@
 # React Terminal Interface
 
-Cyber-AutoAgent's React-based terminal interface provides real-time streaming of agent operations with event-driven architecture and minimal parsing overhead.
+Boo-AutoAgent's React-based terminal interface provides real-time streaming of agent operations with event-driven architecture and minimal parsing overhead.
 
 ## Architecture Overview
 
@@ -31,7 +31,7 @@ graph TB
 The interface communicates with the Python agent through structured events emitted via stdout:
 
 ```typescript
-interface CyberEvent {
+interface BooEvent {
   type: 'tool_start' | 'tool_output' | 'reasoning' | 'step_header';
   timestamp: string;
   data: EventData;
@@ -82,7 +82,7 @@ npm start
 
 ## Configuration
 
-Configuration persists to `~/.cyber-autoagent/config.json`:
+Configuration persists to `~/.boo-autoagent/config.json`:
 
 **Provider Options:**
 - AWS Bedrock (remote execution)
@@ -116,7 +116,7 @@ src/
 ## Design Principles
 
 **Minimal Parsing**: Events stream from Python with minimal interpretation
-- Structured JSON events via `__CYBER_EVENT__` protocol
+- Structured JSON events via `__BOO_EVENT__` protocol
 - Direct passthrough of tool outputs
 - No business logic in presentation layer
 
@@ -135,7 +135,7 @@ src/
 The Python agent emits structured events through stdout:
 
 ```
-__CYBER_EVENT__{"type":"tool_start","tool_name":"shell","tool_input":{...}}__CYBER_EVENT_END__
+__BOO_EVENT__{"type":"tool_start","tool_name":"shell","tool_input":{...}}__BOO_EVENT_END__
 ```
 
 Event types handled by interface:

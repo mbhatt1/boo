@@ -43,7 +43,7 @@ function startCli(extraEnv: Record<string,string> = {}): PtySession {
     NO_COLOR: '1',
     CI: 'true',
     NODE_ENV: 'test',
-    CYBER_TEST_MODE: 'true',
+    BOO_TEST_MODE: 'true',
     ...extraEnv,
   } as any;
 
@@ -77,7 +77,7 @@ const Keys = {
 };
 
 function setTestConfig(config: Record<string, any> | null) {
-  const configDir = path.join(os.homedir(), '.cyber-autoagent');
+  const configDir = path.join(os.homedir(), '.boo-autoagent');
   ensureDir(configDir);
   const configPath = path.join(configDir, 'config.json');
   if (config === null) {

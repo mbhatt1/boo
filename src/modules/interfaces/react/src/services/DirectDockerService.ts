@@ -1,7 +1,7 @@
 /**
  * Direct Docker Execution Service
  * 
- * Provides high-performance Docker container execution for Cyber-AutoAgent assessments.
+ * Provides high-performance Docker container execution for Boo-AutoAgent assessments.
  * Features real-time event streaming with structured JSON event parsing from container stdout.
  * Eliminates WebSocket overhead by parsing events directly from Docker's stdout stream.
  * 
@@ -13,7 +13,7 @@
  * 
  * Event Flow: Docker Container → stdout → Event Parser → React Components
  * 
- * @author Cyber-AutoAgent Team
+ * @author Boo-AutoAgent Team
  * @since v0.1.3
  */
 
@@ -45,7 +45,7 @@ function sanitizeTargetName(target: string): string {
 /**
  * DirectDockerService - Docker container execution service
  * 
- * Manages the complete lifecycle of Cyber-AutoAgent Docker containers with
+ * Manages the complete lifecycle of Boo-AutoAgent Docker containers with
  * error handling, event streaming, and AWS integration.
  * 
  * @extends EventEmitter
@@ -144,7 +144,7 @@ export class DirectDockerService extends EventEmitter {
       const objective = params.objective || `Perform ${params.module.replace('_', ' ')} assessment`;
       
       // Initialize environment variables - always pass objective via env to avoid escaping issues
-      let env: string[] = [`CYBER_OBJECTIVE=${objective}`];
+      let env: string[] = [`BOO_OBJECTIVE=${objective}`];
       const resolvedRegion =
         config.awsRegion ||
         process.env.AWS_REGION ||
@@ -213,8 +213,8 @@ export class DirectDockerService extends EventEmitter {
       env.push(
         'PYTHONUNBUFFERED=1', // Disable Python output buffering for real-time streaming
         `BYPASS_TOOL_CONSENT=${config.confirmations ? 'false' : 'true'}`,
-        'CYBER_UI_MODE=react',
-        'CYBERAGENT_NO_BANNER=true',
+        'BOO_UI_MODE=react',
+        'BOOAGENT_NO_BANNER=true',
         `DEV=${config.verbose ? 'true' : 'false'}`,
       );
 
@@ -302,17 +302,17 @@ export class DirectDockerService extends EventEmitter {
         env.push(`OPENAI_API_VERSION=${config.azureApiVersion}`); 
       }
       if (config.embeddingModel) {
-        env.push(`CYBER_AGENT_EMBEDDING_MODEL=${config.embeddingModel}`);
+        env.push(`BOO_AGENT_EMBEDDING_MODEL=${config.embeddingModel}`);
       }
       if (config.maxTokens) {
         env.push(`MAX_TOKENS=${config.maxTokens}`);
-        env.push(`CYBER_AGENT_MAX_TOKENS=${config.maxTokens}`);
+        env.push(`BOO_AGENT_MAX_TOKENS=${config.maxTokens}`);
       }
       if (config.temperature !== undefined) {
-        env.push(`CYBER_AGENT_TEMPERATURE=${config.temperature}`);
+        env.push(`BOO_AGENT_TEMPERATURE=${config.temperature}`);
       }
       if (config.topP !== undefined) {
-        env.push(`CYBER_AGENT_TOP_P=${config.topP}`);
+        env.push(`BOO_AGENT_TOP_P=${config.topP}`);
       }
       if (config.thinkingBudget) {
         env.push(`THINKING_BUDGET=${config.thinkingBudget}`);
@@ -326,10 +326,10 @@ export class DirectDockerService extends EventEmitter {
 
       // Model Configuration - pass separate models from config
       if (config.swarmModel) {
-        env.push(`CYBER_AGENT_SWARM_MODEL=${config.swarmModel}`);
+        env.push(`BOO_AGENT_SWARM_MODEL=${config.swarmModel}`);
       }
       if (config.evaluationModel) {
-        env.push(`CYBER_AGENT_EVALUATION_MODEL=${config.evaluationModel}`);
+        env.push(`BOO_AGENT_EVALUATION_MODEL=${config.evaluationModel}`);
       }
 
       // Debug logging: what we're about to send to Docker
@@ -404,8 +404,8 @@ export class DirectDockerService extends EventEmitter {
           });
         }
         
-        env.push(`LANGFUSE_PUBLIC_KEY=${config.langfusePublicKey || 'cyber-public'}`);
-        env.push(`LANGFUSE_SECRET_KEY=${config.langfuseSecretKey || 'cyber-secret'}`);
+        env.push(`LANGFUSE_PUBLIC_KEY=${config.langfusePublicKey || 'boo-public'}`);
+        env.push(`LANGFUSE_SECRET_KEY=${config.langfuseSecretKey || 'boo-secret'}`);
         
         if (config.enableLangfusePrompts) {
           env.push(`ENABLE_LANGFUSE_PROMPTS=true`);
@@ -455,8 +455,8 @@ export class DirectDockerService extends EventEmitter {
       env = Array.from(envMap.entries()).map(([key, value]) => `${key}=${value}`);
 
       // Prefer re-using the long-lived service container when available.
-      // CYBER_DOCKER_REUSE defaults to true; set to `false` to force ad-hoc containers.
-      const reuseEnv = process.env.CYBER_DOCKER_REUSE;
+      // BOO_DOCKER_REUSE defaults to true; set to `false` to force ad-hoc containers.
+      const reuseEnv = process.env.BOO_DOCKER_REUSE;
       const ENABLE_SERVICE_CONTAINER_REUSE = reuseEnv !== 'false'
         && (currentDeploymentMode === 'single-container' || currentDeploymentMode === 'full-stack');
       
@@ -469,7 +469,7 @@ export class DirectDockerService extends EventEmitter {
             content: '◆ Reusing existing service container (docker exec)',
             timestamp: Date.now()
           });
-          logger.info('Exec into existing service container', { name: 'cyber-autoagent' });
+          logger.info('Exec into existing service container', { name: 'boo-autoagent' });
 
           await this.execIntoContainer(serviceContainer, args, env, currentDeploymentMode);
           return;
@@ -477,12 +477,12 @@ export class DirectDockerService extends EventEmitter {
       }
 
       // Create a new ad-hoc container for the assessment
-      const dockerImage = process.env.CYBER_DOCKER_IMAGE || 'cyber-autoagent:latest';
-      let dockerNetwork = process.env.CYBER_DOCKER_NETWORK || 'bridge';
+      const dockerImage = process.env.BOO_DOCKER_IMAGE || 'boo-autoagent:latest';
+      let dockerNetwork = process.env.BOO_DOCKER_NETWORK || 'bridge';
 
       // If running in full-stack mode, attempt to infer compose network from a stack container
-      if (!process.env.CYBER_DOCKER_NETWORK && currentDeploymentMode === 'full-stack') {
-        const inferred = await this.inferComposeNetworkFrom('cyber-langfuse');
+      if (!process.env.BOO_DOCKER_NETWORK && currentDeploymentMode === 'full-stack') {
+        const inferred = await this.inferComposeNetworkFrom('boo-langfuse');
         if (inferred) {
           dockerNetwork = inferred;
           this.emit('event', {
@@ -499,8 +499,8 @@ export class DirectDockerService extends EventEmitter {
 
       try {
         const candidateRoots: string[] = [];
-        if (process.env.CYBER_PROJECT_ROOT) {
-          candidateRoots.push(process.env.CYBER_PROJECT_ROOT);
+        if (process.env.BOO_PROJECT_ROOT) {
+          candidateRoots.push(process.env.BOO_PROJECT_ROOT);
         }
         // As a fallback, try cwd only if a tools dir actually exists
         candidateRoots.push(process.cwd());
@@ -749,7 +749,7 @@ export class DirectDockerService extends EventEmitter {
     
     this.streamEventBuffer += cleanedData;
 
-    const eventRegex = /__CYBER_EVENT__(.+?)__CYBER_EVENT_END__/s;
+    const eventRegex = /__BOO_EVENT__(.+?)__BOO_EVENT_END__/s;
     let match;
     let processedEvents = false;
 
@@ -1153,10 +1153,10 @@ export class DirectDockerService extends EventEmitter {
     try {
       const containers = await this.dockerClient.listContainers({ all: true });
       // Prefer exact name match and running state
-      let candidate = containers.find(c => c.State === 'running' && (c.Names || []).some(n => n.replace(/^\//, '') === 'cyber-autoagent'));
+      let candidate = containers.find(c => c.State === 'running' && (c.Names || []).some(n => n.replace(/^\//, '') === 'boo-autoagent'));
       if (!candidate) {
         // Fallback: match by compose service label
-        candidate = containers.find(c => c.State === 'running' && c.Labels && (c.Labels as any)['com.docker.compose.service'] === 'cyber-autoagent');
+        candidate = containers.find(c => c.State === 'running' && c.Labels && (c.Labels as any)['com.docker.compose.service'] === 'boo-autoagent');
       }
       if (!candidate) return null;
       const cont = this.dockerClient.getContainer(candidate.Id);
@@ -1313,9 +1313,9 @@ export class DirectDockerService extends EventEmitter {
     
     // Check if image exists
     try {
-      await dockerClient.getImage('cyber-autoagent:sudo').inspect();
+      await dockerClient.getImage('boo-autoagent:sudo').inspect();
     } catch {
-      throw new Error('Docker image cyber-autoagent:sudo not found. Please run setup first.');
+      throw new Error('Docker image boo-autoagent:sudo not found. Please run setup first.');
     }
   }
 }

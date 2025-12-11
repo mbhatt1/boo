@@ -27,7 +27,7 @@ class ReactHooks(HookProvider):
     Hook provider that bridges SDK tool events to the React UI.
 
     This class captures tool invocation events from the Strands SDK and emits
-    them as structured __CYBER_EVENT__ entries that can be displayed in the
+    them as structured __BOO_EVENT__ entries that can be displayed in the
     React terminal UI and logged to files.
     """
 

@@ -130,7 +130,7 @@ private summarizeStart(): string {
 
       // Build detection and step tracking (BuildKit)
       // Examples:
-      //   "Building cyber-autoagent"
+      //   "Building boo-autoagent"
       //   " => [ 2/17] RUN apt-get update ..."
       //   " => exporting to image"
       if (/^Building\s+/i.test(line) || /^#\d+\s+\[\d+\/\d+\]/.test(line)) {

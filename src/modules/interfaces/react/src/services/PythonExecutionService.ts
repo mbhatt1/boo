@@ -115,12 +115,12 @@ export class PythonExecutionService extends EventEmitter {
 
   /**
    * Resolve the Python project root by searching upwards for project markers.
-   * Priority: 1) CYBER_PROJECT_ROOT env var (if valid), 2) nearest directory with pyproject.toml or setup.py,
+   * Priority: 1) BOO_PROJECT_ROOT env var (if valid), 2) nearest directory with pyproject.toml or setup.py,
    * 3) a directory containing docker/docker-compose.yml, 4) fallback to currentDir.
    */
   private resolveProjectRoot(currentDir: string): string {
     // Priority 1: explicit override
-    const envRoot = process.env.CYBER_PROJECT_ROOT;
+    const envRoot = process.env.BOO_PROJECT_ROOT;
     if (envRoot) {
       const pyproject = path.join(envRoot, 'pyproject.toml');
       const setupPy = path.join(envRoot, 'setup.py');
@@ -163,7 +163,7 @@ export class PythonExecutionService extends EventEmitter {
    */
   public async checkPythonVersion(): Promise<{ installed: boolean; version?: string; error?: string }> {
     // Allow explicit override via environment (takes absolute precedence)
-    const override = process.env.CYBER_PYTHON;
+    const override = process.env.BOO_PYTHON;
 
     // Build a broad candidate list in priority order
     const isWindows = process.platform === 'win32';
@@ -580,17 +580,17 @@ export class PythonExecutionService extends EventEmitter {
       
       // Step 4: Verify installation
       try {
-        await execAsync(`"${this.pythonPath}" -c "import cyberautoagent; print('Cyber-AutoAgent version:', getattr(cyberautoagent, '__version__', 'dev'))"`, {
+        await execAsync(`"${this.pythonPath}" -c "import cyberautoagent; print('Boo-AutoAgent version:', getattr(cyberautoagent, '__version__', 'dev'))"`, {
           env: { ...process.env, PYTHONPATH: this.srcPath }
         });
-        progress('[OK] Cyber-AutoAgent package verified and ready');
+        progress('[OK] Boo-AutoAgent package verified and ready');
       } catch (error) {
         // Last resort - try development install
-        progress('[INFO] Installing Cyber-AutoAgent in development mode...');
+        progress('[INFO] Installing Boo-AutoAgent in development mode...');
         await execAsync(`"${this.pipPath}" install -e .`, {
           cwd: this.projectRoot
         });
-        progress('[OK] Cyber-AutoAgent installed in development mode');
+        progress('[OK] Boo-AutoAgent installed in development mode');
       }
       
       progress('[OK] Python environment setup complete!');
@@ -663,11 +663,11 @@ export class PythonExecutionService extends EventEmitter {
         PYTHONUNBUFFERED: '1',
         FORCE_COLOR: '1',
         // Always pass objective via environment to avoid escaping issues
-        CYBER_OBJECTIVE: objective,
+        BOO_OBJECTIVE: objective,
         // React UI integration - critical for event emission
         BYPASS_TOOL_CONSENT: config.confirmations ? 'false' : 'true',
-        CYBER_UI_MODE: 'react',
-        CYBERAGENT_NO_BANNER: 'true', // Suppress CLI banner in React UI mode
+        BOO_UI_MODE: 'react',
+        BOOAGENT_NO_BANNER: 'true', // Suppress CLI banner in React UI mode
         DEV: config.verbose ? 'true' : 'false',
         // Set AWS region
         AWS_REGION: resolvedRegion,
@@ -708,16 +708,16 @@ export class PythonExecutionService extends EventEmitter {
           AZURE_API_VERSION: config.azureApiVersion,
           OPENAI_API_VERSION: config.azureApiVersion 
         } : {}),
-        ...(config.embeddingModel ? { CYBER_AGENT_EMBEDDING_MODEL: config.embeddingModel } : {}),
-        ...(config.maxTokens ? { MAX_TOKENS: String(config.maxTokens), CYBER_AGENT_MAX_TOKENS: String(config.maxTokens) } : {}),
-        ...(config.temperature !== undefined ? { CYBER_AGENT_TEMPERATURE: String(config.temperature) } : {}),
-        ...(config.topP !== undefined ? { CYBER_AGENT_TOP_P: String(config.topP) } : {}),
+        ...(config.embeddingModel ? { BOO_AGENT_EMBEDDING_MODEL: config.embeddingModel } : {}),
+        ...(config.maxTokens ? { MAX_TOKENS: String(config.maxTokens), BOO_AGENT_MAX_TOKENS: String(config.maxTokens) } : {}),
+        ...(config.temperature !== undefined ? { BOO_AGENT_TEMPERATURE: String(config.temperature) } : {}),
+        ...(config.topP !== undefined ? { BOO_AGENT_TOP_P: String(config.topP) } : {}),
         ...(config.thinkingBudget ? { THINKING_BUDGET: String(config.thinkingBudget) } : {}),
         ...(config.reasoningEffort ? { REASONING_EFFORT: config.reasoningEffort } : {}),
         ...(config.maxCompletionTokens ? { MAX_COMPLETION_TOKENS: String(config.maxCompletionTokens) } : {}),
         // Model Configuration - pass separate models from config
-        ...(config.swarmModel ? { CYBER_AGENT_SWARM_MODEL: config.swarmModel } : {}),
-        ...(config.evaluationModel ? { CYBER_AGENT_EVALUATION_MODEL: config.evaluationModel } : {}),
+        ...(config.swarmModel ? { BOO_AGENT_SWARM_MODEL: config.swarmModel } : {}),
+        ...(config.evaluationModel ? { BOO_AGENT_EVALUATION_MODEL: config.evaluationModel } : {}),
         // Observability settings from config (matching Docker service behavior)
         ENABLE_OBSERVABILITY: config.observability ? 'true' : 'false',
         ENABLE_AUTO_EVALUATION: config.autoEvaluation ? 'true' : 'false',
@@ -997,7 +997,7 @@ export class PythonExecutionService extends EventEmitter {
 
     // Look for structured event markers (UNIFIED with Docker service)
     // Use non-global regex with exec() loop to ensure proper cursor management
-    const eventRegex = /__CYBER_EVENT__(.+?)__CYBER_EVENT_END__/s;
+    const eventRegex = /__BOO_EVENT__(.+?)__BOO_EVENT_END__/s;
     let match;
     let processedEvents = false;
     let lastProcessedIndex = 0;

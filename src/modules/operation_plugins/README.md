@@ -1,6 +1,6 @@
 # Operation Modules
 
-Operation modules extend Cyber-AutoAgent capabilities through domain-specific prompts, tools, and reporting templates. Each module specializes the agent's behavior for particular security assessment scenarios.
+Operation modules extend Boo-AutoAgent capabilities through domain-specific prompts, tools, and reporting templates. Each module specializes the agent's behavior for particular security assessment scenarios.
 
 ## Module Status
 
@@ -116,7 +116,7 @@ Modules are discovered from multiple sources:
 **Search Paths:**
 1. Built-in: `src/modules/operation_plugins/`
 2. User-defined: `~/.cyberagent/modules/`
-3. Custom: `CYBERAGENT_MODULE_PATHS` environment variable
+3. Custom: `BOOAGENT_MODULE_PATHS` environment variable
 
 **Validation Requirements:**
 - Valid `module.yaml` file
@@ -376,5 +376,5 @@ if loader.validate_module("custom_module"):
 ## Implementation Reference
 
 **Module Loading:** `src/modules/prompts/factory.py:ModulePromptLoader`
-**Agent Integration:** `src/modules/agents/cyber_autoagent.py:create_agent`
+**Agent Integration:** `src/modules/agents/boo_autoagent.py:create_agent`
 **Report Generation:** `src/modules/tools/report_generator.py`

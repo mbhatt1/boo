@@ -45,7 +45,7 @@ class JourneyTest {
       NO_COLOR: '1',
       CI: 'true',
       NODE_ENV: 'test',
-      CYBER_TEST_MODE: 'true',
+      BOO_TEST_MODE: 'true',
       ...config.env
     };
 
@@ -73,7 +73,7 @@ class JourneyTest {
   }
 
   async setupTestConfig(config) {
-    const configDir = join(os.homedir(), '.cyber-autoagent');
+    const configDir = join(os.homedir(), '.boo-autoagent');
     const configPath = join(configDir, 'config.json');
     
     if (!fs.existsSync(configDir)) {
@@ -197,12 +197,12 @@ class FirstLaunchJourney extends JourneyTest {
     });
 
     // Section 2.1.1 - Welcome Screen Display
-    await this.waitForText('Welcome to Cyber-AutoAgent');
+    await this.waitForText('Welcome to Boo-AutoAgent');
     
     // Validate branding (TEST-VALIDATION-SPECIFICATION line 42-53)
-    this.validateContains('CYBER', 'ASCII art banner renders correctly');
-    this.validateOccurrenceCount('CYBER', 1, 'ASCII art appears only once');
-    this.validateContains('Full Spectrum Cyber Operations', 'Tagline displays correctly');
+    this.validateContains('BOO', 'ASCII art banner renders correctly');
+    this.validateOccurrenceCount('BOO', 1, 'ASCII art appears only once');
+    this.validateContains('Full Spectrum Boo Operations', 'Tagline displays correctly');
     this.validateContains('Press ENTER', 'Instructions are clear');
     
     // Check for version information
@@ -259,7 +259,7 @@ class ConfigurationJourney extends JourneyTest {
       }
     });
 
-    await this.waitForText('Cyber-AutoAgent');
+    await this.waitForText('Boo-AutoAgent');
     
     // Open configuration editor
     await this.input('/config');
@@ -321,7 +321,7 @@ class AssessmentExecutionJourney extends JourneyTest {
       }
     });
 
-    await this.waitForText('Cyber-AutoAgent');
+    await this.waitForText('Boo-AutoAgent');
     
     // Section 2.3.1 - Target Definition and Validation
     await this.input('target testphp.vulnweb.com');
@@ -396,7 +396,7 @@ class OperationControlJourney extends JourneyTest {
       }
     });
 
-    await this.waitForText('Cyber-AutoAgent');
+    await this.waitForText('Boo-AutoAgent');
     
     // Set up a quick operation
     await this.input('target example.com');
@@ -451,7 +451,7 @@ class ErrorHandlingJourney extends JourneyTest {
       }
     });
 
-    await this.waitForText('Cyber-AutoAgent');
+    await this.waitForText('Boo-AutoAgent');
     
     // Test invalid command
     await this.input('/unknown');

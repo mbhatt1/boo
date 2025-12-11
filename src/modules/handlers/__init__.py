@@ -1,5 +1,5 @@
 """
-Handlers package for Cyber-AutoAgent.
+Handlers package for Boo-AutoAgent.
 
 This package contains modular components for handling agent callbacks,
 tool execution, display formatting, and report generation.

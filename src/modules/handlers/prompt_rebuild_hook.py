@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Trigger-Based Prompt Rebuild Hook for Cyber-AutoAgent.
+Trigger-Based Prompt Rebuild Hook for Boo-AutoAgent.
 
 Implements adaptive prompt rebuilding for extended operations (400+ steps)
 through context-aware rebuild triggers.
@@ -260,7 +260,7 @@ class PromptRebuildHook(HookProvider):
             results = []
             if hasattr(self.memory, 'list_memories'):
                 memories = self.memory.list_memories(
-                    user_id="cyber_agent"
+                    user_id="boo_agent"
                 )
                 # Handle both dict and list return types
                 if isinstance(memories, dict):
@@ -271,13 +271,13 @@ class PromptRebuildHook(HookProvider):
                 results = results[:30] if results else []
             elif hasattr(self.memory, 'get_all'):
                 results = self.memory.get_all(
-                    user_id="cyber_agent"
+                    user_id="boo_agent"
                 )[:30]
             else:
                 # Fallback to search_memories with empty query
                 results = self.memory.search_memories(
                     query="",
-                    user_id="cyber_agent"
+                    user_id="boo_agent"
                 )[:30]
 
             if not results:
@@ -311,7 +311,7 @@ class PromptRebuildHook(HookProvider):
         try:
             # Use get_active_plan if available (more direct)
             if hasattr(self.memory, 'get_active_plan'):
-                active_plan = self.memory.get_active_plan(user_id="cyber_agent")
+                active_plan = self.memory.get_active_plan(user_id="boo_agent")
                 if active_plan:
                     # Return raw memory content for LLM interpretation
                     return str(active_plan.get("memory", ""))[:500]
@@ -319,7 +319,7 @@ class PromptRebuildHook(HookProvider):
             # Otherwise, search for any plan-like memory
             results = self.memory.search_memories(
                 query="plan objective phase",
-                user_id="cyber_agent"
+                user_id="boo_agent"
             )[:1]
 
             if results:
@@ -380,7 +380,7 @@ class PromptRebuildHook(HookProvider):
                 # Try to get all recent memories
                 if hasattr(self.memory, 'list_memories'):
                     memories = self.memory.list_memories(
-                        user_id="cyber_agent"
+                        user_id="boo_agent"
                     )
                     # Handle both dict and list return types
                     if isinstance(memories, dict):
@@ -391,13 +391,13 @@ class PromptRebuildHook(HookProvider):
                     recent_memories = recent_memories[:30] if recent_memories else []
                 elif hasattr(self.memory, 'get_all'):
                     recent_memories = self.memory.get_all(
-                        user_id="cyber_agent"
+                        user_id="boo_agent"
                     )[:30]
                 else:
                     # Fallback to search_memories
                     recent_memories = self.memory.search_memories(
                         query="",  # Empty query to get all
-                        user_id="cyber_agent"
+                        user_id="boo_agent"
                     )[:30]
             except Exception as e:
                 logger.warning("Could not retrieve memories: %s", e)

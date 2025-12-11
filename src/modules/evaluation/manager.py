@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Evaluation Manager for Cyber-AutoAgent
+Evaluation Manager for Boo-AutoAgent
 ======================================
 
 Manages evaluation of multiple traces within an operation, ensuring both main agent
@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from .evaluation import CyberAgentEvaluator
+from .evaluation import BooAgentEvaluator
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +63,7 @@ class EvaluationManager:
         """
         self.operation_id = operation_id
         self.traces: Dict[str, TraceInfo] = {}
-        self.evaluator: Optional[CyberAgentEvaluator] = None
+        self.evaluator: Optional[BooAgentEvaluator] = None
         self._lock = threading.Lock()
         self._evaluation_thread: Optional[threading.Thread] = None
         self._evaluation_complete = threading.Event()
@@ -133,7 +133,7 @@ class EvaluationManager:
         """
         # Initialize evaluator if not already done
         if not self.evaluator:
-            self.evaluator = CyberAgentEvaluator()
+            self.evaluator = BooAgentEvaluator()
 
         results = {}
         unevaluated = self.get_unevaluated_traces()

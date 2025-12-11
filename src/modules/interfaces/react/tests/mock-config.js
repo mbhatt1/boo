@@ -16,7 +16,7 @@ export const mockConfiguredState = {
   awsBearerToken: process.env.AWS_BEARER_TOKEN_BEDROCK || 'test-token',
   
   // Container settings
-  dockerImage: 'cyberautoagent:latest',
+  dockerImage: 'boo:latest',
   dockerTimeout: 600,
   volumeMounts: [],
   

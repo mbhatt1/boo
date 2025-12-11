@@ -187,7 +187,7 @@ class ReactBridgeHandler(PrintingCallbackHandler):
 
             # UI mode hint
             if "ui_mode" not in op_event:
-                op_event["ui_mode"] = os.getenv("CYBER_UI_MODE", "cli").lower()
+                op_event["ui_mode"] = os.getenv("BOO_UI_MODE", "cli").lower()
 
             self._emit_ui_event(op_event)
 
@@ -2814,7 +2814,7 @@ class ReactBridgeHandler(PrintingCallbackHandler):
                     self._emit_ui_event(
                         {
                             "type": "output",
-                            "content": f"\n{'━'*80}\n\nASSESSMENT COMPLETE\n\nREPORT ALSO SAVED TO:\n  • {report_path}\n\nMEMORY STORED IN:\n  • {output_dir}/memory/\n\nOPERATION LOGS:\n  • {os.path.join(output_dir, 'cyber_operations.log')}\n\n{'━'*80}\n",
+                            "content": f"\n{'━'*80}\n\nASSESSMENT COMPLETE\n\nREPORT ALSO SAVED TO:\n  • {report_path}\n\nMEMORY STORED IN:\n  • {output_dir}/memory/\n\nOPERATION LOGS:\n  • {os.path.join(output_dir, 'boo_operations.log')}\n\n{'━'*80}\n",
                         }
                     )
 

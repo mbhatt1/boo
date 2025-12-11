@@ -1,4 +1,4 @@
-# Cyber-AutoAgent Interfaces
+# Boo-AutoAgent Interfaces
 
 > React-based terminal interface for autonomous cybersecurity assessments
 
@@ -8,7 +8,7 @@
 
 ## Overview
 
-Modern terminal UI for Cyber-AutoAgent built with React Ink and TypeScript. Provides real-time streaming of agent operations with comprehensive state management.
+Modern terminal UI for Boo-AutoAgent built with React Ink and TypeScript. Provides real-time streaming of agent operations with comprehensive state management.
 
 ## Architecture
 
@@ -413,7 +413,7 @@ interface ApplicationState {
 }
 ```
 
-**Config Context**: `~/.cyber-autoagent/config.json`
+**Config Context**: `~/.boo-autoagent/config.json`
 - Multi-provider support (Bedrock, Ollama, LiteLLM)
 - Model pricing, Docker settings, Observability
 - Memory backend selection
@@ -474,7 +474,7 @@ AWS_REGION=us-east-1
 AWS_BEARER_TOKEN_BEDROCK=<token>
 OLLAMA_HOST=http://localhost:11434
 LANGFUSE_HOST=http://localhost:3000
-CYBER_THEME=retro
+BOO_THEME=retro
 ```
 
 ### Config Structure

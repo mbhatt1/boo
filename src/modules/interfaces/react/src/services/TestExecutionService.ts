@@ -1,6 +1,6 @@
 /**
  * TestExecutionService - emits synthetic events for integration testing
- * Enabled when CYBER_TEST_MODE=true and CYBER_TEST_EXECUTION=mock
+ * Enabled when BOO_TEST_MODE=true and BOO_TEST_EXECUTION=mock
  */
 
 import { EventEmitter } from 'events';
@@ -94,7 +94,7 @@ export class TestExecutionService extends EventEmitter implements ExecutionServi
 
   private loadEvents(): any[] {
     try {
-      const path = process.env.CYBER_TEST_EVENTS_PATH;
+      const path = process.env.BOO_TEST_EVENTS_PATH;
       if (path && fs.existsSync(path)) {
         const content = fs.readFileSync(path, 'utf-8');
         const lines = content.split(/\r?\n/).filter(Boolean);

@@ -1,5 +1,5 @@
 /**
- * Cyber-AutoAgent Event System - SDK-Aligned Type Definitions
+ * Boo-AutoAgent Event System - SDK-Aligned Type Definitions
  * 
  * Defines the complete event architecture for real-time streaming communication
  * between the Strands SDK-powered Python backend and React Ink frontend. Provides
@@ -49,7 +49,7 @@ export interface BaseEvent {
 /**
  * Event Type Enumeration - Comprehensive Event Classification System
  * 
- * Defines all possible event types in the Cyber-AutoAgent system with
+ * Defines all possible event types in the Boo-AutoAgent system with
  * consistent naming conventions and logical grouping for efficient
  * event handling and UI rendering.
  */
@@ -448,7 +448,7 @@ export interface TerminationReasonEvent {
  * StreamEvent Union Type - Discriminated Union of All Event Types
  * 
  * Comprehensive union type providing type-safe access to all possible
- * event types in the Cyber-AutoAgent system. Includes both SDK-native
+ * event types in the Boo-AutoAgent system. Includes both SDK-native
  * events and legacy events for backward compatibility. Enables exhaustive 
  * pattern matching and compile-time validation of event handling logic.
  */

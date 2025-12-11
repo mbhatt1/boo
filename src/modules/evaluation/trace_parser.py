@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Trace Parser for Cyber-AutoAgent Evaluation
+Trace Parser for Boo-AutoAgent Evaluation
 ==========================================
 
 Provides robust parsing of Langfuse traces to extract meaningful data

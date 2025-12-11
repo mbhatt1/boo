@@ -74,9 +74,9 @@ export class FrameAnalyzer {
             .reduce((sum, count) => sum + count - 1, 0);
         // Count headers (various patterns)
         const headerPatterns = [
-            /CYBER.*AUTOAGENT/gi,
+            /BOO.*AUTOAGENT/gi,
             /╔═╗╦ ╦╔╗ ╔═╗╦═╗/g,
-            /Full Spectrum Cyber Operations/g
+            /Full Spectrum Boo Operations/g
         ];
         const headerCount = headerPatterns.reduce((count, pattern) => count + (frame.match(pattern) || []).length, 0);
         // Count ANSI sequences
@@ -206,8 +206,8 @@ export class FrameAnalyzer {
             differences.push(`Line count changed drastically: ${lines1.length} -> ${lines2.length}`);
         }
         // Check for header position changes
-        const header1Index = lines1.findIndex(line => /CYBER.*AUTOAGENT/.test(line));
-        const header2Index = lines2.findIndex(line => /CYBER.*AUTOAGENT/.test(line));
+        const header1Index = lines1.findIndex(line => /BOO.*AUTOAGENT/.test(line));
+        const header2Index = lines2.findIndex(line => /BOO.*AUTOAGENT/.test(line));
         if (header1Index !== -1 && header2Index !== -1 && header1Index !== header2Index) {
             hasFlicker = true;
             differences.push(`Header moved from line ${header1Index} to ${header2Index}`);

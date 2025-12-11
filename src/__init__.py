@@ -1,5 +1,5 @@
 """
-Cyber-AutoAgent - Autonomous Cybersecurity Assessment Tool
+Boo-AutoAgent - Autonomous Boosecurity Assessment Tool
 """
 
 __version__ = "0.1.3"

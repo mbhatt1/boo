@@ -16,7 +16,7 @@ export const spawn = jest.fn((_file, _args, _opts) => {
       onDataCallback = callback;
       // Simulate initial output
       if (onDataCallback && state === 'WELCOME') {
-        onDataCallback('Welcome to the Cyber-AutoAgent CLI!');
+        onDataCallback('Welcome to the Boo-AutoAgent CLI!');
       }
     }),
     write: jest.fn((data) => {

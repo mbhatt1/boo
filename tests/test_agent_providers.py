@@ -16,12 +16,12 @@ def _minimal_server_config():
     )
 
 
-@patch("modules.agents.cyber_autoagent.get_config_manager")
-@patch("modules.agents.cyber_autoagent._create_litellm_model")
+@patch("modules.agents.boo_autoagent.get_config_manager")
+@patch("modules.agents.boo_autoagent._create_litellm_model")
 @patch("modules.handlers.react.hooks.ReactHooks")
 @patch("modules.handlers.react.react_bridge_handler.ReactBridgeHandler")
-@patch("modules.agents.cyber_autoagent.initialize_memory_system")
-@patch("modules.agents.cyber_autoagent.get_memory_client", return_value=None)
+@patch("modules.agents.boo_autoagent.initialize_memory_system")
+@patch("modules.agents.boo_autoagent.get_memory_client", return_value=None)
 def test_agent_creation_litellm(
     mock_get_memory_client,
     mock_init_memory,
@@ -48,7 +48,7 @@ def test_agent_creation_litellm(
     mock_model = Mock()
     mock_create_litellm.return_value = mock_model
 
-    from modules.agents.cyber_autoagent import create_agent
+    from modules.agents.boo_autoagent import create_agent
 
     agent, handler = create_agent(target="t", objective="o", provider="litellm", op_id="OP_TEST")
 
@@ -57,12 +57,12 @@ def test_agent_creation_litellm(
     mock_create_litellm.assert_called_once()
 
 
-@patch("modules.agents.cyber_autoagent.get_config_manager")
-@patch("modules.agents.cyber_autoagent._handle_model_creation_error")
+@patch("modules.agents.boo_autoagent.get_config_manager")
+@patch("modules.agents.boo_autoagent._handle_model_creation_error")
 @patch("modules.handlers.react.hooks.ReactHooks")
 @patch("modules.handlers.react.react_bridge_handler.ReactBridgeHandler")
-@patch("modules.agents.cyber_autoagent.initialize_memory_system")
-@patch("modules.agents.cyber_autoagent.get_memory_client", return_value=None)
+@patch("modules.agents.boo_autoagent.initialize_memory_system")
+@patch("modules.agents.boo_autoagent.get_memory_client", return_value=None)
 def test_agent_creation_unsupported_provider_raises(
     mock_get_memory_client,
     mock_init_memory,
@@ -83,7 +83,7 @@ def test_agent_creation_unsupported_provider_raises(
     }
     mock_get_cfg.return_value = mock_cfg
 
-    from modules.agents.cyber_autoagent import create_agent
+    from modules.agents.boo_autoagent import create_agent
 
     with pytest.raises(ValueError):
         create_agent(target="t", objective="o", provider="unsupported", op_id="OP_TEST")

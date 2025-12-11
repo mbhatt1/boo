@@ -31,7 +31,7 @@ function resolveAppPath() {
     cols: 100,
     rows: 30,
     cwd: dirname(appPath),
-    env: { ...process.env, NO_COLOR: '1', CI: 'true', CYBER_TEST_MODE: 'true' }
+    env: { ...process.env, NO_COLOR: '1', CI: 'true', BOO_TEST_MODE: 'true' }
   });
 
   let output = '';

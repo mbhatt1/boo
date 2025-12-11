@@ -19,7 +19,7 @@ from strands.handlers import PrintingCallbackHandler
 from .base import HandlerState, StepLimitReached
 from .utils import emit_event
 
-logger = logging.getLogger("CyberAutoAgent.handlers")
+logger = logging.getLogger("BooAutoAgent.handlers")
 
 
 class ReasoningHandler(PrintingCallbackHandler):
@@ -56,7 +56,7 @@ class ReasoningHandler(PrintingCallbackHandler):
         emit_event(
             "banner",
             {
-                "title": "Cyber Security Assessment",
+                "title": "Boo Security Assessment",
                 "operation_id": self.state.operation_id,
                 "timestamp": timestamp,
                 "icon": "🔐",
@@ -342,10 +342,10 @@ class ReasoningHandler(PrintingCallbackHandler):
         self.state.evaluation_triggered = True
 
         # Import here to avoid circular imports
-        from modules.evaluation.evaluation import CyberAgentEvaluator
+        from modules.evaluation.evaluation import BooAgentEvaluator
 
         # Check if evaluation is enabled (application is source of truth when explicit)
-        ui_mode = os.getenv("CYBER_UI_MODE", "").lower()
+        ui_mode = os.getenv("BOO_UI_MODE", "").lower()
         if "ENABLE_AUTO_EVALUATION" in os.environ:
             enabled = os.environ["ENABLE_AUTO_EVALUATION"].lower() == "true"
         else:
@@ -360,7 +360,7 @@ class ReasoningHandler(PrintingCallbackHandler):
             def run_evaluation():
                 try:
                     logger.info("Starting evaluation thread for operation: %s", agent_trace_id)
-                    evaluator = CyberAgentEvaluator()
+                    evaluator = BooAgentEvaluator()
                     import asyncio
 
                     # Evaluate all traces for this operation

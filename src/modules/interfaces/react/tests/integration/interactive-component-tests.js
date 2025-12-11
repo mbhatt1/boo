@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Interactive Component Tests for Cyber-AutoAgent
+ * Interactive Component Tests for Boo-AutoAgent
  * 
  * Tests all interactive React components including:
  * - Modal navigation and keyboard handling
@@ -53,7 +53,7 @@ class ComponentTestRunner {
       cols: 100,
       rows: 30,
       cwd: dirname(appPath),
-      env: { ...process.env, NO_COLOR: '1', CI: 'true', CYBER_TEST_MODE: 'true' }
+      env: { ...process.env, NO_COLOR: '1', CI: 'true', BOO_TEST_MODE: 'true' }
     });
 
     let output = '';
@@ -95,7 +95,7 @@ class ComponentTestRunner {
       cols: 100,
       rows: 30,
       cwd: dirname(appPath),
-      env: { ...process.env, NO_COLOR: '1', CI: 'true', CYBER_TEST_MODE: 'true' }
+      env: { ...process.env, NO_COLOR: '1', CI: 'true', BOO_TEST_MODE: 'true' }
     });
     
     let output = '';
@@ -359,7 +359,7 @@ class ComponentTestRunner {
     console.log(chalk.blue('\n📋 Testing State Persistence...'));
     
     // Create test config
-    const configDir = join(process.env.HOME || process.env.USERPROFILE, '.cyber-autoagent');
+    const configDir = join(process.env.HOME || process.env.USERPROFILE, '.boo-autoagent');
     const configPath = join(configDir, 'test-config.json');
     
     const testConfig = {
@@ -385,7 +385,7 @@ class ComponentTestRunner {
       cwd: __dirname,
       env: {
         ...process.env,
-        CYBER_CONFIG_PATH: configPath
+        BOO_CONFIG_PATH: configPath
       }
     });
     

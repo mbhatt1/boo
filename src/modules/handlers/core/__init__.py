@@ -9,7 +9,7 @@ from .base import HandlerError, HandlerState, StepLimitReached
 from .callback import ReasoningHandler
 from .utils import (
     Colors,
-    CyberEvent,
+    BooEvent,
     create_output_directory,
     emit_event,
     emit_status,
@@ -39,5 +39,5 @@ __all__ = [
     "print_status",
     "emit_event",
     "emit_status",
-    "CyberEvent",
+    "BooEvent",
 ]

@@ -1,8 +1,8 @@
 """
 Unified output interceptor.
 
-Intercepts stdout/stderr lines and emits structured __CYBER_EVENT__ messages.
-Supports two modes via environment variable CYBER_UI_MODE:
+Intercepts stdout/stderr lines and emits structured __BOO_EVENT__ messages.
+Supports two modes via environment variable BOO_UI_MODE:
 - react: buffer tool output, emit once, tag metadata to avoid truncation.
 - cli: minimal interception (pass-through for performance) unless a structured
   event is detected.
@@ -15,7 +15,7 @@ import threading
 from contextlib import contextmanager
 from typing import List, TextIO
 
-from .utils import CyberEvent
+from .utils import BooEvent
 
 # Global state for tool execution and output buffering
 _in_tool_execution = False
@@ -85,7 +85,7 @@ class OutputInterceptor(io.TextIOBase):
 
         with self.lock:
             # Structured events pass through unchanged
-            if "__CYBER_EVENT__" in data:
+            if "__BOO_EVENT__" in data:
                 # Pass through structured events unchanged and flush immediately
                 result = self.original_stream.write(data)
                 if hasattr(self.original_stream, "flush"):
@@ -143,7 +143,7 @@ class OutputInterceptor(io.TextIOBase):
                 metadata["fromToolBuffer"] = True
                 metadata["tool"] = "shell"  # Most tool outputs are from shell
 
-            event = CyberEvent(type=event_type, content=content, metadata=metadata)
+            event = BooEvent(type=event_type, content=content, metadata=metadata)
 
             # Write the structured event to the original stream
             self.original_stream.write(event.to_json() + "\n")
@@ -187,7 +187,7 @@ def intercept_output():
     original_stderr = sys.stderr
 
     # Determine UI mode from environment
-    ui_mode = os.environ.get("CYBER_UI_MODE", "cli").lower()
+    ui_mode = os.environ.get("BOO_UI_MODE", "cli").lower()
     # Only intercept in React UI mode
     if ui_mode != "react":
         # Not in React environment, don't intercept
@@ -218,7 +218,7 @@ def setup_output_interception():
     import os
 
     # Only intercept if running in React environment
-    if os.environ.get("CYBER_UI_MODE", "cli").lower() == "react":
+    if os.environ.get("BOO_UI_MODE", "cli").lower() == "react":
         sys.stdout = OutputInterceptor(sys.stdout, "output")
         sys.stderr = OutputInterceptor(sys.stderr, "error")
 

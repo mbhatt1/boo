@@ -72,7 +72,7 @@ export function getEnvironmentConfig(): EnvironmentConfig {
       structured: env === 'production'
     },
     docker: {
-      networkName: env === 'production' ? 'cyber-autoagent-prod' : 'cyber-autoagent_default',
+      networkName: env === 'production' ? 'boo-autoagent-prod' : 'boo-autoagent_default',
       autoCleanup: env !== 'development',
       healthCheckInterval: env === 'production' ? 30000 : 3000
     },

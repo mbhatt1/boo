@@ -171,7 +171,7 @@ def print_banner():
     """Display operation banner with neon cyberpunk gradient colors."""
     import os
 
-    if os.getenv("CYBERAGENT_NO_BANNER", "").lower() in ("1", "true", "yes"):
+    if os.getenv("BOOAGENT_NO_BANNER", "").lower() in ("1", "true", "yes"):
         return
 
     banner_lines = [
@@ -190,7 +190,7 @@ def print_banner():
         r"╚═╝  ╚═╝ ╚═════╝    ╚═╝    ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝   ",
     ]
 
-    subtitle = "Full Spectrum Cyber Operations"
+    subtitle = "Full Spectrum Boo Operations"
     version = "v0.1.3"
 
     # Terminal Pro gradient colors (24-bit RGB ANSI codes)
@@ -233,7 +233,7 @@ def print_section(title, content, color=Colors.BLUE, emoji=""):
     """Print formatted section with optional emoji."""
     import os
 
-    if os.getenv("CYBERAGENT_NO_BANNER", "").lower() in ("1", "true", "yes"):
+    if os.getenv("BOOAGENT_NO_BANNER", "").lower() in ("1", "true", "yes"):
         return
 
     # Print section for CLI mode
@@ -247,7 +247,7 @@ def print_status(message, status="INFO"):
     """Print status message with color coding and emojis."""
     import os
 
-    if os.getenv("CYBERAGENT_NO_BANNER", "").lower() in ("1", "true", "yes"):
+    if os.getenv("BOOAGENT_NO_BANNER", "").lower() in ("1", "true", "yes"):
         return
 
     # Print status for CLI mode
@@ -365,7 +365,7 @@ def analyze_objective_completion(messages: List[Dict]) -> Tuple[bool, str, Dict]
 
 
 @dataclass
-class CyberEvent:
+class BooEvent:
     """Structured event for terminal output."""
 
     type: str  # 'step_start', 'command', 'command_array', 'output', 'error', 'status', 'complete'
@@ -375,7 +375,7 @@ class CyberEvent:
 
     def to_json(self) -> str:
         """Convert event to JSON with special markers for parsing."""
-        return f"__CYBER_EVENT__{json.dumps(asdict(self), separators=(',', ':'))}__CYBER_EVENT_END__"
+        return f"__BOO_EVENT__{json.dumps(asdict(self), separators=(',', ':'))}__BOO_EVENT_END__"
 
 
 def emit_event(event_type: str, content: Union[str, List[str]], **metadata) -> None:
@@ -389,7 +389,7 @@ def emit_event(event_type: str, content: Union[str, List[str]], **metadata) -> N
         content: Event content (string or list of strings)
         **metadata: Additional metadata (step number, tool name, etc.)
     """
-    event = CyberEvent(type=event_type, content=content, metadata=metadata)
+    event = BooEvent(type=event_type, content=content, metadata=metadata)
     # Use print with flush to ensure immediate output
     print(event.to_json(), flush=True)
 

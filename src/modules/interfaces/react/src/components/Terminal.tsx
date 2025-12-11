@@ -68,7 +68,7 @@ export const Terminal: React.FC<TerminalProps> = React.memo(({
   // Test marker utility for diagnosing spinner/timer behavior
   const emitTestMarker = (msg: string) => {
     try {
-      if (process.env.CYBER_TEST_MODE === 'true') {
+      if (process.env.BOO_TEST_MODE === 'true') {
         const marker = `[TEST_EVENT] ${msg}`;
         loggingService.info(marker);
         // eslint-disable-next-line no-console
@@ -78,13 +78,13 @@ export const Terminal: React.FC<TerminalProps> = React.memo(({
   };
   // Direct event rendering without Static component
   // Limit event buffer to prevent memory leaks - events are already persisted to disk
-const MAX_EVENTS = Number(process.env.CYBER_MAX_EVENTS || 3000); // Keep last N events in memory (default 3000)
+const MAX_EVENTS = Number(process.env.BOO_MAX_EVENTS || 3000); // Keep last N events in memory (default 3000)
   const [completedEvents, setCompletedEvents] = useState<DisplayStreamEvent[]>([]);
   const [activeEvents, setActiveEvents] = useState<DisplayStreamEvent[]>([]);
   const [staticSessionKey, setStaticSessionKey] = useState(0);
 
   // Ring buffers to bound memory regardless of session length
-  const MAX_EVENT_BYTES = Number(process.env.CYBER_MAX_EVENT_BYTES || 8 * 1024 * 1024); // 8 MiB default
+  const MAX_EVENT_BYTES = Number(process.env.BOO_MAX_EVENT_BYTES || 8 * 1024 * 1024); // 8 MiB default
   const completedBufRef = useRef(new ByteBudgetRingBuffer<DisplayStreamEvent>(
     MAX_EVENT_BYTES,
     {
@@ -524,7 +524,7 @@ const MAX_EVENTS = Number(process.env.CYBER_MAX_EVENTS || 3000); // Keep last N 
     const results: DisplayStreamEvent[] = [];
 
     // Test markers for integration tests
-    const testMode = process.env.CYBER_TEST_MODE === 'true';
+    const testMode = process.env.BOO_TEST_MODE === 'true';
     const emitTestMarker = (summary: string) => {
       if (testMode) {
         try { loggingService.info(`[TEST_EVENT] ${summary}`); } catch {}
@@ -1307,7 +1307,7 @@ const MAX_EVENTS = Number(process.env.CYBER_MAX_EVENTS || 3000); // Keep last N 
           const base = safeTarget && opId ? `./outputs/${safeTarget}/${opId}` : '';
           const memory = safeTarget ? `./outputs/${safeTarget}/memory` : '';
           const reportPath = base ? `${base}/security_assessment_report.md` : '';
-          const logPath = base ? `${base}/cyber_operations.log` : '';
+          const logPath = base ? `${base}/boo_operations.log` : '';
           results.push({
             type: 'report_paths',
             operation_id: opId,
@@ -1349,7 +1349,7 @@ const MAX_EVENTS = Number(process.env.CYBER_MAX_EVENTS || 3000); // Keep last N 
       // });
       
       // Preserve preflight and discovery output printed before operation_init.
-      // Memory is bounded by CYBER_MAX_EVENTS ring buffer rather than clearing mid-run.
+      // Memory is bounded by BOO_MAX_EVENTS ring buffer rather than clearing mid-run.
 
       // Handle metrics updates - backend sends cumulative totals, not deltas
       if (event.type === 'metrics_update' && event.metrics) {
@@ -1371,7 +1371,7 @@ const MAX_EVENTS = Number(process.env.CYBER_MAX_EVENTS || 3000); // Keep last N 
         };
         // Emit a test marker for metrics updates to aid PTY-based assertions
         try {
-          if (process.env.CYBER_TEST_MODE === 'true') {
+          if (process.env.BOO_TEST_MODE === 'true') {
             const marker = `[TEST_EVENT] metrics_update tokens=${newMetrics.tokens ?? ''} cost=${newMetrics.cost ?? ''} duration=${newMetrics.duration} memoryOps=${newMetrics.memoryOps} evidence=${newMetrics.evidence}`;
             loggingService.info(marker);
             console.log(marker);

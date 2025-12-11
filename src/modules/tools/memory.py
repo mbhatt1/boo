@@ -134,7 +134,7 @@ TOOL_SPEC = {
         "Phase transitions: Criteria satisfied → status='done', advance current_phase, next status='active', store_plan.\n"
         "Finding Format: [VULNERABILITY][WHERE][IMPACT][EVIDENCE][STEPS][REMEDIATION][CONFIDENCE].\n"
         "Proof Pack (High/Critical): artifact path + one-line rationale; else validation_status='hypothesis' with next steps.\n"
-        "Default user_id='cyber_agent' if unspecified.\n"
+        "Default user_id='boo_agent' if unspecified.\n"
     ),
     "inputSchema": {
         "json": {
@@ -378,7 +378,7 @@ class Mem0ServiceClient:
 
             # Use unified output structure for memory - per-target, not per-operation
             # Get output directory from environment or config
-            output_dir = os.environ.get("CYBER_AGENT_OUTPUT_DIR") or merged_config.get("output_dir", "outputs")
+            output_dir = os.environ.get("BOO_AGENT_OUTPUT_DIR") or merged_config.get("output_dir", "outputs")
             memory_base_path = os.path.join(output_dir, target_name, "memory")
             faiss_path = memory_base_path
 
@@ -553,7 +553,7 @@ class Mem0ServiceClient:
         if not user_id and not agent_id:
             raise ValueError("Either user_id or agent_id must be provided")
 
-        logger = logging.getLogger("CyberAutoAgent")
+        logger = logging.getLogger("BooAutoAgent")
         logger.debug("Calling mem0.get_all with user_id=%s, agent_id=%s", user_id, agent_id)
 
         try:
@@ -575,7 +575,7 @@ class Mem0ServiceClient:
             query=query,
             filters=None,
             limit=20,
-            user_id=user_id or "cyber_agent",
+            user_id=user_id or "boo_agent",
             agent_id=agent_id,
         )
 
@@ -585,7 +585,7 @@ class Mem0ServiceClient:
         filters: Optional[Dict[str, Any]] = None,
         limit: int = 20,
         *,
-        user_id: str = "cyber_agent",
+        user_id: str = "boo_agent",
         agent_id: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """Compatibility wrapper providing Mem0-style search with filter support."""
@@ -705,7 +705,7 @@ class Mem0ServiceClient:
                 return
 
             # Get and display overview
-            overview = self.get_memory_overview(user_id="cyber_agent")
+            overview = self.get_memory_overview(user_id="boo_agent")
 
             if overview.get("error"):
                 print(f"    Warning: Could not retrieve memory overview: {overview['error']}")
@@ -743,7 +743,7 @@ class Mem0ServiceClient:
             print(f"    Note: Could not check existing memories: {str(e)}")
 
     def store_plan(
-        self, plan_content: Union[str, Dict], user_id: str = "cyber_agent", metadata: Optional[Dict] = None
+        self, plan_content: Union[str, Dict], user_id: str = "boo_agent", metadata: Optional[Dict] = None
     ) -> Dict:
         """Store a strategic plan in memory with category='plan'.
 
@@ -810,7 +810,7 @@ class Mem0ServiceClient:
             }
         )
         # Tag with current operation ID (prefer client config, then env)
-        op_id = (self.config or {}).get("operation_id") or os.getenv("CYBER_OPERATION_ID")
+        op_id = (self.config or {}).get("operation_id") or os.getenv("BOO_OPERATION_ID")
         if op_id:
             plan_metadata["operation_id"] = op_id
 
@@ -857,7 +857,7 @@ class Mem0ServiceClient:
         self,
         reflection_content: str,
         plan_id: Optional[str] = None,
-        user_id: str = "cyber_agent",
+        user_id: str = "boo_agent",
         metadata: Optional[Dict] = None,
     ) -> Dict:
         """Store a reflection on findings and plan progress.
@@ -876,7 +876,7 @@ class Mem0ServiceClient:
             {"category": "reflection", "created_at": datetime.now().isoformat(), "type": "plan_reflection"}
         )
         # Tag with current operation ID when available
-        op_id = os.getenv("CYBER_OPERATION_ID")
+        op_id = os.getenv("BOO_OPERATION_ID")
         if op_id and "operation_id" not in reflection_metadata:
             reflection_metadata["operation_id"] = op_id
 
@@ -892,7 +892,7 @@ class Mem0ServiceClient:
 
         return result
 
-    def get_active_plan(self, user_id: str = "cyber_agent", operation_id: Optional[str] = None) -> Optional[Dict]:
+    def get_active_plan(self, user_id: str = "boo_agent", operation_id: Optional[str] = None) -> Optional[Dict]:
         """Get the most recent active plan, preferring the current operation.
 
         This avoids semantic-search drift by listing all memories and selecting the
@@ -955,7 +955,7 @@ class Mem0ServiceClient:
             return None
 
     def reflect_on_findings(
-        self, recent_findings: List[Dict], current_plan: Optional[Dict] = None, user_id: str = "cyber_agent"
+        self, recent_findings: List[Dict], current_plan: Optional[Dict] = None, user_id: str = "boo_agent"
     ) -> str:
         """Generate reflection prompt based on recent findings and current plan.
 
@@ -1011,7 +1011,7 @@ Include: objective, current_phase=1, phases with clear criteria for each.
 
         return reflection_prompt
 
-    def get_memory_overview(self, user_id: str = "cyber_agent") -> Dict:
+    def get_memory_overview(self, user_id: str = "boo_agent") -> Dict:
         """Get overview of memories for startup display.
 
         Args:
@@ -1022,7 +1022,7 @@ Include: objective, current_phase=1, phases with clear criteria for each.
         """
         try:
             # Get all memories for the user
-            logger = logging.getLogger("CyberAutoAgent")
+            logger = logging.getLogger("BooAutoAgent")
             logger.debug("Getting memory overview for user_id: %s", user_id)
 
             memories_response = self.list_memories(user_id=user_id)
@@ -1293,7 +1293,7 @@ def initialize_memory_system(
 
     # Expose operation context for downstream components that rely on env
     try:
-        os.environ["CYBER_OPERATION_ID"] = enhanced_config["operation_id"]
+        os.environ["BOO_OPERATION_ID"] = enhanced_config["operation_id"]
     except Exception:
         pass
 
@@ -1364,7 +1364,7 @@ def mem0_memory(
         content: Content to store (for store action) — use structured format for findings/plans
         memory_id: Memory ID (for get, delete actions)
         query: Search query (for retrieve action)
-        user_id: User ID for memory operations (defaults to 'cyber_agent')
+        user_id: User ID for memory operations (defaults to 'boo_agent')
         agent_id: Agent ID for memory operations
         metadata: Optional metadata with category, severity, confidence; for findings include severity, validation_status, and proof_pack when verified
 
@@ -1384,7 +1384,7 @@ def mem0_memory(
     try:
         # Use simple user_id if not provided
         if not user_id and not agent_id:
-            user_id = "cyber_agent"
+            user_id = "boo_agent"
 
         def _normalize_confidence(conf_val: Any, cap_to: float | None = None) -> str:
             """Normalize confidence to a percentage string, optionally capping at cap_to."""
@@ -1449,15 +1449,15 @@ def mem0_memory(
             else:
                 plan_dict = content
 
-            results = _MEMORY_CLIENT.store_plan(plan_dict, user_id or "cyber_agent")
+            results = _MEMORY_CLIENT.store_plan(plan_dict, user_id or "boo_agent")
             if not strands_dev:
                 console.print("[green]✅ Strategic plan stored successfully[/green]")
             return json.dumps(results, indent=2)
 
         elif action == "get_plan":
             # Scope retrieval to current operation when available to avoid stale plans
-            op_id = os.getenv("CYBER_OPERATION_ID")
-            plan = _MEMORY_CLIENT.get_active_plan(user_id or "cyber_agent", operation_id=op_id)
+            op_id = os.getenv("BOO_OPERATION_ID")
+            plan = _MEMORY_CLIENT.get_active_plan(user_id or "boo_agent", operation_id=op_id)
             if plan:
                 if not strands_dev:
                     console.print("[green]📋 Active plan retrieved[/green]")
@@ -1502,7 +1502,7 @@ def mem0_memory(
                 metadata = {}
 
             # Tag with current operation ID when available
-            op_id = os.getenv("CYBER_OPERATION_ID")
+            op_id = os.getenv("BOO_OPERATION_ID")
             if op_id and "operation_id" not in metadata:
                 metadata["operation_id"] = op_id
 
@@ -1606,7 +1606,7 @@ def mem0_memory(
             memories = _MEMORY_CLIENT.list_memories(user_id, agent_id)
 
             # Debug logging to understand the response structure
-            logger = logging.getLogger("CyberAutoAgent")
+            logger = logging.getLogger("BooAutoAgent")
             logger.debug("Memory list raw response type: %s", type(memories))
             logger.debug("Memory list raw response: %s", memories)
 

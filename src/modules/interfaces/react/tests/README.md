@@ -1,6 +1,6 @@
-# Cyber-AutoAgent React Interface Test Suite
+# Boo-AutoAgent React Interface Test Suite
 
-Comprehensive testing infrastructure for the Cyber-AutoAgent React terminal interface, aligned with `TEST-VALIDATION-SPECIFICATION.md`.
+Comprehensive testing infrastructure for the Boo-AutoAgent React terminal interface, aligned with `TEST-VALIDATION-SPECIFICATION.md`.
 
 ## Quick Start
 
@@ -77,7 +77,7 @@ node integration/operation-stream-simulation.js
 - Execution:
   - `node integration/operation-stream-simulation.js`
 - Environment used by the script:
-  - `NODE_ENV=test`, `CYBER_TEST_MODE=true`, `CYBER_TEST_EXECUTION=mock` (ensures `TestExecutionService` is selected and UI emits test markers).
+  - `NODE_ENV=test`, `BOO_TEST_MODE=true`, `BOO_TEST_EXECUTION=mock` (ensures `TestExecutionService` is selected and UI emits test markers).
 - Notes:
   - In test mode, the UI auto-confirms the safety prompt and auto-drives the guided flow to start streaming.
 
@@ -231,8 +231,8 @@ cd .. && npm run test:coverage
 ### Test Mode and Mock Execution
 
 Some integration tests rely on a controlled test mode:
-- `CYBER_TEST_MODE=true`: Enables PTY-visible markers and safe auto-flows in the UI.
-- `CYBER_TEST_EXECUTION=mock`: Selects the `TestExecutionService` so tests do not require Python/Docker.
+- `BOO_TEST_MODE=true`: Enables PTY-visible markers and safe auto-flows in the UI.
+- `BOO_TEST_EXECUTION=mock`: Selects the `TestExecutionService` so tests do not require Python/Docker.
 
 In test mode the UI will:
 - Auto-open and auto-confirm the safety prompt.

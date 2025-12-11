@@ -1,15 +1,15 @@
 /**
- * Theme System for Cyber-AutoAgent
- * 
+ * Theme System for Boo
+ *
  * Defines color schemes and styling options for consistent UI theming.
  */
 
-export interface CyberTheme {
+export interface BooTheme {
   type: 'dark' | 'light' | 'ansi' | 'custom';
   name: string;
   background: string;
   foreground: string;
-  primary: string;      // Cyber blue/green
+  primary: string;      // Boo blue/green
   secondary: string;    // Purple accent
   accent: string;       // Accent color (similar to primary)
   subtle: string;       // Very muted text
@@ -24,7 +24,7 @@ export interface CyberTheme {
 }
 
 export interface ThemeConfig {
-  theme: CyberTheme;
+  theme: BooTheme;
   enableGradients: boolean;
   enableAnimations: boolean;
   terminalWidth: number;

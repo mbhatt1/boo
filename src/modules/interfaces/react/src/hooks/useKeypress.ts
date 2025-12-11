@@ -1,5 +1,5 @@
 /**
- * Custom Keypress Hook for Cyber-AutoAgent
+ * Custom Keypress Hook for Boo-AutoAgent
  * 
  * Provides robust keyboard handling that works across all execution modes:
  * - Python CLI mode
