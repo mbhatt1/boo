@@ -31,13 +31,33 @@ The React-based terminal interface is now the **default UI**, providing interact
 
 ### Local Development - Recommended
 
-```bash
-# Clone and setup
-git clone https://github.com/westonbrown/Boo-AutoAgent.git
-cd Boo-AutoAgent
+#### 1. Backend (Python) Setup
 
-# Build React terminal interface
-cd src/modules/interfaces/react
+```bash
+# From the project root
+cd boo
+
+# (Recommended) Install dependencies using uv (https://github.com/astral-sh/uv)
+uv venv .venv
+source .venv/bin/activate
+uv pip install -r uv.lock
+
+# (Alternative) Install dependencies using pip and pyproject.toml (less reproducible)
+# pip install -e .
+
+# Copy and configure environment variables
+cp .env.example .env
+# Edit .env as needed for your environment (AWS keys, model provider, etc.)
+
+# (Optional) Run backend directly for advanced use or debugging
+python src/boo.py --help
+```
+
+#### 2. Frontend (React Terminal) Setup
+
+```bash
+# From the project root
+cd boo/src/modules/interfaces/react
 npm install
 npm run build
 
@@ -52,6 +72,26 @@ node dist/index.js \
 ```
 
 The React terminal will automatically spawn the Python agent as a subprocess and guide you through configuration on first launch.
+
+---
+
+## Running Evaluation Locally
+
+You can run the evaluation module directly without Docker:
+
+```bash
+# Activate your Python environment (if not already)
+source .venv/bin/activate
+
+# Run the evaluation script
+python src/modules/evaluation/evaluation.py --help
+
+# Example: Run an evaluation (replace with your actual arguments)
+python src/modules/evaluation/evaluation.py --input path/to/input.json --output path/to/output.json
+```
+
+- Make sure your `.env` is configured and dependencies are installed with `uv pip install -r uv.lock`.
+- The script will use `localhost` for any services if not running in Docker.
 
 > **[Complete User Guide](docs/user-instructions.md)** - Detailed setup, configuration, operation modules, troubleshooting, and examples
 
