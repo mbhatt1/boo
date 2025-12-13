@@ -9,17 +9,12 @@ import os
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
-
-# Environment configuration
-# Helper function to detect if running in Docker
-def is_docker():
-    """Check if running inside a Docker container."""
-    return os.path.exists("/.dockerenv") or os.path.exists("/app")
+from modules.config.runtime import get_config
 
 
-# Use langfuse-web:3000 when in Docker, localhost:3000 otherwise
-DEFAULT_LANGFUSE_HOST = "http://langfuse-web:3000" if is_docker() else "http://localhost:3000"
-LANGFUSE_HOST = os.getenv("LANGFUSE_HOST", DEFAULT_LANGFUSE_HOST)
+# Environment configuration - using configuration-based approach
+config = get_config()
+LANGFUSE_HOST = config.services.langfuse_url
 LANGFUSE_PUBLIC_KEY = os.getenv("LANGFUSE_PUBLIC_KEY", "pk-lf-placeholder")
 LANGFUSE_SECRET_KEY = os.getenv("LANGFUSE_SECRET_KEY", "sk-lf-placeholder")
 

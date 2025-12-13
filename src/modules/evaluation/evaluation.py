@@ -14,6 +14,7 @@ import os
 import time
 from typing import Any, Dict, List, Optional
 
+from modules.config.runtime import get_config
 from langchain_aws import BedrockEmbeddings, ChatBedrock
 from langchain_ollama import ChatOllama, OllamaEmbeddings
 from langchain_community.chat_models import ChatLiteLLM  # type: ignore
@@ -57,18 +58,15 @@ class BooAgentEvaluator:
     """
 
     def __init__(self):
-        """Initialize evaluator with Langfuse and evaluation metrics."""
+        """Initialize evaluator with Langfuse and evaluation metrics using configuration system."""
+        # Use configuration-based approach for Langfuse URL
+        config = get_config()
+        langfuse_url = config.services.langfuse_url
+        
         self.langfuse = Langfuse(
             public_key=os.getenv("LANGFUSE_PUBLIC_KEY", "boo-public"),
             secret_key=os.getenv("LANGFUSE_SECRET_KEY", "boo-secret"),
-            host=os.getenv(
-                "LANGFUSE_HOST",
-                (
-                    "http://langfuse-web:3000"
-                    if os.path.exists("/.dockerenv") or os.path.exists("/app")
-                    else "http://localhost:3000"
-                ),
-            ),
+            host=langfuse_url,
         )
         self.setup_models()
         self.setup_metrics()

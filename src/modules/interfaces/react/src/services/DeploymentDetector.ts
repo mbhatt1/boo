@@ -93,15 +93,18 @@ export class DeploymentDetector {
 
   /**
    * Scan for available deployments
+   *
+   * Priority order: Local Python environment is checked FIRST as the default mode,
+   * then Docker deployments are checked as optional alternatives.
    */
   private async scanDeployments(): Promise<DeploymentStatus[]> {
     const deployments: DeploymentStatus[] = [];
     
-    // Check local-cli
+    // Check local Python installation FIRST (priority - default execution mode)
     const localCli = await this.checkLocalCli();
     deployments.push(localCli);
     
-    // Check Docker deployments
+    // Check Docker deployments (optional alternative deployment modes)
     const dockerRunning = await this.checkDocker();
     if (dockerRunning) {
       const containers = await this.getRunningContainers();

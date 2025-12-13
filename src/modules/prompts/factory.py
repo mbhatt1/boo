@@ -12,6 +12,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 from textwrap import dedent
 
+from modules.config.runtime import get_config
+
 try:
     import yaml  # type: ignore
 except Exception:  # pragma: no cover
@@ -53,18 +55,15 @@ def _lf_env_true(name: str) -> bool:
     return os.getenv(name, "false").lower() == "true"
 
 
-def _lf_is_docker() -> bool:
-    return os.path.exists("/.dockerenv") or os.path.exists("/app")
-
-
 def _lf_enabled() -> bool:
     # Strict alignment with observability as requested
     return _lf_env_true("ENABLE_OBSERVABILITY") and _lf_env_true("ENABLE_LANGFUSE_PROMPTS")
 
 
 def _lf_host() -> str:
-    default_host = "http://langfuse-web:3000" if _lf_is_docker() else "http://localhost:3000"
-    return os.getenv("LANGFUSE_HOST", default_host).rstrip("/")
+    """Get Langfuse host URL using configuration-based approach."""
+    config = get_config()
+    return config.services.langfuse_url.rstrip("/")
 
 
 def _lf_auth_header() -> str:

@@ -48,6 +48,7 @@ from botocore.exceptions import (
 from modules.agents.boo_agent import AgentConfig, create_agent
 from modules.config.environment import auto_setup, clean_operation_memory, setup_logging
 from modules.config.manager import get_config_manager
+from modules.config.runtime import get_config
 from modules.handlers.base import StepLimitReached
 from strands.types.exceptions import MaxTokensReachedException
 from modules.handlers.utils import (
@@ -72,19 +73,19 @@ def get_initial_prompt():  # noqa: D401
 def detect_deployment_mode():
     """
     Detect deployment mode for appropriate observability defaults.
+    
+    Uses configuration-based approach for Docker detection.
 
     Returns:
         str: 'cli' (Python CLI), 'container' (single container), or 'compose' (full stack)
     """
-
-    def is_docker():
-        """Check if running inside a Docker container."""
-        return os.path.exists("/.dockerenv") or os.path.exists("/app")
-
+    # Use configuration-based Docker detection
+    config = get_config()
+    
     def is_langfuse_available():
         """Check if Langfuse service is available."""
         try:
-            if is_docker():
+            if config.is_docker_mode():
                 # In Docker, try to connect to langfuse-web service
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 sock.settimeout(2)
@@ -100,7 +101,7 @@ def detect_deployment_mode():
         except Exception:
             return False
 
-    if is_docker():
+    if config.is_docker_mode():
         if is_langfuse_available():
             return "compose"  # Full Docker Compose stack
         else:
@@ -170,15 +171,10 @@ def setup_telemetry(logger):
 
 
 def setup_langfuse_connection(logger, deployment_mode):
-    """Setup Langfuse connection parameters for remote observability."""
-
-    def is_docker():
-        """Check if running inside a Docker container."""
-        return os.path.exists("/.dockerenv") or os.path.exists("/app")
-
-    # Use langfuse-web:3000 when in Docker, localhost:3000 otherwise
-    default_host = "http://langfuse-web:3000" if is_docker() else "http://localhost:3000"
-    host = os.getenv("LANGFUSE_HOST", default_host)
+    """Setup Langfuse connection parameters for remote observability using configuration system."""
+    # Use configuration-based approach for Langfuse URL
+    config = get_config()
+    host = config.services.langfuse_url
     public_key = os.getenv("LANGFUSE_PUBLIC_KEY", "boo-public")
     secret_key = os.getenv("LANGFUSE_SECRET_KEY", "boo-secret")
 
@@ -539,11 +535,11 @@ def main():
     target_sanitized = sanitize_target_name(args.target)
     output_base_path = get_output_path(target_sanitized, operation_timestamp, "", server_config.output.base_dir)
 
-    # Detect if running in Docker for path display
-    is_docker = os.path.exists("/.dockerenv") or os.environ.get("CONTAINER") == "docker"
+    # Use configuration-based Docker detection for path display
+    config = get_config()
 
     # Prepare path display based on environment
-    if is_docker:
+    if config.is_docker_mode():
         output_path_display = f"{output_base_path}\n{Colors.BOLD}Host Path:{Colors.RESET}     {output_base_path.replace('/app/outputs', './outputs')}"
     else:
         output_path_display = output_base_path
@@ -848,9 +844,9 @@ def main():
 
             # Display output paths in terminal mode
             if os.environ.get("BOO_UI_MODE", "cli").lower() != "react":
-                is_docker = os.path.exists("/.dockerenv") or os.environ.get("CONTAINER") == "docker"
+                config = get_config()
 
-                if is_docker:
+                if config.is_docker_mode():
                     # Docker environment: show both container and host paths
                     host_evidence_location = evidence_location.replace("/app/outputs", "./outputs")
                     host_memory_location = memory_location.replace("./outputs", "./outputs")

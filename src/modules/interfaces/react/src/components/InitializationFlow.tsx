@@ -48,8 +48,9 @@ type InitStep =
 type DeploymentMode = 'local-cli' | 'single-container' | 'full-stack';
 
 interface StepStatus {
-  docker: 'pending' | 'checking' | 'success' | 'error';
-  containers: 'pending' | 'checking' | 'starting' | 'success' | 'error';
+  python: 'pending' | 'checking' | 'success' | 'error';
+  docker?: 'pending' | 'checking' | 'success' | 'error';  // Make optional
+  containers?: 'pending' | 'checking' | 'starting' | 'success' | 'error';  // Make optional
   config: 'pending' | 'checking' | 'needed' | 'success';
 }
 
@@ -64,6 +65,7 @@ export const InitializationFlow: React.FC<InitializationFlowProps> = ({ onComple
   const [deploymentMode, setDeploymentMode] = useState<DeploymentMode>('full-stack');
   const [selectedModeIndex, setSelectedModeIndex] = useState(0);
   const [stepStatus, setStepStatus] = useState<StepStatus>({
+    python: 'pending',
     docker: 'pending',
     containers: 'pending',
     config: 'pending'
@@ -222,91 +224,85 @@ export const InitializationFlow: React.FC<InitializationFlowProps> = ({ onComple
   const checkInitialization = async () => {
     const monitor = HealthMonitor.getInstance();
     
-    // Skip Docker checks for local CLI mode
-    if (deploymentMode === 'local-cli') {
-      setStepStatus(prev => ({ ...prev, docker: 'success', containers: 'success' }));
-      setCurrentStep('checking-config');
-      
-      // Check configuration
-      setStepStatus(prev => ({ ...prev, config: 'checking' }));
-      
-      if (!config.isConfigured) {
-        setStepStatus(prev => ({ ...prev, config: 'needed' }));
-        setShowContinue(true);
-      } else {
-        setStepStatus(prev => ({ ...prev, config: 'success' }));
-        setCurrentStep('setup-complete');
-        
-        // Complete immediately to avoid screen flicker
-        onComplete();
+    // Step 1: Check Python (required for all modes)
+    setStepStatus(prev => ({ ...prev, python: 'checking' }));
+    const pythonAvailable = await checkPython();
+    
+    if (!pythonAvailable) {
+      setStepStatus(prev => ({ ...prev, python: 'error' }));
+      setCurrentStep('error');
+      setError('Python 3.10+ is required. Please install Python and try again.');
+      return;
+    }
+    
+    setStepStatus(prev => ({ ...prev, python: 'success' }));
+    
+    // Step 2: Check Docker (ONLY if deployment mode is docker)
+    if (deploymentMode === 'single-container' || deploymentMode === 'full-stack') {
+      setStepStatus(prev => ({ ...prev, docker: 'checking' }));
+      const dockerStatus = await checkDockerStatus();
+    
+      if (!dockerStatus) {
+        setStepStatus(prev => ({ ...prev, docker: 'error' }));
+        setCurrentStep('docker-not-running');
+        return;
       }
-      return;
-    }
-    
-    // Step 1: Check Docker (for container modes)
-    setStepStatus(prev => ({ ...prev, docker: 'checking' }));
-    const dockerStatus = await checkDockerStatus();
-    
-    if (!dockerStatus) {
-      setStepStatus(prev => ({ ...prev, docker: 'error' }));
-      setCurrentStep('docker-not-running');
-      return;
-    }
-    
-    setStepStatus(prev => ({ ...prev, docker: 'success' }));
-    
-    // Step 2: Check containers
-    setCurrentStep('checking-containers');
-    setStepStatus(prev => ({ ...prev, containers: 'checking' }));
-    
-    const health = await monitor.checkHealth();
-    setHealthStatus(health);
-    
-    const criticalServices = ['boo-langfuse'];
-    const criticalRunning = health.services
-      .filter(s => criticalServices.includes(s.name))
-      .every(s => s.status === 'running');
-    
-    if (!criticalRunning) {
-      // Check if containers are actually running but with different names
-      const runningContainers = health.services.filter(s => s.status === 'running').length;
       
-      // If we have at least some containers running, don't try to start them
-      if (runningContainers >= 3) {
-        // Most containers are running, just proceed
-      } else {
-        // Try to start containers
-        setCurrentStep('starting-containers');
-        setStepStatus(prev => ({ ...prev, containers: 'starting' }));
+      setStepStatus(prev => ({ ...prev, docker: 'success' }));
+      
+      // Step 3: Check containers (only for Docker modes)
+      setCurrentStep('checking-containers');
+      setStepStatus(prev => ({ ...prev, containers: 'checking' }));
+      
+      const health = await monitor.checkHealth();
+      setHealthStatus(health);
+      
+      const criticalServices = ['boo-langfuse'];
+      const criticalRunning = health.services
+        .filter(s => criticalServices.includes(s.name))
+        .every(s => s.status === 'running');
+      
+      if (!criticalRunning) {
+        // Check if containers are actually running but with different names
+        const runningContainers = health.services.filter(s => s.status === 'running').length;
         
-        const started = await startContainers();
-        if (!started) {
-          // Check again if they're actually running
-          const recheckHealth = await monitor.checkHealth();
-          const runningAfterError = recheckHealth.services.filter(s => s.status === 'running').length;
-          
-          if (runningAfterError >= 4) {
-            // They're actually running, just with different names
-            setHealthStatus(recheckHealth);
-          } else {
-            setStepStatus(prev => ({ ...prev, containers: 'error' }));
-            setCurrentStep('error');
-            setError('Failed to start containers. Please run: docker-compose up -d');
-            return;
-          }
+        // If we have at least some containers running, don't try to start them
+        if (runningContainers >= 3) {
+          // Most containers are running, just proceed
         } else {
-          // Re-check health after starting
-          await new Promise(resolve => setTimeout(resolve, 5000)); // Wait for containers to start
-          const newHealth = await monitor.checkHealth();
-          setHealthStatus(newHealth);
+          // Try to start containers
+          setCurrentStep('starting-containers');
+          setStepStatus(prev => ({ ...prev, containers: 'starting' }));
+          
+          const started = await startContainers();
+          if (!started) {
+            // Check again if they're actually running
+            const recheckHealth = await monitor.checkHealth();
+            const runningAfterError = recheckHealth.services.filter(s => s.status === 'running').length;
+            
+            if (runningAfterError >= 4) {
+              // They're actually running, just with different names
+              setHealthStatus(recheckHealth);
+            } else {
+              setStepStatus(prev => ({ ...prev, containers: 'error' }));
+              setCurrentStep('error');
+              setError('Failed to start containers. Please run: docker-compose up -d');
+              return;
+            }
+          } else {
+            // Re-check health after starting
+            await new Promise(resolve => setTimeout(resolve, 5000)); // Wait for containers to start
+            const newHealth = await monitor.checkHealth();
+            setHealthStatus(newHealth);
+          }
         }
       }
+      
+      setStepStatus(prev => ({ ...prev, containers: 'success' }));
+      setCurrentStep('containers-ready');
     }
     
-    setStepStatus(prev => ({ ...prev, containers: 'success' }));
-    setCurrentStep('containers-ready');
-    
-    // Step 3: Check configuration
+    // Step 4: Check configuration (all modes)
     setCurrentStep('checking-config');
     setStepStatus(prev => ({ ...prev, config: 'checking' }));
     
@@ -326,6 +322,17 @@ export const InitializationFlow: React.FC<InitializationFlowProps> = ({ onComple
         // Complete immediately to avoid screen flicker
         onComplete();
       }
+    }
+  };
+
+  const checkPython = async (): Promise<boolean> => {
+    try {
+      const { PythonExecutionService } = await import('../services/PythonExecutionService.js');
+      const pythonService = new PythonExecutionService();
+      const pythonCheck = await pythonService.checkPythonVersion();
+      return pythonCheck.installed;
+    } catch {
+      return false;
     }
   };
 
@@ -686,16 +693,26 @@ export const InitializationFlow: React.FC<InitializationFlowProps> = ({ onComple
         <Text color={theme.muted}> ({deploymentMode})</Text>
       </Box>
 
-      {/* Docker Status */}
+      {/* Python Status */}
       <Box marginBottom={1}>
-        {getStatusIcon(stepStatus.docker)}
-        <Text color={stepStatus.docker === 'error' ? theme.danger : theme.foreground}>
-          {' '}Docker Desktop
+        {getStatusIcon(stepStatus.python)}
+        <Text color={stepStatus.python === 'error' ? theme.danger : theme.foreground}>
+          {' '}Python 3.10+
         </Text>
       </Box>
 
+      {/* Docker Status - Only show for Docker modes */}
+      {(deploymentMode === 'single-container' || deploymentMode === 'full-stack') && stepStatus.docker && (
+        <Box marginBottom={1}>
+          {getStatusIcon(stepStatus.docker)}
+          <Text color={stepStatus.docker === 'error' ? theme.danger : theme.foreground}>
+            {' '}Docker Desktop
+          </Text>
+        </Box>
+      )}
+
       {/* Container Status */}
-      {stepStatus.docker === 'success' && (
+      {stepStatus.docker === 'success' && stepStatus.containers && (
         <Box marginBottom={1}>
           {getStatusIcon(stepStatus.containers)}
           <Text color={stepStatus.containers === 'error' ? theme.danger : theme.foreground}>

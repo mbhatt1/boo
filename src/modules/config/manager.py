@@ -26,6 +26,7 @@ import boto3
 import ollama
 import requests
 
+from modules.config.runtime import get_config
 from modules.handlers.utils import get_output_path, sanitize_target_name
 
 logger = logging.getLogger(__name__)
@@ -944,25 +945,10 @@ class ConfigManager:
             raise ValueError(f"Unsupported provider type: {provider}")
 
     def get_ollama_host(self) -> str:
-        """Determine appropriate Ollama host based on environment."""
-        env_host = os.getenv("OLLAMA_HOST")
-        if env_host:
-            return env_host
-
-        # Check if running in Docker
-        if os.path.exists("/app"):
-            candidates = ["http://localhost:11434", "http://host.docker.internal:11434"]
-            for host in candidates:
-                try:
-                    response = requests.get(f"{host}/api/version", timeout=2)
-                    if response.status_code == 200:
-                        return host
-                except (requests.exceptions.RequestException, ConnectionError):
-                    pass
-            # Fallback to host.docker.internal if no connection works
-            return "http://host.docker.internal:11434"
-        # Native execution - use localhost
-        return "http://localhost:11434"
+        """Determine appropriate Ollama host using configuration system."""
+        # Use configuration-based approach for Ollama URL
+        config = get_config()
+        return config.services.ollama_url
 
     def set_environment_variables(self, server: str) -> None:
         """Set environment variables for backward compatibility."""

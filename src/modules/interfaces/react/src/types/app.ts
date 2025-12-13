@@ -61,6 +61,14 @@ export interface ModalContext {
  * Application configuration interface
  */
 export interface ApplicationConfig {
+  /**
+   * Deployment mode - determines how the agent is executed
+   * - 'local-cli': Run agent directly as subprocess (default, no Docker required)
+   * - 'single-container': Run agent in Docker container
+   * - 'full-stack': Run full observability stack with Docker Compose
+   */
+  executionMode?: 'local-cli' | 'single-container' | 'full-stack';
+  
   docker: {
     useDocker: boolean;
     containerName: string;

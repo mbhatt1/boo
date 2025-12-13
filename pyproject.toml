@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "boo"
-version = "0.1.3"
-description = "Autonomous agent platform rebranded as Boo for ethical security assessments"
+version = "0.2.0"
+description = "Autonomous agent platform with local-first architecture for ethical security assessments"
 readme = "README.md"
 authors = [
     {name = "Boo Team", email = "info@boo.com"}
@@ -53,6 +53,8 @@ dev = [
     "pytest",
     "pytest-cov",
     "pytest-mock",
+    "pytest-asyncio",
+    "python-dotenv",
     "black",
     "isort",
     "flake8",
@@ -114,10 +116,15 @@ testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
+markers = [
+    "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
+    "docker: marks tests that require Docker (deselect with '-m \"not docker\"')"
+]
 addopts = [
     "--strict-markers",
     "--strict-config",
-    "--verbose"
+    "--verbose",
+    "--tb=short"
 ]
 pythonpath = ["src"]
 

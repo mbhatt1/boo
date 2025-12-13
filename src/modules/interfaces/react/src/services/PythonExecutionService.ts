@@ -1,6 +1,10 @@
 /**
- * Python Execution Service
- * 
+ * Python Execution Service - Primary Execution Mode
+ *
+ * This service runs the Boo agent directly as a subprocess on the local machine.
+ * This is the default and recommended execution mode.
+ * Docker execution is available as an alternative deployment option.
+ *
  * Handles direct Python execution for local CLI mode, including:
  * - Virtual environment management
  * - Requirements installation

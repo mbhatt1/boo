@@ -166,8 +166,11 @@ export const StatusIndicator: React.FC<StatusIndicatorProps> = React.memo(({
           // Fallback - show appropriate status
           <Text color={theme.muted}>● Ready</Text>
         )}
-        {!healthStatus.dockerRunning && deploymentMode !== 'cli' && (
+        {deploymentMode !== 'cli' && !healthStatus.dockerRunning && (
           <Text color={theme.danger}> Docker Off</Text>
+        )}
+        {deploymentMode === 'cli' && (
+          <Text color={theme.success}> Local Mode</Text>
         )}
         {lastCheckAt && (
           <>
@@ -194,9 +197,9 @@ export const StatusIndicator: React.FC<StatusIndicatorProps> = React.memo(({
         )}
       </Box>
       
-      {!healthStatus.dockerRunning && (
+      {deploymentMode !== 'cli' && !healthStatus.dockerRunning && (
         <Box marginBottom={1}>
-          <Text color={theme.danger}>⚠ Docker is not running</Text>
+          <Text color={theme.warning}>⚠️  Docker Desktop is not running</Text>
         </Box>
       )}
       

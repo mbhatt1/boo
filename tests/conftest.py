@@ -179,3 +179,32 @@ def caplog_with_level():
         return _pytest.logging.LogCaptureFixture(pytest_config=None)
 
     return _caplog_with_level
+
+
+@pytest.fixture(autouse=True)
+def reset_runtime_config():
+    """Reset runtime config before each test."""
+    from modules.config.runtime import reset_config
+    reset_config()
+    yield
+    reset_config()
+
+
+@pytest.fixture
+def local_mode_env(monkeypatch):
+    """Fixture to set up local mode environment."""
+    from modules.config.runtime import reset_config
+    monkeypatch.setenv('BOO_DEPLOYMENT_MODE', 'local')
+    monkeypatch.setenv('LANGFUSE_URL', 'http://localhost:3000')
+    monkeypatch.setenv('OLLAMA_URL', 'http://localhost:11434')
+    reset_config()
+
+
+@pytest.fixture
+def docker_mode_env(monkeypatch):
+    """Fixture to set up Docker mode environment."""
+    from modules.config.runtime import reset_config
+    monkeypatch.setenv('BOO_DEPLOYMENT_MODE', 'docker')
+    monkeypatch.setenv('LANGFUSE_URL', 'http://langfuse-web:3000')
+    monkeypatch.setenv('OLLAMA_URL', 'http://host.docker.internal:11434')
+    reset_config()

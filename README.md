@@ -1,3 +1,9 @@
+> **🎉 New in v0.2.0: Local-First Architecture!**
+>
+> Boo now runs natively on your machine without Docker. Docker deployment remains fully supported.
+>
+> **Upgrading from v0.1.x?** See the [Migration Guide](docs/MIGRATION.md)
+
 ## Table of Contents
 
 - [Important Disclaimer](#important-disclaimer)

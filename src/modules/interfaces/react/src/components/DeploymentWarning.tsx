@@ -29,8 +29,17 @@ export const DeploymentWarning: React.FC<DeploymentWarningProps> = ({
   // Find which ones are NOT being used
   const unusedDeployments = activeDeployments.filter(d => d.mode !== configuredMode);
   
-  if (unusedDeployments.length === 0) {
-    return null;
+  // Filter out local-cli from conflicts if current mode is also local-cli
+  // Local mode doesn't conflict with itself (can coexist with Docker)
+  const relevantConflicts = unusedDeployments.filter(dep => {
+    if (configuredMode === 'local-cli' && dep.mode === 'local-cli') {
+      return false;  // Local mode doesn't conflict with itself
+    }
+    return true;
+  });
+  
+  if (relevantConflicts.length === 0) {
+    return null;  // No warning needed
   }
   
   return (
@@ -49,7 +58,7 @@ export const DeploymentWarning: React.FC<DeploymentWarningProps> = ({
         <Text color={theme.muted}>
           Also running but not in use:
         </Text>
-        {unusedDeployments.map(dep => (
+        {relevantConflicts.map(dep => (
           <Text key={dep.mode} color={theme.muted}>
             • {dep.mode}
           </Text>
@@ -60,7 +69,7 @@ export const DeploymentWarning: React.FC<DeploymentWarningProps> = ({
         <Text color={theme.muted} italic>
           💡 Tip: Use /config to switch modes. To stop unused services:
         </Text>
-        {unusedDeployments.map(dep => (
+        {relevantConflicts.map(dep => (
           <Text key={`${dep.mode}-cmd`} color={theme.muted}>
             • {dep.mode === 'local-cli' ? 'Deactivate venv or quit CLI' : dep.mode === 'single-container' ? 'docker stop boo-autoagent' : 'docker compose down'}
           </Text>

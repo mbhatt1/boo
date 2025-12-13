@@ -207,63 +207,73 @@ export class HealthMonitor {
   // Perform health check with circuit breaker protection
   async checkHealth(): Promise<HealthStatus> {
     return await CircuitBreakers.healthMonitor.execute(async () => {
+      const containerManager = ContainerManager.getInstance();
+      const deploymentMode = await containerManager.getCurrentMode();
+      
       const status: HealthStatus = {
         overall: 'healthy',
         services: [],
         lastCheck: new Date(),
-        dockerRunning: false
+        dockerRunning: false  // Default to false
       };
 
       try {
-        // First check if Docker is running with retry
-        const dockerRunning = await RetryConfigs.healthCheck.execute(
-          () => this.checkDockerDaemon(),
-          'checkDockerDaemon'
-        );
-      status.dockerRunning = dockerRunning;
+        // Only check Docker if in Docker deployment mode
+        if (deploymentMode === 'single-container' || deploymentMode === 'full-stack') {
+          const dockerRunning = await RetryConfigs.healthCheck.execute(
+            () => this.checkDockerDaemon(),
+            'checkDockerDaemon'
+          );
+          status.dockerRunning = dockerRunning;
 
-      if (!dockerRunning) {
-        status.overall = 'unhealthy';
-        const currentServices = await this.getCurrentServices();
-        status.services = currentServices.map(svc => ({
-          name: svc.name,
-          displayName: svc.displayName,
-          status: 'error',
-          message: 'Docker not running'
-        }));
-      } else {
-        // Check each service based on current deployment mode
-        const currentServices = await this.getCurrentServices();
-        
-        if (currentServices.length === 0) {
-          // Single-container mode or local-cli - no persistent services to monitor
-          status.overall = 'healthy';
-          status.services = [];
-        } else {
-          const serviceStatuses = await Promise.all(
-            currentServices.map(svc => this.checkService(svc))
-          );
-          
-          status.services = serviceStatuses;
-
-          // Determine overall health
-          const criticalServices = serviceStatuses.filter((svc, idx) => 
-            currentServices[idx].critical
-          );
-          const hasUnhealthyCritical = criticalServices.some(
-            svc => svc.status !== 'running' || svc.health === 'unhealthy'
-          );
-          const hasUnhealthyNonCritical = serviceStatuses.some(
-            svc => svc.status !== 'running' || svc.health === 'unhealthy'
-          );
-
-          if (hasUnhealthyCritical) {
+          if (!dockerRunning) {
             status.overall = 'unhealthy';
-          } else if (hasUnhealthyNonCritical) {
-            status.overall = 'degraded';
+            const currentServices = await this.getCurrentServices();
+            status.services = currentServices.map(svc => ({
+              name: svc.name,
+              displayName: svc.displayName,
+              status: 'error',
+              message: 'Docker not running'
+            }));
+          } else {
+            // Check each service based on current deployment mode
+            const currentServices = await this.getCurrentServices();
+            
+            if (currentServices.length === 0) {
+              // Single-container mode - no persistent services to monitor
+              status.overall = 'healthy';
+              status.services = [];
+            } else {
+              const serviceStatuses = await Promise.all(
+                currentServices.map(svc => this.checkService(svc))
+              );
+              
+              status.services = serviceStatuses;
+
+              // Determine overall health
+              const criticalServices = serviceStatuses.filter((svc, idx) =>
+                currentServices[idx].critical
+              );
+              const hasUnhealthyCritical = criticalServices.some(
+                svc => svc.status !== 'running' || svc.health === 'unhealthy'
+              );
+              const hasUnhealthyNonCritical = serviceStatuses.some(
+                svc => svc.status !== 'running' || svc.health === 'unhealthy'
+              );
+
+              if (hasUnhealthyCritical) {
+                status.overall = 'unhealthy';
+              } else if (hasUnhealthyNonCritical) {
+                status.overall = 'degraded';
+              }
+            }
           }
+        } else {
+          // Local mode - just verify Python process is healthy
+          status.overall = 'healthy';
+          status.dockerRunning = false;  // Not applicable for local mode
+          status.services = [];
         }
-      }
       } catch (error) {
         this.logger.error('Health check failed', error as Error);
         status.overall = 'unhealthy';

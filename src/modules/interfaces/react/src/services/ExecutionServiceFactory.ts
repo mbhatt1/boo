@@ -305,6 +305,9 @@ export class ExecutionServiceFactory {
 
   /**
    * Get default mode order based on configuration hints
+   *
+   * Local mode (PYTHON_CLI) is the default and recommended execution mode.
+   * Docker modes are available as alternative deployment options.
    */
   private static getDefaultModeOrder(config: Config): ExecutionMode[] {
     // Respect explicit deployment mode configuration first
@@ -319,12 +322,8 @@ export class ExecutionServiceFactory {
       }
     }
     
-    // Fallback logic: If observability is enabled, prefer full-stack for better monitoring
-    if (config.observability) {
-      return [ExecutionMode.DOCKER_STACK, ExecutionMode.DOCKER_SINGLE, ExecutionMode.PYTHON_CLI];
-    }
-
-    // If simple assessment, prefer lighter modes
+    // Default: Local mode is preferred for simplicity and direct execution
+    // Docker modes are optional alternatives for containerized deployments
     return [ExecutionMode.PYTHON_CLI, ExecutionMode.DOCKER_SINGLE, ExecutionMode.DOCKER_STACK];
   }
 

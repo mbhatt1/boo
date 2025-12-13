@@ -13,6 +13,37 @@ import { themeManager } from '../themes/theme-manager.js';
 import { LogContainer, LogEntry } from './LogContainer.js';
 import { ProgressIndicator, StatusIcons, Divider } from './icons.js';
 
+type SetupStep = {
+  name: string;
+  label: string;
+  detail: string;
+};
+
+const SETUP_STEPS_LOCAL: SetupStep[] = [
+  { name: 'preflight', label: 'Initializing setup', detail: 'Loading configuration' },
+  { name: 'python-check', label: 'Checking Python', detail: 'Verifying Python 3.10+ installation' },
+  { name: 'config-check', label: 'Configuration', detail: 'Loading environment settings' },
+  { name: 'ready', label: 'Ready', detail: 'Setup complete' }
+];
+
+const SETUP_STEPS_DOCKER_SINGLE: SetupStep[] = [
+  { name: 'preflight', label: 'Initializing setup', detail: 'Loading configuration' },
+  { name: 'docker-check', label: 'Checking Docker', detail: 'Verifying Docker Desktop' },
+  { name: 'pull', label: 'Images', detail: 'Checking boo-autoagent:latest' },
+  { name: 'containers-start', label: 'Starting container', detail: 'docker run boo-autoagent' },
+  { name: 'ready', label: 'Ready', detail: 'Setup complete' }
+];
+
+const SETUP_STEPS_FULL_STACK: SetupStep[] = [
+  { name: 'preflight', label: 'Initializing setup', detail: 'Loading configuration' },
+  { name: 'docker-check', label: 'Checking Docker', detail: 'Verifying Docker Desktop' },
+  { name: 'pull', label: 'Images', detail: 'Pulling container images' },
+  { name: 'containers-start', label: 'Starting containers', detail: 'docker-compose up' },
+  { name: 'network', label: 'Network connectivity', detail: 'Verifying container networking' },
+  { name: 'health-check', label: 'Health checks', detail: 'Waiting for services to be ready' },
+  { name: 'ready', label: 'Ready', detail: 'Setup complete' }
+];
+
 interface SetupProgressScreenProps {
   /** Current deployment mode being set up */
   deploymentMode: 'local-cli' | 'single-container' | 'full-stack';
@@ -54,19 +85,22 @@ export const SetupProgressScreen: React.FC<SetupProgressScreenProps> = ({
   const isStableProfile = process.env.BOO_PREPULL === 'true' || process.env.BOO_SETUP_PROFILE === 'stable';
 
   // Determine steps based on deployment mode
-  useEffect(() => {
+  const steps = useMemo(() => {
     switch (deploymentMode) {
       case 'local-cli':
-        setTotalSteps(4); // Python check, venv, deps, verify
-        break;
+        return SETUP_STEPS_LOCAL;
       case 'single-container':
-        setTotalSteps(3); // Docker check, container start, health check
-        break;
+        return SETUP_STEPS_DOCKER_SINGLE;
       case 'full-stack':
-        setTotalSteps(5); // Docker check, containers start, network, health check, observability
-        break;
+        return SETUP_STEPS_FULL_STACK;
+      default:
+        return SETUP_STEPS_LOCAL;
     }
   }, [deploymentMode]);
+
+  useEffect(() => {
+    setTotalSteps(steps.length);
+  }, [steps]);
 
   // Elapsed timer (mm:ss)
   useEffect(() => {
@@ -207,31 +241,22 @@ export const SetupProgressScreen: React.FC<SetupProgressScreenProps> = ({
 
       {/* Step checklist */}
       <Box flexDirection="column" alignItems="center">
-        {(() => {
-          const steps: string[] = (() => {
-            if (deploymentMode === 'local-cli') return ['Checking Python', 'Create virtual environment', 'Install dependencies', 'Verify environment'];
-            if (deploymentMode === 'single-container') return ['Checking Docker', 'Starting agent container', 'Health check'];
-            return ['Checking Docker', 'Starting containers', 'Network connectivity', 'Health checks', 'Enable observability'];
-          })();
-          return (
-            <Box flexDirection="column">
-              {steps.map((label, idx) => {
-                const index = idx + 1;
-                const isDone = index < currentStep || (isComplete && index <= totalSteps);
-                const isActive = index === currentStep && !isComplete && !hasFailed;
-                const color = isDone ? theme.success : isActive ? theme.accent : theme.muted;
-                const icon = isDone ? <StatusIcons.Success /> : isActive ? <StatusIcons.Loading /> : <Text color={theme.muted}>○</Text>;
-                return (
-                  <Box key={label} flexDirection="row" alignItems="center">
-                    <Box width={3} justifyContent="flex-end">{icon}</Box>
-                    <Text> </Text>
-                    <Text color={color}>{label}</Text>
-                  </Box>
-                );
-              })}
-            </Box>
-          );
-        })()}
+        <Box flexDirection="column">
+          {steps.map((step, idx) => {
+            const index = idx + 1;
+            const isDone = index < currentStep || (isComplete && index <= totalSteps);
+            const isActive = index === currentStep && !isComplete && !hasFailed;
+            const color = isDone ? theme.success : isActive ? theme.accent : theme.muted;
+            const icon = isDone ? <StatusIcons.Success /> : isActive ? <StatusIcons.Loading /> : <Text color={theme.muted}>○</Text>;
+            return (
+              <Box key={step.name} flexDirection="row" alignItems="center">
+                <Box width={3} justifyContent="flex-end">{icon}</Box>
+                <Text> </Text>
+                <Text color={color}>{step.label}</Text>
+              </Box>
+            );
+          })}
+        </Box>
       </Box>
     </Box>
   );
