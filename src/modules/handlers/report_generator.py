@@ -14,6 +14,7 @@ This is NOT a Strands tool - it's a handler utility function.
 
 import json
 import logging
+import os
 from typing import Any, Dict, List, Optional
 
 from modules.agents.report_agent import ReportGenerator
@@ -278,19 +279,25 @@ def _retrieve_evidence_from_memory(_operation_id: str) -> List[Dict[str, Any]]:
         # Use pre-imported memory client with silent mode to prevent output during report generation
         memory_client = get_memory_client(silent=True)
         if not memory_client:
-            error_msg = (
-                "Critical: Memory service unavailable - cannot generate comprehensive report with stored evidence"
-            )
-            logger.error(error_msg)
-            # Still proceed but with clear indication of missing data
-            evidence.append(
-                {
-                    "category": "system_warning",
-                    "content": "⚠️ WARNING: Memory service unavailable - report generated without stored evidence from previous assessment steps",
-                    "severity": "HIGH",
-                    "confidence": "SYSTEM",
-                }
-            )
+            # Check if memory was expected to be available (e.g., MEM0_ENABLED env var)
+            # Only show warning if memory should have been available but failed to initialize
+            memory_expected = os.environ.get("MEM0_ENABLED", "").lower() in ("true", "1", "yes")
+            if memory_expected:
+                error_msg = (
+                    "Critical: Memory service unavailable - cannot generate comprehensive report with stored evidence"
+                )
+                logger.error(error_msg)
+                # Still proceed but with clear indication of missing data
+                evidence.append(
+                    {
+                        "category": "system_warning",
+                        "content": "⚠️ WARNING: Memory service unavailable - report generated without stored evidence from previous assessment steps",
+                        "severity": "HIGH",
+                        "confidence": "SYSTEM",
+                    }
+                )
+            else:
+                logger.debug("Memory service not configured - continuing without memory-based evidence")
             return evidence
 
         # Retrieve memories for this operation

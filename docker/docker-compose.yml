@@ -341,6 +341,89 @@ services:
     volumes:
       - langfuse_minio_data:/data
 
+  # Collaboration PostgreSQL Database
+  collaboration-db:
+    image: postgres:15-alpine
+    container_name: boo-collaboration-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: boo_user
+      POSTGRES_PASSWORD: ${COLLAB_DB_PASSWORD:-changeme}
+      POSTGRES_DB: boo_collaboration
+    volumes:
+      - collaboration_db_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"  # Expose on different port to avoid conflict with langfuse postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U boo_user -d boo_collaboration"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - default
+
+  # Collaboration WebSocket Server
+  collaboration-server:
+    image: boo:latest
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+    container_name: boo-collaboration-server
+    restart: unless-stopped
+    command: npm run collab:server
+    depends_on:
+      collaboration-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8080:8080"  # WebSocket server port
+    environment:
+      # Server Configuration
+      - COLLAB_WS_PORT=8080
+      - COLLAB_WS_HOST=0.0.0.0
+      - COLLAB_WS_PATH=/collaboration
+      - COLLAB_WS_PING_INTERVAL=30000
+      - COLLAB_WS_MAX_CONNECTIONS=1000
+      
+      # Database Configuration
+      - COLLAB_DB_HOST=collaboration-db
+      - COLLAB_DB_PORT=5432
+      - COLLAB_DB_NAME=boo_collaboration
+      - COLLAB_DB_USER=boo_user
+      - COLLAB_DB_PASSWORD=${COLLAB_DB_PASSWORD:-changeme}
+      - COLLAB_DB_SSL=false
+      - COLLAB_DB_MAX_CONNECTIONS=20
+      
+      # Redis Configuration (reuse langfuse redis)
+      - COLLAB_REDIS_HOST=redis
+      - COLLAB_REDIS_PORT=6379
+      - COLLAB_REDIS_PASSWORD=myredissecret
+      - COLLAB_REDIS_DB=1
+      - COLLAB_REDIS_PREFIX=collab:
+      
+      # JWT Configuration
+      - COLLAB_JWT_SECRET=${COLLAB_JWT_SECRET:-dev-secret-change-in-production-please}
+      - COLLAB_JWT_EXPIRES_IN=24h
+      - COLLAB_JWT_REFRESH_EXPIRES_IN=7d
+      - COLLAB_JWT_ISSUER=boo-collaboration
+      - COLLAB_JWT_AUDIENCE=boo-users
+      
+      # General Configuration
+      - COLLAB_ENABLE_LOGGING=true
+      - COLLAB_LOG_LEVEL=info
+      - NODE_ENV=${NODE_ENV:-development}
+    networks:
+      - default
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
 # Named volumes for better control
 volumes:
   langfuse_postgres_data:
@@ -349,11 +432,11 @@ volumes:
     driver: local
   langfuse_clickhouse_logs:
     driver: local
-  langfuse_redis_data:
-    driver: local
   langfuse_minio_data:
     driver: local
   langfuse_keys:
+    driver: local
+  collaboration_db_data:
     driver: local
 
 networks:

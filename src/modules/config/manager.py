@@ -62,6 +62,20 @@ EMBEDDING_DIMENSIONS: Dict[str, int] = {
     "cohere.embed-multilingual-v3": 1024,
     "multi-qa-MiniLM-L6-cos-v1": 384,
 }
+
+def get_embedding_dimensions(model_name: str, default: int = 1536) -> int:
+    """
+    Safely get embedding dimensions for a model with fallback to default.
+    
+    Args:
+        model_name: The embedding model name
+        default: Default dimension if model not found (default: 1536)
+        
+    Returns:
+        The embedding dimension for the model
+    """
+    return EMBEDDING_DIMENSIONS.get(model_name, default)
+
 MEM0_PROVIDER_MAP: Dict[str, str] = {
     "bedrock": "aws_bedrock",
     "openai": "openai",

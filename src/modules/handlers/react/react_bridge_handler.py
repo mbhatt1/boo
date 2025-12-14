@@ -20,6 +20,14 @@ from ..events import EventEmitter, get_emitter
 from ..output_interceptor import get_buffered_output, get_buffered_error_output, set_tool_execution_state
 from .tool_emitters import ToolEventEmitter
 
+# Collaboration integration
+try:
+    from ..collaboration.bridges.PythonEventBridge import emit_collaboration_event
+    COLLABORATION_AVAILABLE = True
+except ImportError:
+    COLLABORATION_AVAILABLE = False
+    emit_collaboration_event = None
+
 logger = logging.getLogger(__name__)
 
 
@@ -40,6 +48,8 @@ class ReactBridgeHandler(PrintingCallbackHandler):
         swarm_model_id: str = None,
         emitter: EventEmitter = None,
         init_context: Dict[str, Any] = None,
+        session_id: str = None,
+        user_id: str = None,
     ):
         """
         Initialize the React bridge handler.
@@ -51,6 +61,8 @@ class ReactBridgeHandler(PrintingCallbackHandler):
             swarm_model_id: Model ID to use for swarm agents
             emitter: Event emitter to use (defaults to stdout)
             init_context: Optional initialization context with rich operation details
+            session_id: Optional collaboration session ID
+            user_id: Optional user ID for collaboration
         """
         super().__init__()
 
@@ -58,6 +70,15 @@ class ReactBridgeHandler(PrintingCallbackHandler):
         self.current_step = 0
         self.max_steps = max_steps
         self.operation_id = operation_id or f"OP_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        
+        # Collaboration configuration
+        self.session_id = session_id or os.getenv('COLLAB_SESSION_ID')
+        self.user_id = user_id or os.getenv('COLLAB_USER_ID')
+        self.collaboration_enabled = (
+            COLLABORATION_AVAILABLE and
+            bool(self.session_id) and
+            os.getenv('COLLAB_ENABLED', '').lower() in ('true', '1', 'yes')
+        )
 
         # Initialize emitter with operation context
         self.emitter = emitter or get_emitter(operation_id=self.operation_id)
@@ -232,6 +253,58 @@ class ReactBridgeHandler(PrintingCallbackHandler):
             logger.debug(f"Frontend disconnected, skipping event {event.get('type')}")
         except Exception as e:
             logger.error(f"Failed to emit event {event.get('type')}: {e}", exc_info=True)
+        
+        # Forward to collaboration server if enabled
+        if self.collaboration_enabled and emit_collaboration_event:
+            try:
+                # Convert event to collaboration format
+                event_type = self._map_event_type(event.get('type', 'unknown'))
+                content = self._format_event_content(event)
+                
+                # Send to collaboration server
+                emit_collaboration_event(
+                    event_type=event_type,
+                    content=content,
+                    operation_id=self.operation_id,
+                    session_id=self.session_id,
+                    user_id=self.user_id,
+                    metadata={
+                        'step': self.current_step,
+                        'max_steps': self.max_steps,
+                        'original_type': event.get('type'),
+                    }
+                )
+            except Exception as e:
+                # Don't fail the operation if collaboration fails
+                logger.debug(f"Failed to send event to collaboration: {e}")
+    
+    def _map_event_type(self, ui_event_type: str) -> str:
+        """Map UI event types to collaboration event types"""
+        type_mapping = {
+            'stdout': 'stdout',
+            'stderr': 'stderr',
+            'step_header': 'step_header',
+            'tool_start': 'tool_start',
+            'tool_end': 'tool_end',
+            'tool_result': 'tool_end',
+            'reasoning': 'reasoning',
+            'error': 'error',
+            'metrics': 'metrics',
+            'completion': 'completion',
+        }
+        return type_mapping.get(ui_event_type, 'stdout')
+    
+    def _format_event_content(self, event: Dict[str, Any]) -> str:
+        """Format event content for collaboration"""
+        # If event has 'content', use it directly
+        if 'content' in event:
+            return str(event['content'])
+        
+        # Otherwise, serialize the entire event
+        try:
+            return json.dumps(event, default=str)
+        except Exception:
+            return str(event)
 
     def _emit_termination(self, reason: str, message: str) -> None:
         """Emit a single termination_reason event (idempotent) with a clear final step.
@@ -2841,33 +2914,32 @@ class ReactBridgeHandler(PrintingCallbackHandler):
             self._emit_ui_event({"type": "error", "content": f"Error generating report: {str(e)}"})
 
     # Evaluation methods
+    def _eval_debug(self, message: str, *args) -> None:
+        """Helper method for evaluation debug logging."""
+        if os.getenv("VERBOSE", "false").lower() == "true":
+            logger.debug(f"EVAL_DEBUG: {message}", *args)
+
     def trigger_evaluation_on_completion(self) -> None:
         """Trigger evaluation after operation completion."""
         from modules.evaluation.manager import EvaluationManager, TraceType
 
-        verbose_eval = os.getenv("VERBOSE", "false").lower() == "true"
-
-        if verbose_eval:
-            logger.debug("EVAL_DEBUG: trigger_evaluation_on_completion called for operation %s", self.operation_id)
+        self._eval_debug("trigger_evaluation_on_completion called for operation %s", self.operation_id)
 
         # Check if observability is enabled first - evaluation requires Langfuse infrastructure
         if os.getenv("ENABLE_OBSERVABILITY", "false").lower() != "true":
             logger.debug("Observability is disabled - skipping evaluation (requires Langfuse)")
-            if verbose_eval:
-                logger.debug("EVAL_DEBUG: Skipping evaluation - observability disabled")
+            self._eval_debug("Skipping evaluation - observability disabled")
             return
 
         # Default evaluation to same setting as observability
         default_evaluation = os.getenv("ENABLE_OBSERVABILITY", "false")
         if os.getenv("ENABLE_AUTO_EVALUATION", default_evaluation).lower() != "true":
             logger.debug("Auto-evaluation is disabled, skipping")
-            if verbose_eval:
-                logger.debug("EVAL_DEBUG: Auto-evaluation disabled via ENABLE_AUTO_EVALUATION=false")
+            self._eval_debug("Auto-evaluation disabled via ENABLE_AUTO_EVALUATION=false")
             return
 
         try:
-            if verbose_eval:
-                logger.debug("EVAL_DEBUG: Starting evaluation process for operation %s", self.operation_id)
+            self._eval_debug("Starting evaluation process for operation %s", self.operation_id)
 
             eval_manager = EvaluationManager(operation_id=self.operation_id)
 
@@ -2878,8 +2950,7 @@ class ReactBridgeHandler(PrintingCallbackHandler):
                 session_id=self.operation_id,
             )
 
-            if verbose_eval:
-                logger.debug("EVAL_DEBUG: Registered trace for evaluation")
+            self._eval_debug("Registered trace for evaluation")
 
             import asyncio
 
@@ -2887,27 +2958,23 @@ class ReactBridgeHandler(PrintingCallbackHandler):
             asyncio.set_event_loop(loop)
 
             logger.info("Starting evaluation for operation %s", self.operation_id)
-            if verbose_eval:
-                logger.debug("EVAL_DEBUG: Starting async evaluation loop")
+            self._eval_debug("Starting async evaluation loop")
 
             results = loop.run_until_complete(eval_manager.evaluate_all_traces())
 
             if results:
                 logger.info("Evaluation completed successfully: %d traces evaluated", len(results))
-                if verbose_eval:
-                    logger.debug("EVAL_DEBUG: Evaluation results: %s", results)
+                self._eval_debug("Evaluation results: %s", results)
                 self._emit_ui_event(
                     {"type": "evaluation_complete", "operation_id": self.operation_id, "traces_evaluated": len(results)}
                 )
             else:
                 logger.warning("No evaluation results returned")
-                if verbose_eval:
-                    logger.debug("EVAL_DEBUG: No evaluation results - check trace finding and metric evaluation")
+                self._eval_debug("No evaluation results - check trace finding and metric evaluation")
 
         except Exception as e:
             logger.warning("Evaluation failed but continuing operation: %s", str(e))
-            if verbose_eval:
-                logger.debug("EVAL_DEBUG: Full evaluation exception details", exc_info=True)
+            self._eval_debug("Full evaluation exception details", exc_info=True)
             # Don't re-raise the exception - just log and continue
 
     def wait_for_evaluation_completion(self, timeout: int = 300) -> None:

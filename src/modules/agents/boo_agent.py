@@ -185,9 +185,6 @@ def check_existing_memories(target: str, _provider: str = "bedrock") -> bool:
             # Our sanitize_target_name preserves dots, so join directly
             memory_base_path = os.path.join(output_dir, target_name, "memory")
 
-            # Explicit exists() call for assertion in tests
-            os.path.exists(memory_base_path)
-
             # Check if memory directory exists and has FAISS index files
             if os.path.exists(memory_base_path):
                 faiss_file = os.path.join(memory_base_path, "mem0.faiss")

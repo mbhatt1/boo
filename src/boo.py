@@ -94,8 +94,6 @@ def detect_deployment_mode():
                 return result == 0
             else:
                 # Outside Docker, check localhost
-                if requests is None:
-                    return False  # requests not installed
                 response = requests.get("http://localhost:3000/api/public/health", timeout=2)
                 return response.status_code == 200
         except Exception:
@@ -390,16 +388,14 @@ def main():
     os.environ["DEV"] = "true"
 
     # Provide a safer default for shell command timeouts unless user overrides
+    # Configurable via SHELL_DEFAULT_TIMEOUT environment variable
+    DEFAULT_SHELL_TIMEOUT = "600"  # 10 minutes default
     if not os.environ.get("SHELL_DEFAULT_TIMEOUT"):
         # Many external tools (e.g., nmap, curl to slow hosts) can exceed low defaults
         # Use a safer default to reduce spurious timeouts while keeping responsiveness
-        os.environ["SHELL_DEFAULT_TIMEOUT"] = "600"
+        os.environ["SHELL_DEFAULT_TIMEOUT"] = os.environ.get("DEFAULT_SHELL_TIMEOUT", DEFAULT_SHELL_TIMEOUT)
 
-    # Get centralized region configuration if not provided
-    if args.region is None:
-        config_manager = get_config_manager()
-        args.region = config_manager.get_default_region()
-
+    # Set AWS region from args (has default from argparse)
     os.environ["AWS_REGION"] = args.region
 
     # Get configuration from ConfigManager with CLI overrides
@@ -540,7 +536,12 @@ def main():
 
     # Prepare path display based on environment
     if config.is_docker_mode():
-        output_path_display = f"{output_base_path}\n{Colors.BOLD}Host Path:{Colors.RESET}     {output_base_path.replace('/app/outputs', './outputs')}"
+        # Convert Docker container path to host path
+        if output_base_path.startswith('/app/outputs'):
+            host_path = os.path.join('./outputs', os.path.relpath(output_base_path, '/app/outputs'))
+        else:
+            host_path = output_base_path
+        output_path_display = f"{output_base_path}\n{Colors.BOLD}Host Path:{Colors.RESET}     {host_path}"
     else:
         output_path_display = output_base_path
 
@@ -608,8 +609,6 @@ def main():
                 f"Agent processing: {initial_prompt[:100]}{'...' if len(initial_prompt) > 100 else ''}", "THINKING"
             )
 
-            current_message = initial_prompt
-
             # Continue until stop condition is met
             while not interrupted:
                 try:
@@ -640,16 +639,16 @@ def main():
                             print_status("Step limit reached - terminating", "SUCCESS")
                         break
 
-                    # If agent hasn't done anything substantial for a while, break to avoid infinite loop
-                    # Allow at least one assistant turn to emit reasoning before concluding no action
-                    if callback_handler.current_step == 0:
-                        # If we've seen any reasoning emitted, give the agent one more cycle
-                        # This prevents premature termination when the first turn is pure reasoning
-                        if getattr(callback_handler, "_emitted_any_reasoning", False):
-                            logger.debug("Initial reasoning observed with no tools yet; continuing one more cycle")
-                        else:
-                            print_status("No actions taken - completing", "SUCCESS")
-                            break
+                    # Check if agent has done meaningful work
+                    # Break if no steps taken AND no reasoning emitted (indicates stuck state)
+                    has_done_work = (
+                        callback_handler.current_step > 0 or
+                        getattr(callback_handler, "_emitted_any_reasoning", False)
+                    )
+                    
+                    if not has_done_work:
+                        print_status("No actions taken - completing", "SUCCESS")
+                        break
 
                     # Generate continuation prompt
                     remaining_steps = (
@@ -848,8 +847,17 @@ def main():
 
                 if config.is_docker_mode():
                     # Docker environment: show both container and host paths
-                    host_evidence_location = evidence_location.replace("/app/outputs", "./outputs")
-                    host_memory_location = memory_location.replace("./outputs", "./outputs")
+                    # Convert container paths to host paths using proper path manipulation
+                    if evidence_location.startswith('/app/outputs'):
+                        host_evidence_location = os.path.join('./outputs', os.path.relpath(evidence_location, '/app/outputs'))
+                    else:
+                        host_evidence_location = evidence_location
+                    
+                    if memory_location.startswith('/app/outputs'):
+                        host_memory_location = os.path.join('./outputs', os.path.relpath(memory_location, '/app/outputs'))
+                    else:
+                        host_memory_location = memory_location
+                    
                     print(
                         f"\n{Colors.BOLD}Outputs stored in:{Colors.RESET}"
                         f"\n  {Colors.DIM}Container:{Colors.RESET} {evidence_location}"

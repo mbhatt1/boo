@@ -71,9 +71,11 @@ class ReasoningHandler(PrintingCallbackHandler):
         """Process callback events with proper step limiting and clean formatting"""
 
         # Check for interrupt
-        if "cyberautoagent" in sys.modules:
-            cyberautoagent = sys.modules["cyberautoagent"]
-            if hasattr(cyberautoagent, "interrupted") and cyberautoagent.interrupted:
+        # Get the main module dynamically from the current module's package
+        main_module_name = __name__.split('.')[0] if '.' in __name__ else "boo"
+        if main_module_name in sys.modules:
+            main_module = sys.modules[main_module_name]
+            if hasattr(main_module, "interrupted") and main_module.interrupted:
                 raise KeyboardInterrupt("User interrupted operation")
 
         # Check step limit

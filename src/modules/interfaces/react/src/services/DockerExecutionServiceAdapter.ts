@@ -9,6 +9,7 @@ import { EventEmitter } from 'events';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import * as fsSync from 'fs';
+import { fileURLToPath } from 'url';
 import { 
   ExecutionService, 
   ExecutionMode, 
@@ -38,7 +39,9 @@ export class DockerExecutionServiceAdapter extends EventEmitter implements Execu
   constructor(mode: ExecutionMode) {
     super();
     // Allow multiple UI subscribers (Terminal, useOperationManager, etc.)
-    // without triggering noisy warnings. We still properly clean up listeners.
+    // without triggering noisy warnings. Listeners are properly cleaned up
+    // in the cleanup() method which calls removeAllListeners().
+    // IMPORTANT: Always call cleanup() when done to prevent memory leaks.
     this.setMaxListeners(25);
     if (mode !== ExecutionMode.DOCKER_SINGLE && mode !== ExecutionMode.DOCKER_STACK) {
       throw new Error(`Invalid Docker mode: ${mode}`);
@@ -188,7 +191,8 @@ export class DockerExecutionServiceAdapter extends EventEmitter implements Execu
         
         if (!path.isAbsolute(outputDir)) {
           // For Docker mode, find project root by searching for pyproject.toml
-          let currentDir = path.dirname(new URL(import.meta.url).pathname);
+          // Use fileURLToPath to properly handle Windows paths
+          let currentDir = path.dirname(fileURLToPath(import.meta.url));
           logger.info('Docker validation: starting path resolution', { currentDir });
           
           while (currentDir !== path.dirname(currentDir)) {

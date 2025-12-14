@@ -47,6 +47,8 @@ export class PythonExecutionService extends EventEmitter {
   private toolOutputBuffer = '';
   // Track execution start time for duration reporting
   private startTime?: number;
+  // Track current tool name for metadata
+  private _currentToolName?: string;
 
   /** Emit a chunk of buffered tool output */
   private emitToolOutputChunk(content: string): void {
@@ -55,7 +57,7 @@ export class PythonExecutionService extends EventEmitter {
         type: 'output',
         content,
         timestamp: Date.now(),
-        metadata: { fromToolBuffer: true, tool: (this as any)._currentToolName, chunked: true }
+        metadata: { fromToolBuffer: true, tool: this._currentToolName, chunked: true }
       });
     } catch {}
   }
@@ -175,14 +177,19 @@ export class PythonExecutionService extends EventEmitter {
     const condaPy = process.env.CONDA_PREFIX ? `${process.env.CONDA_PREFIX}/bin/python` : undefined;
 
     const versioned = ['3.12', '3.11', '3.10'];
+    // Safely extract minor version with bounds checking
+    const getMinorVersion = (v: string) => {
+      const parts = v.split('.');
+      return parts.length > 1 ? parts[1] : v;
+    };
     const baseNames = [
-      ...versioned.map(v => `python3.${v.split('.')[1]}`),
+      ...versioned.map(v => `python3.${getMinorVersion(v)}`),
       'python3',
       'python',
     ];
     const homebrew = [
-      ...versioned.map(v => `/opt/homebrew/bin/python3.${v.split('.')[1]}`),
-      ...versioned.map(v => `/usr/local/bin/python3.${v.split('.')[1]}`),
+      ...versioned.map(v => `/opt/homebrew/bin/python3.${getMinorVersion(v)}`),
+      ...versioned.map(v => `/usr/local/bin/python3.${getMinorVersion(v)}`),
       '/opt/homebrew/bin/python3',
       '/usr/local/bin/python3',
     ];
@@ -251,7 +258,8 @@ export class PythonExecutionService extends EventEmitter {
         best = d;
         continue;
       }
-      if (d.major > best.major! || (d.major === best.major && d.minor! > best.minor!)) {
+      // Values already verified as defined above
+      if (d.major > best.major || (d.major === best.major && d.minor > best.minor)) {
         best = d;
       }
     }
@@ -314,25 +322,37 @@ export class PythonExecutionService extends EventEmitter {
 
       try {
         // Kill entire process tree to prevent orphans
-        // On Unix: negative PID kills the process group
+        // Platform-specific handling: Unix supports process groups, Windows does not
         const pid = this.activeProcess.pid;
+        const isWindows = process.platform === 'win32';
+        
         if (pid) {
           try {
-            // Try to kill process group first (kills all children)
-            process.kill(-pid, 'SIGTERM');
-            this.logger.info('Sent SIGTERM to process group', { pgid: -pid });
+            if (isWindows) {
+              // Windows: kill the process directly (no process group support)
+              this.activeProcess.kill('SIGTERM');
+              this.logger.info('Sent SIGTERM to process (Windows)', { pid });
+            } else {
+              // Unix: kill the entire process group (negative PID)
+              process.kill(-pid, 'SIGTERM');
+              this.logger.info('Sent SIGTERM to process group (Unix)', { pgid: -pid });
+            }
           } catch (pgErr) {
-            // If process group kill fails, try individual process
-            this.logger.warn('Process group kill failed, trying individual process', pgErr);
+            // Fallback: try individual process kill
+            this.logger.warn('Process kill failed, trying fallback', pgErr);
             this.activeProcess.kill('SIGTERM');
           }
 
-          // If still running after 3 seconds, force kill entire tree
+          // If still running after 3 seconds, force kill
           setTimeout(() => {
             if (this.activeProcess && !this.activeProcess.killed) {
-              this.logger.warn('Force killing Python process tree');
+              this.logger.warn('Force killing Python process');
               try {
-                process.kill(-pid, 'SIGKILL');
+                if (isWindows) {
+                  this.activeProcess.kill('SIGKILL');
+                } else {
+                  process.kill(-pid, 'SIGKILL');
+                }
               } catch {
                 this.activeProcess.kill('SIGKILL');
               }

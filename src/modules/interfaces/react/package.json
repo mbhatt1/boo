@@ -21,7 +21,9 @@
     "test:visual": "NODE_OPTIONS=--experimental-vm-modules jest --config tests/jest.config.cjs visual-regression.test.tsx",
     "test:journeys": "NODE_OPTIONS=--experimental-vm-modules jest --config tests/jest.config.cjs --verbose",
     "test:all": "npm run build && npm run test:coverage",
-    "validate": "npm run build && npm run test:all"
+    "validate": "npm run build && npm run test:all",
+    "collab:migrate": "tsx ../../../collaboration/database/migrate.ts",
+    "collab:server": "tsx ../../../collaboration/server/index.ts"
   },
   "dependencies": {
     "@types/chokidar": "^1.7.5",
@@ -41,10 +43,15 @@
     "ink-table": "^3.1.0",
     "ink-text-input": "^6.0.0",
     "js-yaml": "^4.1.0",
+    "jsonwebtoken": "^9.0.2",
     "meow": "^12.1.1",
     "node-pty": "^1.0.0",
+    "pg": "^8.11.3",
     "react": "^19.1.1",
+    "redis": "^4.6.12",
     "strip-ansi": "^7.1.0",
+    "uuid": "^9.0.1",
+    "ws": "^8.16.0",
     "yaml": "^2.8.0"
   },
   "devDependencies": {
@@ -54,9 +61,13 @@
     "@types/dockerode": "^3.3.5",
     "@types/jest": "^29.5.14",
     "@types/js-yaml": "^4.0.9",
+    "@types/jsonwebtoken": "^9.0.5",
     "@types/node": "^20.19.9",
+    "@types/pg": "^8.10.9",
     "@types/react": "^19.1.13",
     "@types/react-test-renderer": "^19.1.0",
+    "@types/uuid": "^9.0.7",
+    "@types/ws": "^8.5.10",
     "babel-jest": "^30.0.5",
     "chalk": "^5.4.1",
     "ink-testing-library": "^4.0.0",

@@ -132,7 +132,7 @@ export const useEventStream = (
         };
       });
     },
-  }), [version]); // Include version to ensure actions see latest store state
+  }), []); // Actions use eventStoreRef which doesn't need dependencies
 
   return [state, actions];
 };
