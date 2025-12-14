@@ -28,6 +28,7 @@ class BatchingEmitter:
         self.timer: Optional[threading.Timer] = None
         self.lock = threading.Lock()
         self.operation_id = operation_id or "batch"
+        self._shutdown = False
 
     def emit(self, event: Dict[str, Any]) -> None:
         """Add event to batch and schedule flush.
@@ -36,6 +37,9 @@ class BatchingEmitter:
             event: Event to batch
         """
         with self.lock:
+            if self._shutdown:
+                return  # Don't accept new events after shutdown
+            
             # Critical events bypass batching
             if self._is_critical(event):
                 self._flush()
@@ -47,6 +51,7 @@ class BatchingEmitter:
             # Start timer if not running
             if not self.timer or not self.timer.is_alive():
                 self.timer = threading.Timer(self.batch_ms, self._flush)
+                self.timer.daemon = True  # Ensure timer doesn't prevent shutdown
                 self.timer.start()
 
     def _is_critical(self, event: Dict[str, Any]) -> bool:
@@ -67,6 +72,9 @@ class BatchingEmitter:
         """Flush batched events."""
         with self.lock:
             if not self.batch:
+                if self.timer:
+                    self.timer.cancel()
+                self.timer = None
                 return
 
             # Single event - emit directly
@@ -89,6 +97,17 @@ class BatchingEmitter:
 
     def flush_immediate(self) -> None:
         """Force immediate flush of pending events."""
-        if self.timer and self.timer.is_alive():
-            self.timer.cancel()
+        with self.lock:
+            if self.timer and self.timer.is_alive():
+                self.timer.cancel()
+        self._flush()
+
+    def shutdown(self) -> None:
+        """Shutdown the emitter, flushing pending events and canceling timers."""
+        with self.lock:
+            self._shutdown = True
+            if self.timer and self.timer.is_alive():
+                self.timer.cancel()
+            self.timer = None
+        # Flush any remaining events outside the lock to avoid deadlock
         self._flush()

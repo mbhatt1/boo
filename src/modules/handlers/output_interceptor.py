@@ -36,6 +36,14 @@ def set_tool_execution_state(is_executing: bool):
         # When ending tool execution, buffers are returned by getters
 
 
+def cleanup_tool_buffers():
+    """Clean up global tool buffers. Should be called on shutdown."""
+    global _tool_output_buffer, _tool_error_buffer
+    with _tool_execution_lock:
+        _tool_output_buffer = []
+        _tool_error_buffer = []
+
+
 def is_in_tool_execution() -> bool:
     """Check if we're currently executing a tool."""
     with _tool_execution_lock:
@@ -73,6 +81,7 @@ class OutputInterceptor(io.TextIOBase):
         self.buffer = io.StringIO()
         self.lock = threading.Lock()
         self._in_event_emission = False
+        self._closed = False
 
     def write(self, data: str) -> int:
         """Intercept write calls and emit as events."""
@@ -99,10 +108,16 @@ class OutputInterceptor(io.TextIOBase):
             content = self.buffer.getvalue()
             if "\n" in content:
                 lines = content.split("\n")
-                # Keep the last incomplete line in buffer
+                # Close old buffer and create new one for incomplete line
+                old_buffer = self.buffer
                 self.buffer = io.StringIO()
                 if lines[-1]:
                     self.buffer.write(lines[-1])
+                # Close the old buffer to free memory
+                try:
+                    old_buffer.close()
+                except Exception:
+                    pass
 
                 # Emit complete lines as events
                 for line in lines[:-1]:
@@ -155,19 +170,35 @@ class OutputInterceptor(io.TextIOBase):
     def flush(self):
         """Flush any remaining buffered content."""
         with self.lock:
+            if self._closed:
+                return
             content = self.buffer.getvalue()
             if content.strip():
                 self._emit_output_event(content)
+                # Close old buffer and create new one
+                old_buffer = self.buffer
                 self.buffer = io.StringIO()
+                try:
+                    old_buffer.close()
+                except Exception:
+                    pass
             self.original_stream.flush()
 
     def isatty(self):
         """Check if the stream is a TTY."""
-        return hasattr(self.original_stream, "isatty") and self.original_stream.isatty()
+        try:
+            return hasattr(self.original_stream, "isatty") and self.original_stream.isatty()
+        except (AttributeError, OSError):
+            return False
 
     # Implement other required methods
     def fileno(self):
-        return self.original_stream.fileno() if hasattr(self.original_stream, "fileno") else -1
+        try:
+            if hasattr(self.original_stream, "fileno"):
+                return self.original_stream.fileno()
+            return -1
+        except (AttributeError, OSError, io.UnsupportedOperation):
+            return -1
 
     def readable(self):
         return False
@@ -177,6 +208,18 @@ class OutputInterceptor(io.TextIOBase):
 
     def seekable(self):
         return False
+
+    def close(self):
+        """Close the interceptor and clean up resources."""
+        with self.lock:
+            if self._closed:
+                return
+            self._closed = True
+            try:
+                self.buffer.close()
+            except Exception:
+                pass
+            # Don't close original_stream as it may be needed by the system
 
 
 @contextmanager

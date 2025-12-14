@@ -100,6 +100,8 @@ export class PerformanceMonitor extends EventEmitter {
   
   private startTime: number = Date.now();
   private intervalId?: NodeJS.Timeout;
+  private lastReportTime: number = Date.now();
+  private lastCpuUsage = process.cpuUsage();
   
   // Thresholds for alerts
   private thresholds = {
@@ -131,6 +133,10 @@ export class PerformanceMonitor extends EventEmitter {
       report.alerts.forEach(alert => {
         this.emit('alert', alert);
       });
+      
+      // Reset message counter after report (Bug #10 fix)
+      this.wsMessages = 0;
+      this.lastReportTime = Date.now();
     }, this.reportIntervalMs);
   }
 
@@ -251,7 +257,7 @@ export class PerformanceMonitor extends EventEmitter {
       websocketMetrics: {
         activeConnections: this.wsConnections.size,
         totalConnections: this.wsConnections.size,
-        messagesPerSecond: this.wsMessages / (this.reportIntervalMs / 1000),
+        messagesPerSecond: this.wsMessages / ((Date.now() - this.lastReportTime) / 1000),
         avgMessageSize: this.average(this.wsMessageSizes),
         errors: 0,
       },
@@ -263,7 +269,9 @@ export class PerformanceMonitor extends EventEmitter {
       },
       redisMetrics: {
         operationLatency: this.calculateLatencyMetrics(this.redisOps),
-        cacheHitRate: this.cacheHits / (this.cacheHits + this.cacheMisses || 1),
+        cacheHitRate: (this.cacheHits + this.cacheMisses) === 0
+          ? 0
+          : this.cacheHits / (this.cacheHits + this.cacheMisses),
         memoryUsage: process.memoryUsage().heapUsed,
         evictions: 0,
       },
@@ -300,8 +308,9 @@ export class PerformanceMonitor extends EventEmitter {
    * Calculate percentile
    */
   private percentile(sorted: number[], p: number): number {
-    const index = Math.ceil(sorted.length * p) - 1;
-    return sorted[Math.max(0, index)] || 0;
+    if (sorted.length === 0) return 0;
+    const index = Math.max(0, Math.ceil(sorted.length * p) - 1);
+    return sorted[index] || 0;
   }
 
   /**
@@ -318,9 +327,18 @@ export class PerformanceMonitor extends EventEmitter {
   private collectSystemMetrics(): SystemMetrics {
     const mem = process.memoryUsage();
     
+    // Calculate CPU usage as percentage over time interval (Bug #12 fix)
+    const currentCpuUsage = process.cpuUsage();
+    const elapsedUs = (currentCpuUsage.user - this.lastCpuUsage.user) +
+                      (currentCpuUsage.system - this.lastCpuUsage.system);
+    const elapsedMs = Date.now() - this.lastReportTime;
+    const cpuPercent = (elapsedUs / 1000) / elapsedMs; // Convert to percentage
+    
+    this.lastCpuUsage = currentCpuUsage;
+    
     return {
       memoryUsage: mem.heapUsed / mem.heapTotal,
-      cpuUsage: process.cpuUsage().user / 1000000, // Convert to seconds
+      cpuUsage: Math.min(cpuPercent, 1), // Clamp to max 100%
       heapUsed: mem.heapUsed,
       heapTotal: mem.heapTotal,
       uptime: (Date.now() - this.startTime) / 1000,
@@ -400,11 +418,14 @@ export class PerformanceMonitor extends EventEmitter {
     this.requestLatencies = [];
     this.wsMessages = 0;
     this.wsMessageSizes = [];
+    this.wsConnections.clear(); // Bug #13 fix - clear connections
     this.dbQueries = [];
     this.slowQueries = 0;
     this.redisOps = [];
     this.cacheHits = 0;
     this.cacheMisses = 0;
     this.eventProcessingTimes = [];
+    this.lastReportTime = Date.now();
+    this.lastCpuUsage = process.cpuUsage();
   }
 }

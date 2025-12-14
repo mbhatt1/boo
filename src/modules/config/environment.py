@@ -254,9 +254,15 @@ class TeeOutput:
 
     def __init__(self, stream, log_file):
         self.terminal = stream
-        self.log = open(log_file, "a", encoding="utf-8", buffering=1)
         self.lock = threading.Lock()
         self.line_buffer = ""  # Buffer for incomplete lines
+        self.log = None
+        try:
+            self.log = open(log_file, "a", encoding="utf-8", buffering=1)
+        except (OSError, IOError) as e:
+            # If we can't open the log file, continue without logging to file
+            import logging
+            logging.warning("Failed to open log file %s: %s", log_file, e)
 
     def write(self, message):
         with self.lock:
@@ -266,65 +272,75 @@ class TeeOutput:
             if hasattr(self.terminal, "flush"):
                 self.terminal.flush()
 
-            # Clean message for log file
-            try:
-                # Remove ANSI escape sequences for log file
-                ansi_escape = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
-                clean_message = ansi_escape.sub("", message)
+            # Clean message for log file (only if log is available)
+            if self.log:
+                try:
+                    # Remove ANSI escape sequences for log file
+                    ansi_escape = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
+                    clean_message = ansi_escape.sub("", message)
 
-                # Handle carriage returns properly
-                # If message contains \r without \n, it's likely overwriting the same line
-                if "\r" in clean_message and "\r\n" not in clean_message:
-                    # Split by \r and take the last part (what would be visible on screen)
-                    parts = clean_message.split("\r")
-                    # Keep only the last part after all overwrites
-                    clean_message = parts[-1]
-                    # If we had buffered content, clear it as it's being overwritten
-                    self.line_buffer = ""
+                    # Handle carriage returns properly
+                    # If message contains \r without \n, it's likely overwriting the same line
+                    if "\r" in clean_message and "\r\n" not in clean_message:
+                        # Split by \r and take the last part (what would be visible on screen)
+                        parts = clean_message.split("\r")
+                        # Keep only the last part after all overwrites
+                        clean_message = parts[-1]
+                        # If we had buffered content, clear it as it's being overwritten
+                        self.line_buffer = ""
 
-                # Add to line buffer
-                self.line_buffer += clean_message
+                    # Add to line buffer
+                    self.line_buffer += clean_message
 
-                # Write complete lines to log
-                if "\n" in self.line_buffer:
-                    lines = self.line_buffer.split("\n")
-                    # Write all complete lines
-                    for line in lines[:-1]:
-                        # Don't strip leading spaces - preserve formatting
-                        self.log.write(line + "\n")
-                    # Keep the incomplete line in buffer
-                    self.line_buffer = lines[-1]
-                    self.log.flush()
+                    # Write complete lines to log
+                    if "\n" in self.line_buffer:
+                        lines = self.line_buffer.split("\n")
+                        # Write all complete lines
+                        for line in lines[:-1]:
+                            # Don't strip leading spaces - preserve formatting
+                            self.log.write(line + "\n")
+                        # Keep the incomplete line in buffer
+                        self.line_buffer = lines[-1]
+                        self.log.flush()
 
-            except (ValueError, OSError):
-                # Handle closed file gracefully
-                pass
+                except (ValueError, OSError):
+                    # Handle closed file gracefully
+                    pass
 
     def flush(self):
         with self.lock:
             self.terminal.flush()
-            try:
-                self.log.flush()
-            except (ValueError, OSError):
-                pass
+            if self.log:
+                try:
+                    self.log.flush()
+                except (ValueError, OSError):
+                    pass
 
     def close(self):
         with self.lock:
-            try:
-                # Flush any remaining buffered content
-                if self.line_buffer:
-                    self.log.write(self.line_buffer)
-                    self.log.flush()
-                self.log.close()
-            except (OSError, AttributeError):
-                pass
+            if self.log:
+                try:
+                    # Flush any remaining buffered content
+                    if self.line_buffer:
+                        self.log.write(self.line_buffer)
+                        self.log.flush()
+                    self.log.close()
+                except (OSError, AttributeError):
+                    pass
+            self.log = None
 
     # Additional methods to fully mimic file objects
     def fileno(self):
-        return self.terminal.fileno()
+        try:
+            return self.terminal.fileno()
+        except (AttributeError, OSError):
+            return -1
 
     def isatty(self):
-        return self.terminal.isatty()
+        try:
+            return self.terminal.isatty()
+        except (AttributeError, OSError):
+            return False
 
 
 def setup_logging(log_file: str = "boo_operations.log", verbose: bool = False):
@@ -345,13 +361,16 @@ def setup_logging(log_file: str = "boo_operations.log", verbose: bool = False):
     sys.stderr = TeeOutput(sys.stderr, log_file)
 
     # Register cleanup handler to ensure log files are properly closed
+    _cleanup_lock = threading.Lock()
+    
     def cleanup_tee_outputs():
-        if isinstance(sys.stdout, TeeOutput):
-            sys.stdout.close()
-            sys.stdout = sys.__stdout__
-        if isinstance(sys.stderr, TeeOutput):
-            sys.stderr.close()
-            sys.stderr = sys.__stderr__
+        with _cleanup_lock:
+            if isinstance(sys.stdout, TeeOutput):
+                sys.stdout.close()
+                sys.stdout = sys.__stdout__
+            if isinstance(sys.stderr, TeeOutput):
+                sys.stderr.close()
+                sys.stderr = sys.__stderr__
 
     atexit.register(cleanup_tee_outputs)
 

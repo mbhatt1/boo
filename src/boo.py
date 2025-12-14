@@ -29,6 +29,11 @@ import time
 import traceback
 import warnings
 from datetime import datetime
+import threading
+
+# Constants
+DEFAULT_AWS_REGION = "us-east-1"
+DEFAULT_SHELL_TIMEOUT = "600"  # 10 minutes
 
 # Third-party imports
 from dotenv import load_dotenv
@@ -88,10 +93,12 @@ def detect_deployment_mode():
             if config.is_docker_mode():
                 # In Docker, try to connect to langfuse-web service
                 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                sock.settimeout(2)
-                result = sock.connect_ex(("langfuse-web", 3000))
-                sock.close()
-                return result == 0
+                try:
+                    sock.settimeout(2)
+                    result = sock.connect_ex(("langfuse-web", 3000))
+                    return result == 0
+                finally:
+                    sock.close()
             else:
                 # Outside Docker, check localhost
                 response = requests.get("http://localhost:3000/api/public/health", timeout=2)
@@ -189,14 +196,25 @@ def setup_langfuse_connection(logger, deployment_mode):
     logger.info("View traces at %s (login: admin@boo-autoagent.com/changeme)", host)
 
 
-# Global flag for interrupt handling
-interrupted = False
+# Global flag for interrupt handling with thread lock
+_interrupted_lock = threading.Lock()
+_interrupted = False
+
+def is_interrupted():
+    """Thread-safe check if interrupted."""
+    with _interrupted_lock:
+        return _interrupted
+
+def set_interrupted(value):
+    """Thread-safe set interrupted flag."""
+    with _interrupted_lock:
+        global _interrupted
+        _interrupted = value
 
 
 def signal_handler(signum, frame):  # pylint: disable=unused-argument
     """Handle interrupt signals gracefully"""
-    global interrupted
-    interrupted = True
+    set_interrupted(True)
 
     # Determine signal type for appropriate message
     if signum == signal.SIGINT:
@@ -218,13 +236,13 @@ def signal_handler(signum, frame):  # pylint: disable=unused-argument
     )
 
     if in_swarm:
-        print("\033[91m[!] Swarm operation detected - forcing immediate termination\033[0m")
+        print("\033[91m[!] Swarm operation detected - forcing termination after cleanup\033[0m")
 
-        # Force exit after a short delay to allow cleanup
+        # Schedule cleanup and exit via sys.exit to allow atexit handlers to run
         def force_exit():
             time.sleep(2)
-            print("\033[91m[!] Force terminating swarm operation\033[0m")
-            os._exit(1)
+            print("\033[91m[!] Terminating swarm operation\033[0m")
+            sys.exit(1)  # Use sys.exit instead of os._exit to allow cleanup
 
         threading.Thread(target=force_exit, daemon=True).start()
 
@@ -294,8 +312,8 @@ def main():
     parser.add_argument(
         "--region",
         type=str,
-        default="us-east-1",
-        help="AWS region for Bedrock (default: from AWS_REGION or us-east-1)",
+        default=DEFAULT_AWS_REGION,
+        help=f"AWS region for Bedrock (default: from AWS_REGION or {DEFAULT_AWS_REGION})",
     )
     parser.add_argument(
         "--provider",
@@ -389,7 +407,6 @@ def main():
 
     # Provide a safer default for shell command timeouts unless user overrides
     # Configurable via SHELL_DEFAULT_TIMEOUT environment variable
-    DEFAULT_SHELL_TIMEOUT = "600"  # 10 minutes default
     if not os.environ.get("SHELL_DEFAULT_TIMEOUT"):
         # Many external tools (e.g., nmap, curl to slow hosts) can exceed low defaults
         # Use a safer default to reduce spurious timeouts while keeping responsiveness
@@ -466,12 +483,13 @@ def main():
         except Exception:
             pass
 
-        if hasattr(sys.stdout, "close") and callable(sys.stdout.close):
+        # Only close if not default stdout/stderr to avoid breaking functionality
+        if hasattr(sys.stdout, "close") and callable(sys.stdout.close) and sys.stdout is not sys.__stdout__:
             try:
                 sys.stdout.close()
             except Exception:
                 pass
-        if hasattr(sys.stderr, "close") and callable(sys.stderr.close):
+        if hasattr(sys.stderr, "close") and callable(sys.stderr.close) and sys.stderr is not sys.__stderr__:
             try:
                 sys.stderr.close()
             except Exception:
@@ -912,21 +930,21 @@ def main():
                     pass
 
         # Skip cleanup if interrupted
-        if interrupted:
+        if is_interrupted():
             ui_mode = os.environ.get("BOO_UI_MODE", "cli").lower()
             if ui_mode == "react":
                 # In React UI mode, we've already emitted a structured termination event above.
-                # Just close log outputs and return without forcing an abrupt process exit so the
+                # Just close log outputs without forcing an abrupt process exit so the
                 # event can reach the frontend cleanly.
                 close_log_outputs()
-                return
+                # Don't perform remaining cleanup - early exit from finally block
             else:
                 print_status("Exiting immediately due to interrupt", "WARNING")
                 close_log_outputs()
                 os._exit(1)
-
-        # Ensure final report is generated - single trigger point
-        if callback_handler:
+        
+        # Ensure final report is generated if not interrupted - single trigger point
+        if not is_interrupted() and callback_handler:
             try:
                 callback_handler.ensure_report_generated(agent, args.target, args.objective, args.module)
 

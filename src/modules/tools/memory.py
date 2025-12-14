@@ -192,7 +192,12 @@ class Mem0ServiceClient:
 
     @staticmethod
     def _normalise_results_list(payload: Any) -> List[Dict[str, Any]]:
-        """Best-effort conversion of Mem0 responses to a list of memory dicts."""
+        """Best-effort conversion of Mem0 responses to a list of memory dicts.
+        
+        Returns:
+            List of memory dictionaries. Empty list can mean either valid response with no memories
+            or invalid response format. Check logs for warnings about invalid formats.
+        """
         if payload is None:
             return []
         if isinstance(payload, list):
@@ -202,6 +207,11 @@ class Mem0ServiceClient:
                 value = payload.get(key)
                 if isinstance(value, list):
                     return value
+            # Valid dict response but no recognized memory keys - log warning
+            logger.warning(f"Dict response missing expected keys (results/memories/data): {list(payload.keys())}")
+        else:
+            # Invalid response format - log warning
+            logger.warning(f"Invalid memory response format: {type(payload)}")
         return []
 
     @staticmethod
@@ -331,9 +341,16 @@ class Mem0ServiceClient:
         if not os.environ.get("AWS_REGION"):
             os.environ["AWS_REGION"] = self.region
 
-        # Set up AWS credentials
+        # Set up AWS credentials with validation
         session = boto3.Session()
         credentials = session.get_credentials()
+        
+        if credentials is None:
+            raise ValueError(
+                "AWS credentials not found. Please configure AWS credentials using "
+                "environment variables, AWS CLI, or IAM role."
+            )
+        
         auth = AWSV4SignerAuth(credentials, self.region, "es")
 
         # Prepare configuration

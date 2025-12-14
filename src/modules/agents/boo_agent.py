@@ -60,7 +60,8 @@ class _ToolRouterHook:
         raw_input = tool_use.get("input", {})
         if isinstance(raw_input, dict):
             params: dict[str, Any] = raw_input
-        else:
+        elif isinstance(raw_input, (str, int, float, bool)):
+            # Handle primitive types safely
             params = {"options": str(raw_input)}
             if isinstance(raw_input, str) and raw_input.strip().startswith("{"):
                 try:
@@ -70,6 +71,13 @@ class _ToolRouterHook:
                         params = maybe
                 except Exception:
                     pass
+        elif isinstance(raw_input, (list, tuple)):
+            # Handle list/tuple by joining elements
+            params = {"options": " ".join(str(x) for x in raw_input)}
+        else:
+            # Handle other types (None, objects, etc.)
+            logger.warning(f"Unexpected tool input type: {type(raw_input)}, converting to string")
+            params = {"options": str(raw_input) if raw_input is not None else ""}
 
         options = _s(params.get("options"))
         target = _first(params.get("target"), params.get("host"), params.get("url"), params.get("ip"))

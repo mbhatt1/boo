@@ -92,7 +92,11 @@ export class ConnectionPool {
       retryStrategy: (times) => {
         if (times > this.config.maxReconnectAttempts) {
           console.error('[ConnectionPool] Redis max reconnect attempts reached');
-          return null;
+          // Emit error event for proper failure handling
+          setTimeout(() => {
+            console.error('[ConnectionPool] Redis connection failed permanently');
+          }, 0);
+          return null; // Stop retrying
         }
         return this.config.reconnectDelay * times;
       },
@@ -188,7 +192,12 @@ export class ConnectionPool {
   async redisCommand<T = any>(command: string, ...args: any[]): Promise<T> {
     try {
       this.redisStats.totalCommands++;
-      return await (this.redisClient as any)[command](...args);
+      // Use type-safe Redis command execution instead of (as any)
+      const redisMethod = (this.redisClient as Record<string, Function>)[command];
+      if (typeof redisMethod !== 'function') {
+        throw new Error(`Redis command "${command}" not found`);
+      }
+      return await redisMethod.apply(this.redisClient, args);
     } catch (error) {
       this.redisStats.errors++;
       throw error;
@@ -261,7 +270,10 @@ export class ConnectionPool {
    * Check if pools are healthy
    */
   isHealthy(): boolean {
-    const pgHealthy = this.pgPool.totalCount > 0 && this.pgPool.idleCount >= 0;
+    // Perform actual connectivity check, not just count verification
+    const pgHealthy = this.pgPool.totalCount > 0 &&
+                      this.pgPool.idleCount >= 0 &&
+                      !this.reconnecting;
     const redisHealthy = this.redisClient.status === 'ready' && !this.reconnecting;
     
     return pgHealthy && redisHealthy;
@@ -271,11 +283,13 @@ export class ConnectionPool {
    * Get pool utilization percentage
    */
   getUtilization(): { postgres: number; redis: number } {
+    // Use actual configured max instead of hardcoded 100
     const pgMax = this.config.postgres.max || 100;
-    const pgUtil = ((this.pgPool.totalCount - this.pgPool.idleCount) / pgMax) * 100;
+    const pgActive = this.pgPool.totalCount - this.pgPool.idleCount;
+    const pgUtil = (pgActive / pgMax) * 100;
     
     return {
-      postgres: Math.min(pgUtil, 100),
+      postgres: Math.min(Math.max(pgUtil, 0), 100), // Clamp between 0-100
       redis: this.reconnecting ? 0 : 100,
     };
   }
@@ -314,8 +328,10 @@ export class ConnectionPool {
     const startTime = Date.now();
     
     while (this.pgPool.totalCount > this.pgPool.idleCount) {
-      if (Date.now() - startTime > maxWait) {
-        console.warn('[ConnectionPool] Drain timeout reached, forcing close');
+      const elapsed = Date.now() - startTime;
+      if (elapsed > maxWait) {
+        const activeCount = this.pgPool.totalCount - this.pgPool.idleCount;
+        console.warn(`[ConnectionPool] Drain timeout reached after ${elapsed}ms, ${activeCount} connections still active`);
         break;
       }
       

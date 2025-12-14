@@ -36,10 +36,13 @@ import { flattenEnvironment } from '../utils/env.js';
 function sanitizeTargetName(target: string): string {
   return target
     .replace(/https?:\/\//g, '')  // Remove protocol
+    .replace(/\.\./g, '')  // Remove directory traversal attempts
+    .replace(/^[\/\\]+/, '')  // Remove leading slashes
     .replace(/[\/\\:*?"<>|]/g, '_')  // Replace invalid chars
     .replace(/\s+/g, '_')  // Replace spaces
     .replace(/_+/g, '_')  // Collapse multiple underscores
-    .replace(/^_|_$/g, '');  // Trim underscores
+    .replace(/^_|_$/g, '')  // Trim underscores
+    .substring(0, 200);  // Limit length to prevent buffer issues
 }
 
 /**
@@ -84,7 +87,10 @@ export class DirectDockerService extends EventEmitter {
         timestamp: Date.now(),
         metadata: { fromToolBuffer: true, tool: this._currentToolName, chunked: true }
       } as any);
-    } catch {}
+    } catch (error) {
+      // Log errors during tool output emission for debugging
+      logger.debug('Failed to emit tool output chunk:', error);
+    }
   }
 
   /**
@@ -94,6 +100,16 @@ export class DirectDockerService extends EventEmitter {
   private flushToolOutputChunks(force: boolean = false): void {
     const CHUNK_SIZE = 64 * 1024; // 64 KiB
     const MIN_SPLIT = 32 * 1024;  // Prefer newline split after 32 KiB
+    const MAX_BUFFER_SIZE = 10 * 1024 * 1024; // 10 MB max buffer to prevent memory issues
+    
+    // Safety: if buffer exceeds max size, force flush entire buffer
+    if (this.toolOutputBuffer.length > MAX_BUFFER_SIZE) {
+      logger.warn(`Tool output buffer exceeded ${MAX_BUFFER_SIZE} bytes, force flushing`);
+      this.emitToolOutputChunk(this.toolOutputBuffer);
+      this.toolOutputBuffer = '';
+      return;
+    }
+    
     while (this.toolOutputBuffer.length > CHUNK_SIZE || (force && this.toolOutputBuffer.length > 0)) {
       const window = this.toolOutputBuffer.slice(0, CHUNK_SIZE);
       let n = Math.min(this.toolOutputBuffer.length, CHUNK_SIZE);
