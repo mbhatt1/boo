@@ -103,6 +103,8 @@ export interface ExecutionCapabilities {
   requiresDocker: boolean;
   /** Maximum concurrent executions supported (0 = unlimited) */
   maxConcurrent: number;
+  /** Optional list of requirements for this execution service */
+  requirements?: string[];
 }
 
 /**

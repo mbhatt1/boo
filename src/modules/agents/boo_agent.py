@@ -69,7 +69,8 @@ class _ToolRouterHook:
                     maybe = _json.loads(raw_input)
                     if isinstance(maybe, dict):
                         params = maybe
-                except Exception:
+                except _json.JSONDecodeError:
+                    # Bug #5 Fix: Catch specific JSON error instead of broad Exception
                     pass
         elif isinstance(raw_input, (list, tuple)):
             # Handle list/tuple by joining elements
@@ -125,6 +126,7 @@ def _first(*vals: Any) -> str:
 # Configure SDK logging for debugging swarm operations
 def configure_sdk_logging(enable_debug: bool = False):
     """Configure logging for Strands SDK components."""
+    # Bug #8 Fix: Only enable debug logging when explicitly requested via environment
     if enable_debug:
         # Only enable verbose logging when explicitly requested
         log_level = logging.INFO
@@ -394,8 +396,9 @@ def create_agent(
 ) -> Tuple[Agent, ReasoningHandler]:
     """Create autonomous agent"""
 
-    # Enable comprehensive SDK logging for debugging
-    configure_sdk_logging(enable_debug=True)
+    # Bug #8 Fix: Make debug logging conditional on environment variable
+    debug_logging = os.getenv("BOO_DEBUG_SDK", "false").lower() == "true"
+    configure_sdk_logging(enable_debug=debug_logging)
 
     # Use provided config or create default
     if config is None:
@@ -500,9 +503,10 @@ def create_agent(
             config.provider, target_name, operation_id, module=config.module
         )
         print_status(f"Output directories ready: {paths.get('artifacts', '')}", "SUCCESS")
-    except Exception:
-        # Non-fatal: proceed even if directory creation logs an error
-        pass
+    except Exception as e:
+        # Bug #4 Fix: Log directory creation failures instead of silent suppression
+        logger.warning(f"Directory creation issue (non-fatal): {e}")
+        paths = {}
 
     try:
         if paths:
@@ -522,8 +526,9 @@ def create_agent(
 
         # Fix python_repl race condition by disabling PTY mode
         os.environ["PYTHON_REPL_INTERACTIVE"] = "false"
-    except Exception:
-        logger.debug("Unable to set overlay environment context", exc_info=True)
+    except Exception as e:
+        # Bug #9 Fix: Add debug logging for environment variable errors
+        logger.debug("Unable to set overlay environment context: %s", e, exc_info=True)
 
     try:
         initialize_memory_system(memory_config, operation_id, target_name, has_existing_memories)
@@ -554,7 +559,7 @@ def create_agent(
             import importlib.util
             import sys
 
-            # Track loaded modules for cleanup
+            # Bug #20: Track loaded modules for cleanup
             loaded_module_names: List[str] = []
 
             # Dynamically load each tool module
@@ -577,9 +582,8 @@ def create_agent(
                                 loaded_module_tools.append(attr)
                                 agent_logger.debug("Found module tool: %s", attr_name)
 
-                except ImportError as ie:
-                    agent_logger.error("Failed to import tool module from %s: %s", tool_path, ie, exc_info=True)
-                except Exception as e:
+                except (ImportError, Exception) as e:
+                    # Bug #10 Fix: Consolidate exception handling
                     agent_logger.error("Failed to load tool from %s: %s", tool_path, e, exc_info=True)
 
             tool_names = [tool.__name__ for tool in loaded_module_tools] if loaded_module_tools else []
@@ -741,30 +745,31 @@ Guidance and tool names in prompts are illustrative, not prescriptive. Always ch
                                         criteria_line = ls.split(" - ", 1)[1]
                             if phase_line and criteria_line:
                                 break
-                    # Try JSON extraction first (plan stored as JSON or within [PLAN] {json})
-                    plan_json = None
-                    try:
-                        brace = raw.find("{")
-                        if brace != -1:
-                            plan_json = json.loads(raw[brace:])
-                    except Exception:
-                        plan_json = None
-                    if isinstance(plan_json, dict):
+                    # Bug #11 Fix: Simplify JSON extraction with helper
+                    def extract_plan_json(text: str):
+                        """Extract JSON from plan text."""
                         try:
-                            cph = plan_json.get("current_phase")
-                            if isinstance(cph, int):
-                                plan_current_phase = cph
-                            else:
-                                phases = plan_json.get("phases") or []
-                                if isinstance(phases, list):
-                                    for ph in phases:
-                                        if isinstance(ph, dict) and ph.get("status") == "active":
-                                            pid = ph.get("id")
-                                            if isinstance(pid, int):
-                                                plan_current_phase = pid
-                                                break
-                        except Exception:
+                            brace = text.find("{")
+                            if brace != -1:
+                                return json.loads(text[brace:])
+                        except json.JSONDecodeError:
                             pass
+                        return None
+                    
+                    plan_json = extract_plan_json(raw)
+                    if isinstance(plan_json, dict):
+                        cph = plan_json.get("current_phase")
+                        if isinstance(cph, int):
+                            plan_current_phase = cph
+                        else:
+                            phases = plan_json.get("phases") or []
+                            if isinstance(phases, list):
+                                for ph in phases:
+                                    if isinstance(ph, dict) and ph.get("status") == "active":
+                                        pid = ph.get("id")
+                                        if isinstance(pid, int):
+                                            plan_current_phase = pid
+                                            break
                     # Compose snapshot with up to three lines
                     snap_lines = []
                     if phase_line:

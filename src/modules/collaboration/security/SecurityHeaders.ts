@@ -193,7 +193,9 @@ const DEFAULT_CONFIG: SecurityHeadersConfig = {
   
   cors: {
     enabled: true,
-    origin: false as any, // Set to specific origins in production
+    // Bug #37 Fix: Use proper CORS configuration - defaults to localhost for dev
+    // Set CORS_ORIGIN environment variable with comma-separated origins for production
+    origin: ['http://localhost:3000', 'http://localhost:8080'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     exposedHeaders: ['X-RateLimit-Limit', 'X-RateLimit-Remaining', 'X-RateLimit-Reset'],

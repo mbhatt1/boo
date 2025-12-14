@@ -97,6 +97,8 @@ export class DirectDockerService extends EventEmitter {
         metadata: { fromToolBuffer: true, tool: this._currentToolName, chunked: true }
       } as any);
     } catch (error) {
+      // Bug #31 Fix: Log the error instead of silent catch
+      logger.warn('Failed to emit tool buffer chunk:', error);
       // Log errors during tool output emission for debugging
       logger.debug('Failed to emit tool output chunk:', error);
     }
@@ -657,12 +659,14 @@ export class DirectDockerService extends EventEmitter {
       eventParser.on('data', () => {});
       
       eventParser.on('error', (error) => {
-        // Emit parser errors as events instead of console.error
+        // Bug #30 Fix: Clean up event parser on error to prevent resource leaks
         this.emit('event', {
           type: 'output',
           content: `Event parser error: ${error}`,
           timestamp: Date.now()
         });
+        // Destroy the parser to prevent further processing and resource leaks
+        eventParser.destroy();
       });
       
       stream.on('error', (error) => {
@@ -1333,8 +1337,15 @@ export class DirectDockerService extends EventEmitter {
     stream.pipe(eventParser);
 
     eventParser.on('error', (error) => {
+      // Bug #30 Fix: Add proper cleanup in error handler
       logger.error('Event parser error', error as any);
       this.emit('event', { type: 'output', content: `Event parser error: ${error}`, timestamp: Date.now() });
+      // Cleanup parser resources on error
+      try {
+        eventParser.removeAllListeners();
+      } catch (cleanupError) {
+        logger.warn('Failed to cleanup event parser:', cleanupError);
+      }
     });
     stream.on('error', (error: any) => {
       logger.error('Exec stream error', error);

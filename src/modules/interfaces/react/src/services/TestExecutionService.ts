@@ -20,6 +20,7 @@ export class TestExecutionService extends EventEmitter implements ExecutionServi
       canExecute: true,
       supportsStreaming: true,
       supportsParallel: false,
+      requiresDocker: false,
       maxConcurrent: 1,
       requirements: ['Test mode only']
     };

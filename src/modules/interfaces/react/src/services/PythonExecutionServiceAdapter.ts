@@ -61,6 +61,7 @@ export class PythonExecutionServiceAdapter extends EventEmitter implements Execu
       canExecute: true,
       supportsStreaming: true,
       supportsParallel: false, // Python service creates new instances
+      requiresDocker: false,
       maxConcurrent: 1,
       requirements: [
         'Python 3.10+',

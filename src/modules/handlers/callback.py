@@ -430,8 +430,12 @@ class ReasoningHandler(PrintingCallbackHandler):
             return
         self.state.evaluation_triggered = True
 
-        # Import here to avoid circular imports
-        from modules.evaluation.evaluation import BooAgentEvaluator
+        # Bug #6 Fix: Add error handling for import
+        try:
+            from modules.evaluation.evaluation import BooAgentEvaluator
+        except ImportError as e:
+            logger.error("Failed to import BooAgentEvaluator: %s", e)
+            return
 
         # Check if evaluation is enabled (application is source of truth when explicit)
         ui_mode = os.getenv("BOO_UI_MODE", "").lower()
@@ -477,15 +481,15 @@ class ReasoningHandler(PrintingCallbackHandler):
                 if self.state.evaluation_thread and self.state.evaluation_thread.is_alive():
                     logger.info("Signaling evaluation thread to stop...")
                     self.evaluation_stop_event.set()
-                    self.state.evaluation_thread.join(timeout=2.0)
+                    # Bug #19 Fix: Increase timeout for evaluation thread completion
+                    timeout = float(os.getenv("EVALUATION_THREAD_TIMEOUT", "5.0"))
+                    self.state.evaluation_thread.join(timeout=timeout)
                     if self.state.evaluation_thread.is_alive():
-                        logger.warning("Evaluation thread did not complete within timeout")
+                        logger.warning("Evaluation thread did not complete within %s second timeout", timeout)
             
             atexit.register(wait_for_evaluation)
 
-            # Wait a moment to ensure evaluation starts
-            # time module already imported at module level
-
+            # Bug #7 Fix: Remove redundant comment
             time.sleep(1)
             logger.info("Evaluation thread started successfully (daemon mode with atexit handler)")
 

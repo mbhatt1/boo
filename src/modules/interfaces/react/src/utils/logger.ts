@@ -204,7 +204,12 @@ export class Logger {
       ...(entry.metadata && { metadata: entry.metadata })
     };
 
-    console.log(JSON.stringify(output));
+    // Bug #17 Fix: Wrap in try/catch to handle closed stdout
+    try {
+      console.log(JSON.stringify(output));
+    } catch (err) {
+      // Silently ignore stdout errors (e.g., pipe closed)
+    }
   }
 
   /**

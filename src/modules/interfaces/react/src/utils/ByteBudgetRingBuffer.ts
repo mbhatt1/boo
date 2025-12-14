@@ -82,6 +82,12 @@ export class ByteBudgetRingBuffer<T> {
     if (this.currentBytes > Number.MAX_SAFE_INTEGER - size) {
       console.warn('ByteBudgetRingBuffer: Integer overflow detected, recalculating bytes');
       this.recalculateBytes();
+      // Bug #14 Fix: Verify recalculation succeeded
+      if (this.currentBytes > Number.MAX_SAFE_INTEGER - size) {
+        console.error('ByteBudgetRingBuffer: Overflow persists after recalculation, clearing buffer');
+        this.clear();
+        return;
+      }
     } else {
       this.currentBytes += size;
     }

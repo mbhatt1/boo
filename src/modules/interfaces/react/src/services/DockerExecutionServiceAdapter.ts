@@ -79,6 +79,7 @@ export class DockerExecutionServiceAdapter extends EventEmitter implements Execu
       canExecute: true,
       supportsStreaming: true,
       supportsParallel: true, // Docker containers can run in parallel
+      requiresDocker: true,
       maxConcurrent: 5, // Reasonable limit for container resources
       requirements: [
         'Docker Engine running',

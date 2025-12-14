@@ -23,9 +23,27 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
-import boto3
-import ollama
-import requests
+# Bug #23 Fix: Add try/except for optional imports
+try:
+    import boto3
+    HAS_BOTO3 = True
+except ImportError:
+    HAS_BOTO3 = False
+    boto3 = None  # type: ignore
+
+try:
+    import ollama
+    HAS_OLLAMA = True
+except ImportError:
+    HAS_OLLAMA = False
+    ollama = None  # type: ignore
+
+try:
+    import requests
+    HAS_REQUESTS = True
+except ImportError:
+    HAS_REQUESTS = False
+    requests = None  # type: ignore
 
 from modules.config.runtime import get_config
 from modules.handlers.utils import get_output_path, sanitize_target_name

@@ -178,21 +178,26 @@ export function useCollaboration(config: UseCollaborationConfig): UseCollaborati
             break;
 
           case 'comment.created':
-            setComments((prev) => [
-              ...prev,
-              {
-                id: message.comment.id,
-                sessionId: message.sessionId,
-                authorId: message.comment.author.userId,
-                targetType: message.comment.targetType,
-                targetId: message.comment.targetId,
-                content: message.comment.content,
-                metadata: message.comment.metadata || {},
-                createdAt: new Date(message.timestamp),
-                updatedAt: new Date(message.timestamp),
-              },
-            ]);
-            log('Comment added:', message.comment.id);
+            // Bug #18 Fix: Add null check for comment before accessing properties
+            if (message.comment && message.comment.id) {
+              setComments((prev) => [
+                ...prev,
+                {
+                  id: message.comment.id,
+                  sessionId: message.sessionId,
+                  authorId: message.comment.author?.userId || 'unknown',
+                  targetType: message.comment.targetType,
+                  targetId: message.comment.targetId,
+                  content: message.comment.content,
+                  metadata: message.comment.metadata || {},
+                  createdAt: new Date(message.timestamp),
+                  updatedAt: new Date(message.timestamp),
+                },
+              ]);
+              log('Comment added:', message.comment.id);
+            } else {
+              log('Invalid comment data received');
+            }
             break;
 
           case 'session_created':
@@ -291,7 +296,13 @@ export function useCollaboration(config: UseCollaborationConfig): UseCollaborati
           log(`Reconnecting in ${reconnectInterval}ms (attempt ${reconnectAttemptsRef.current}/${maxReconnectAttempts})`);
           
           reconnectTimeoutRef.current = setTimeout(() => {
-            connect();
+            // Bug #15 Fix: Add error handling for reconnection
+            try {
+              connect();
+            } catch (err) {
+              log('Reconnection failed:', err);
+              setError(err as Error);
+            }
           }, reconnectInterval);
         } else if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
           setError(new Error('Max reconnection attempts reached'));
@@ -302,7 +313,7 @@ export function useCollaboration(config: UseCollaborationConfig): UseCollaborati
       setError(err as Error);
       setConnectionState('error');
     }
-  }, [url, token, sessionId, handleMessage, reconnectInterval, maxReconnectAttempts, log]);
+  }, [url, token, sessionId, handleMessage, sendMessage, reconnectInterval, maxReconnectAttempts, log]);
 
   /**
    * Disconnect from WebSocket server
