@@ -100,7 +100,16 @@ export CDK_DEFAULT_REGION="$AWS_REGION"
 # Step 1: Install CDK dependencies
 echo -e "${GREEN}[1/6] Installing CDK dependencies...${NC}"
 cd "$(dirname "$0")/.."
-npm install
+if ! npm install; then
+    echo -e "${RED}Error: Failed to install CDK dependencies${NC}"
+    echo "This could be due to:"
+    echo "  - Network connectivity issues"
+    echo "  - Corrupted package-lock.json"
+    echo "  - Incompatible Node.js version"
+    echo "  - Missing npm registry access"
+    exit 1
+fi
+echo -e "${GREEN}✓ CDK dependencies installed successfully${NC}"
 
 # Step 2: Bootstrap CDK (if needed)
 echo -e "${GREEN}[2/6] Checking CDK bootstrap...${NC}"
@@ -113,7 +122,20 @@ fi
 
 # Step 3: Build and push Docker image
 if [ "$SKIP_IMAGE" = false ]; then
+    # Verify Docker is running
     echo -e "${GREEN}[3/6] Building and pushing Docker image...${NC}"
+    echo "Checking Docker daemon status..."
+    
+    if ! docker info >/dev/null 2>&1; then
+        echo -e "${RED}Error: Docker daemon is not running${NC}"
+        echo "Please start Docker and try again:"
+        echo "  - macOS: Start Docker Desktop"
+        echo "  - Linux: sudo systemctl start docker"
+        echo "  - Check status: docker info"
+        exit 1
+    fi
+    
+    echo "✓ Docker daemon is running"
     ./scripts/build-and-push.sh -e "$ENVIRONMENT" -r "$AWS_REGION" -a "$AWS_ACCOUNT"
 else
     echo -e "${YELLOW}[3/6] Skipping Docker image build (--skip-image flag)${NC}"

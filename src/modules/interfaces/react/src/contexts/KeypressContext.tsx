@@ -209,6 +209,9 @@ export function KeypressProvider({ children }: { children: React.ReactNode }) {
       stdin.removeListener('data', handleRawKeypress);
       rl.close();
 
+      // Clear the rapid input timer BEFORE flushing
+      clearRapidInputTimer();
+
       if (wasRaw === false) {
         setRawMode(false);
       }
@@ -226,8 +229,7 @@ export function KeypressProvider({ children }: { children: React.ReactNode }) {
         pasteBuffer = Buffer.alloc(0);
       }
 
-      // Flush any pending rapid input data
-      clearRapidInputTimer();
+      // Flush any pending rapid input data (after clearing timer)
       if (rapidInputBuffer) {
         broadcast({
           name: '',

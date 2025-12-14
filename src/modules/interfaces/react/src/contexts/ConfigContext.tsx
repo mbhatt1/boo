@@ -493,6 +493,7 @@ export const ConfigProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   // Use a ref to get the latest config in callbacks without adding a dependency
   const configRef = useRef(config);
+  const isFirstRenderConfig = useRef(true);
   useEffect(() => {
     configRef.current = config;
   }, [config]);
@@ -527,16 +528,17 @@ export const ConfigProvider: FC<{ children: ReactNode }> = ({ children }) => {
 
   // Persist confirmations/autoApprove changes immediately to survive app restarts
   useEffect(() => {
+    // Skip on mount to avoid race condition
+    if (isFirstRenderConfig.current) {
+      isFirstRenderConfig.current = false;
+      return;
+    }
+
     (async () => {
       try {
-        // Only persist when confirmations or autoApprove change to avoid excessive writes
-        // Compare with ref to avoid writing on initial load
-        const prev = configRef.current;
-        if (prev.confirmations !== config.confirmations || prev.autoApprove !== config.autoApprove) {
-          await fs.mkdir(path.dirname(configFilePath), { recursive: true });
-          await fs.writeFile(configFilePath, JSON.stringify(config, null, 2));
-          loggingService.info('Persisted confirmations/autoApprove to:', configFilePath);
-        }
+        await fs.mkdir(path.dirname(configFilePath), { recursive: true });
+        await fs.writeFile(configFilePath, JSON.stringify(config, null, 2));
+        loggingService.info('Persisted confirmations/autoApprove to:', configFilePath);
       } catch (e) {
         loggingService.warn?.('Non-fatal: failed to persist confirmations/autoApprove', e);
       }
@@ -652,7 +654,8 @@ export const ConfigProvider: FC<{ children: ReactNode }> = ({ children }) => {
   // Load and validate configuration on component mount
   useEffect(() => {
     validateAndLoadConfig();
-  }, [validateAndLoadConfig]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const contextValue = useMemo(() => ({
     config,

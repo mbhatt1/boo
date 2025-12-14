@@ -165,20 +165,29 @@ export class EventStore {
 
     const toRemove = this.totalCount - this.maxEvents;
     let removed = 0;
+    let chunksToRemove = 0;
 
-    // Remove complete chunks from the beginning
-    while (removed < toRemove && this.chunks.length > 0) {
-      const firstChunk = this.chunks[0];
-      if (removed + firstChunk.length <= toRemove) {
-        // Remove entire chunk
-        removed += firstChunk.length;
-        this.chunks.shift();
+    // Calculate how many complete chunks to remove
+    for (let i = 0; i < this.chunks.length && removed < toRemove; i++) {
+      const chunk = this.chunks[i];
+      if (removed + chunk.length <= toRemove) {
+        removed += chunk.length;
+        chunksToRemove++;
       } else {
-        // Partially trim first chunk
-        const trimCount = toRemove - removed;
-        this.chunks[0] = firstChunk.slice(trimCount);
-        removed += trimCount;
+        break;
       }
+    }
+
+    // Remove chunks in O(1) using splice
+    if (chunksToRemove > 0) {
+      this.chunks.splice(0, chunksToRemove);
+    }
+
+    // Partially trim first remaining chunk if needed
+    if (removed < toRemove && this.chunks.length > 0) {
+      const trimCount = toRemove - removed;
+      this.chunks[0] = this.chunks[0].slice(trimCount);
+      removed += trimCount;
     }
 
     this.totalCount -= removed;
@@ -223,10 +232,11 @@ export function useEventStore(maxEvents = MAX_EVENTS) {
   const storeRef = React.useRef(new EventStore(maxEvents));
   const [version, setVersion] = React.useState(0);
 
+  // Stable callbacks without version dependency
   const append = React.useCallback((event: DisplayStreamEvent) => {
     storeRef.current.append(event);
     setVersion(v => v + 1);
-  }, []);
+  }, []); // No dependencies - stable reference
 
   const appendBatch = React.useCallback((events: DisplayStreamEvent[]) => {
     storeRef.current.appendBatch(events);
@@ -238,19 +248,21 @@ export function useEventStore(maxEvents = MAX_EVENTS) {
     setVersion(v => v + 1);
   }, []);
 
-  const getEvents = React.useCallback(() => {
+  // Use version only for derived data that needs re-render
+  const getEvents = React.useMemo(() => {
     return storeRef.current.toArray();
-  }, [version]); // Depend on version to re-compute when changed
+  }, [version]);
 
   const getRecent = React.useCallback((count: number) => {
+    // Direct access without version dependency
     return storeRef.current.getRecent(count);
-  }, [version]);
+  }, []);
 
   const split = React.useCallback((activeCount: number) => {
     return storeRef.current.split(activeCount);
-  }, [version]);
+  }, []);
 
-  return {
+  return React.useMemo(() => ({
     append,
     appendBatch,
     clear,
@@ -258,5 +270,5 @@ export function useEventStore(maxEvents = MAX_EVENTS) {
     getRecent,
     split,
     count: storeRef.current.count
-  };
+  }), [append, appendBatch, clear, getEvents, getRecent, split]);
 }

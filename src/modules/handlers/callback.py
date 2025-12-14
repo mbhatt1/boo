@@ -8,6 +8,7 @@ callback operations, step tracking, and report generation.
 
 import logging
 import os
+import signal
 import sys
 import threading
 import time
@@ -56,6 +57,12 @@ class ReasoningHandler(PrintingCallbackHandler):
         self.state.start_time = time.time()
         timestamp = datetime.now().strftime("%H:%M:%S")
 
+        # Setup interrupt handling
+        self._stop_event = threading.Event()
+        self._original_sigint = None
+        self.evaluation_stop_event = threading.Event()
+        self._setup_signal_handler()
+
         # Emit structured banner event instead of direct print
         emit_event(
             "banner",
@@ -66,17 +73,33 @@ class ReasoningHandler(PrintingCallbackHandler):
                 "icon": "🔐",
             },
         )
+    
+    def _setup_signal_handler(self):
+        """Setup signal handler for graceful interruption"""
+        try:
+            self._original_sigint = signal.getsignal(signal.SIGINT)
+            signal.signal(signal.SIGINT, self._handle_interrupt)
+        except ValueError:
+            # signal only works in main thread
+            logger.debug("Cannot setup signal handler (not in main thread)")
+    
+    def _handle_interrupt(self, signum, frame):
+        """Handle interrupt signal properly"""
+        logger.info("Interrupt signal received, stopping operation...")
+        self._stop_event.set()
+        
+        # Restore original handler for second interrupt (force quit)
+        if self._original_sigint:
+            signal.signal(signal.SIGINT, self._original_sigint)
+        
+        raise KeyboardInterrupt("User interrupted operation")
 
     def __call__(self, **kwargs):
         """Process callback events with proper step limiting and clean formatting"""
 
-        # Check for interrupt
-        # Get the main module dynamically from the current module's package
-        main_module_name = __name__.split('.')[0] if '.' in __name__ else "boo"
-        if main_module_name in sys.modules:
-            main_module = sys.modules[main_module_name]
-            if hasattr(main_module, "interrupted") and main_module.interrupted:
-                raise KeyboardInterrupt("User interrupted operation")
+        # Check if stop was requested
+        if self._stop_event.is_set():
+            raise KeyboardInterrupt("User interrupted operation")
 
         # Check step limit
         if self.state.step_limit_reached:
@@ -426,26 +449,45 @@ class ReasoningHandler(PrintingCallbackHandler):
             def run_evaluation():
                 try:
                     logger.info("Starting evaluation thread for operation: %s", agent_trace_id)
+                    
+                    # Check stop event before starting
+                    if self.evaluation_stop_event.is_set():
+                        logger.info("Evaluation cancelled before start")
+                        return
+                    
                     evaluator = BooAgentEvaluator()
                     import asyncio
 
                     # Evaluate all traces for this operation
                     logger.info("Running evaluation for trace ID: %s", agent_trace_id)
                     result = asyncio.run(evaluator.evaluate_trace(trace_id=agent_trace_id))
-                    logger.info("Evaluation completed. Results: %s", result)
+                    
+                    if not self.evaluation_stop_event.is_set():
+                        logger.info("Evaluation completed. Results: %s", result)
                 except Exception as e:
                     logger.error("Error running evaluation: %s", e, exc_info=True)
 
-            self.state.evaluation_thread = threading.Thread(target=run_evaluation)
-            # Don't use daemon thread - allow evaluation to complete
-            self.state.evaluation_thread.daemon = False
+            # Bug #98 Fix: Set daemon=True and add atexit handler
+            self.state.evaluation_thread = threading.Thread(target=run_evaluation, daemon=True)
             self.state.evaluation_thread.start()
+
+            # Add atexit handler to wait for completion with timeout
+            import atexit
+            def wait_for_evaluation():
+                if self.state.evaluation_thread and self.state.evaluation_thread.is_alive():
+                    logger.info("Signaling evaluation thread to stop...")
+                    self.evaluation_stop_event.set()
+                    self.state.evaluation_thread.join(timeout=2.0)
+                    if self.state.evaluation_thread.is_alive():
+                        logger.warning("Evaluation thread did not complete within timeout")
+            
+            atexit.register(wait_for_evaluation)
 
             # Wait a moment to ensure evaluation starts
             # time module already imported at module level
 
             time.sleep(1)
-            logger.info("Evaluation thread started successfully (non-daemon mode)")
+            logger.info("Evaluation thread started successfully (daemon mode with atexit handler)")
 
         except Exception as e:
             logger.error("Error triggering evaluation: %s", e)
@@ -488,6 +530,15 @@ class ReasoningHandler(PrintingCallbackHandler):
     def created_tools(self) -> List[str]:
         """Get the list of created tools."""
         return self.state.created_tools
+    
+    def cleanup(self):
+        """Cleanup resources and restore signal handler"""
+        if self._original_sigint:
+            try:
+                signal.signal(signal.SIGINT, self._original_sigint)
+            except ValueError:
+                pass  # Not in main thread
+        self._stop_event.clear()
 
     @property
     def stop_tool_used(self) -> bool:

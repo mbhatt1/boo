@@ -18,6 +18,7 @@ Key Components:
 import importlib.util
 import logging
 import os
+import re
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
@@ -73,7 +74,13 @@ def get_embedding_dimensions(model_name: str, default: int = 1536) -> int:
         
     Returns:
         The embedding dimension for the model
+        
+    Raises:
+        ValueError: If model_name is None or empty
     """
+    if not model_name:
+        raise ValueError("model_name cannot be None or empty")
+    
     return EMBEDDING_DIMENSIONS.get(model_name, default)
 
 MEM0_PROVIDER_MAP: Dict[str, str] = {
@@ -352,8 +359,16 @@ class ConfigManager:
         self._default_configs = self._initialize_default_configs()
 
     def get_default_region(self) -> str:
-        """Get the default AWS region with environment override support."""
-        return os.getenv("AWS_REGION", "us-east-1")
+        """Get the default AWS region with environment override support and validation."""
+        region = os.getenv("AWS_REGION", "us-east-1")
+        
+        # Validate region format (e.g., us-east-1, eu-west-2)
+        valid_region_pattern = r'^[a-z]{2}-[a-z]+-\d{1}$'
+        if not re.match(valid_region_pattern, region):
+            logger.warning(f"Invalid AWS region format: {region}, using us-east-1")
+            return "us-east-1"
+        
+        return region
 
     def get_thinking_models(self) -> List[str]:
         """Get list of models that support thinking capabilities."""

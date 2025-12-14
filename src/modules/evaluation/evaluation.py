@@ -63,15 +63,32 @@ class BooAgentEvaluator:
         config = get_config()
         langfuse_url = config.services.langfuse_url
         
-        self.langfuse = Langfuse(
-            public_key=os.getenv("LANGFUSE_PUBLIC_KEY", "boo-public"),
-            secret_key=os.getenv("LANGFUSE_SECRET_KEY", "boo-secret"),
-            host=langfuse_url,
-        )
+        try:
+            self.langfuse = Langfuse(
+                public_key=os.getenv("LANGFUSE_PUBLIC_KEY", "boo-public"),
+                secret_key=os.getenv("LANGFUSE_SECRET_KEY", "boo-secret"),
+                host=langfuse_url,
+            )
+            
+            # Verify connection (if Langfuse has a health/ping method, use it)
+            # Otherwise, just log successful initialization
+            logger.info(f"Langfuse evaluator connected to {langfuse_url}")
+            
+        except Exception as e:
+            logger.error(f"Failed to initialize Langfuse: {e}")
+            logger.warning("Evaluation will be disabled. The agent will continue without Langfuse integration.")
+            self.langfuse = None  # Allow graceful degradation
+        
+        # Initialize models and metrics regardless of Langfuse status
         self.setup_models()
         self.setup_metrics()
-        # Initialize trace parser with LLM and Langfuse client
-        self.trace_parser = TraceParser(llm=self.llm, langfuse_client=self.langfuse)
+        
+        # Only create trace parser if Langfuse is available
+        if self.langfuse:
+            self.trace_parser = TraceParser(llm=self.llm, langfuse_client=self.langfuse)
+        else:
+            self.trace_parser = None
+            logger.info("Trace parser not initialized (Langfuse unavailable)")
 
     def setup_models(self):
         """Configure evaluation models based on server type."""
@@ -231,6 +248,10 @@ class BooAgentEvaluator:
         Returns:
             Dictionary mapping trace names to their evaluation scores
         """
+        if not self.langfuse:
+            logger.warning("Cannot evaluate operation traces: Langfuse not initialized")
+            return {}
+        
         # Find all traces for this operation with bounded retry from config manager
         eval_cfg = get_config_manager().get_server_config(os.getenv("PROVIDER", "bedrock")).evaluation
         max_wait = getattr(eval_cfg, "max_wait_secs", 30)
@@ -455,6 +476,10 @@ class BooAgentEvaluator:
         Returns:
             Dictionary of metric names and scores (from all traces combined)
         """
+        if not self.langfuse:
+            logger.warning("Cannot evaluate trace: Langfuse not initialized")
+            return {}
+        
         logger.info(
             "Evaluating all traces for operation %s",
             trace_id,

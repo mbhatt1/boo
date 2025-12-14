@@ -1,6 +1,7 @@
 {
   "name": "@boo/collaboration",
   "version": "1.0.0",
+  "type": "module",
   "description": "Real-time collaboration system for Boo security assessment tool",
   "main": "index.js",
   "scripts": {

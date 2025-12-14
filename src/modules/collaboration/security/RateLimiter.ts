@@ -13,6 +13,7 @@
  * Supports both in-memory and Redis backends for production scalability
  */
 
+import { randomUUID } from 'crypto';
 import { CollaborationError, CollaborationErrorCode, User } from '../types/index.js';
 import type { RedisClient } from '../redis/RedisClient.js';
 
@@ -123,6 +124,9 @@ export class RateLimiter {
   private memoryStore: Map<string, RateLimitEntry>;
   private bannedUsers: Set<string>;
   private bannedIps: Set<string>;
+  private cleanupInterval?: ReturnType<typeof setInterval>;
+  // Bug #95 Fix: Track ban timers for proper cleanup
+  private banTimers: Map<string, ReturnType<typeof setTimeout>>;
 
   constructor(config: Partial<RateLimitConfig> = {}, redis?: RedisClient) {
     this.config = { ...DEFAULT_CONFIG, ...config };
@@ -130,6 +134,7 @@ export class RateLimiter {
     this.memoryStore = new Map();
     this.bannedUsers = new Set();
     this.bannedIps = new Set();
+    this.banTimers = new Map();
     
     // Start cleanup interval for memory store
     if (!this.redis) {
@@ -210,9 +215,13 @@ export class RateLimiter {
     this.bannedUsers.add(userId);
     
     const duration = durationMs || this.config.banDurationMs;
-    setTimeout(() => {
+    // Bug #95 Fix: Store timer reference for cleanup
+    const timerKey = `user:${userId}`;
+    const timer = setTimeout(() => {
       this.bannedUsers.delete(userId);
+      this.banTimers.delete(timerKey);
     }, duration);
+    this.banTimers.set(timerKey, timer);
     
     if (this.redis) {
       await this.redis.set(`ban:user:${userId}`, '1', Math.floor(duration / 1000));
@@ -226,12 +235,52 @@ export class RateLimiter {
     this.bannedIps.add(ipAddress);
     
     const duration = durationMs || this.config.banDurationMs;
-    setTimeout(() => {
+    // Bug #95 Fix: Store timer reference for cleanup
+    const timerKey = `ip:${ipAddress}`;
+    const timer = setTimeout(() => {
       this.bannedIps.delete(ipAddress);
+      this.banTimers.delete(timerKey);
     }, duration);
+    this.banTimers.set(timerKey, timer);
     
     if (this.redis) {
       await this.redis.set(`ban:ip:${ipAddress}`, '1', Math.floor(duration / 1000));
+    }
+  }
+
+  /**
+   * Manually unban a user
+   */
+  async unbanUser(userId: string): Promise<void> {
+    this.bannedUsers.delete(userId);
+    
+    const timerKey = `user:${userId}`;
+    const timer = this.banTimers.get(timerKey);
+    if (timer) {
+      clearTimeout(timer);
+      this.banTimers.delete(timerKey);
+    }
+    
+    if (this.redis) {
+      await this.redis.del(`ban:user:${userId}`);
+    }
+  }
+
+  /**
+   * Manually unban an IP address
+   */
+  async unbanIp(ipAddress: string): Promise<void> {
+    this.bannedIps.delete(ipAddress);
+    
+    const timerKey = `ip:${ipAddress}`;
+    const timer = this.banTimers.get(timerKey);
+    if (timer) {
+      clearTimeout(timer);
+      this.banTimers.delete(timerKey);
+    }
+    
+    if (this.redis) {
+      await this.redis.del(`ban:ip:${ipAddress}`);
     }
   }
 
@@ -333,7 +382,7 @@ export class RateLimiter {
     const count = validEntries.length;
     
     // Add new entry if within limit
-    const entryId = `${now}:${Math.random()}`;
+    const entryId = `${now}:${randomUUID()}`;
     await this.redis!.zadd(redisKey, now, entryId);
     
     // Store TTL info separately since we can't use expire
@@ -504,11 +553,13 @@ export class RateLimiter {
         lastViolation: now,
       };
     } else {
+      // Bug #93 Fix: Store previous violation time before updating
+      const previousViolationTime = entry.lastViolation;
       entry.violations++;
       entry.lastViolation = now;
       
-      // Decay old violations
-      if (now - entry.lastViolation > this.config.violationDecayMs) {
+      // Decay old violations based on time since previous violation
+      if (previousViolationTime && now - previousViolationTime > this.config.violationDecayMs) {
         entry.violations = Math.max(0, entry.violations - 1);
       }
     }
@@ -592,7 +643,8 @@ export class RateLimiter {
    * Start cleanup interval for expired entries
    */
   private startCleanupInterval(): void {
-    setInterval(() => {
+    // Bug #94 Fix: Store interval reference for cleanup
+    this.cleanupInterval = setInterval(() => {
       const now = Date.now();
       for (const [key, entry] of this.memoryStore.entries()) {
         if (entry.resetAt <= now) {
@@ -618,6 +670,18 @@ export class RateLimiter {
    * Shutdown and cleanup
    */
   async close(): Promise<void> {
+    // Bug #94 Fix: Clear cleanup interval
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = undefined;
+    }
+    
+    // Bug #95 Fix: Clear all ban timers
+    for (const timer of this.banTimers.values()) {
+      clearTimeout(timer);
+    }
+    this.banTimers.clear();
+    
     this.memoryStore.clear();
     this.bannedUsers.clear();
     this.bannedIps.clear();

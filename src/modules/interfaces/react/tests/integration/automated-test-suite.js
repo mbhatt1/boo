@@ -63,6 +63,19 @@ class AutomatedTestRunner {
     this.performanceMetrics = [];
     this.startTime = Date.now();
     this.testPassed = true;
+    
+    // Bug #118: Process termination tracking
+    this.processExited = false;
+    this.expectedExit = false;
+    this.currentReject = null;
+    
+    // Bug #119: Cleanup tracking
+    this.cleanedUp = false;
+    this.killTimeout = null;
+    
+    // Bug #120: Config cleanup tracking
+    this.configCleanupPath = null;
+    this.originalConfig = null;
   }
 
   /**
@@ -84,6 +97,8 @@ class AutomatedTestRunner {
     }
 
     return new Promise((resolve, reject) => {
+      this.currentReject = reject;  // Store for later use (Bug #119)
+      
       try {
         this.term = spawn('node', [appPath, '--headless'], {
           name: 'xterm-256color',
@@ -108,15 +123,31 @@ class AutomatedTestRunner {
           this.detectFlicker();
         });
 
+        // Bug #118: Enhanced process termination handling
         this.term.onExit(({ exitCode }) => {
           if (exitCode !== 0 && exitCode !== null) {
             this.errors.push(`Process exited with code ${exitCode}`);
+            this.testPassed = false;
+          }
+          
+          // Mark process as exited
+          this.processExited = true;
+          
+          // Cleanup resources
+          this.cleanup();
+          
+          // Fail test if unexpected exit
+          if (exitCode !== 0 && !this.expectedExit) {
+            if (this.currentReject) {
+              this.currentReject(new Error(`Process exited unexpectedly with code ${exitCode}`));
+            }
           }
         });
 
         // Wait for initial render
         setTimeout(() => resolve(), 1500);
       } catch (error) {
+        this.cleanup();  // Cleanup on error (Bug #119)
         reject(error);
       }
     });
@@ -129,10 +160,27 @@ class AutomatedTestRunner {
     const configDir = join(os.homedir(), '.boo-autoagent');
     const configPath = join(configDir, 'config.json');
     
+    // Store path for cleanup (Bug #120)
+    this.configCleanupPath = configPath;
+    
+    // Backup existing config if it exists (Bug #120)
+    if (fs.existsSync(configPath)) {
+      try {
+        this.originalConfig = fs.readFileSync(configPath, 'utf8');
+      } catch (err) {
+        console.warn('Failed to backup config:', err);
+        this.originalConfig = null;
+      }
+    } else {
+      this.originalConfig = null;
+    }
+    
+    // Create directory if needed
     if (!fs.existsSync(configDir)) {
       fs.mkdirSync(configDir, { recursive: true });
     }
     
+    // Write test config
     fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
   }
 
@@ -325,10 +373,58 @@ class AutomatedTestRunner {
 
   /**
    * Clean up and generate report
+   * Fixes Bug #118, #119, and #120
    */
   async cleanup() {
+    if (this.cleanedUp) {
+      return; // Prevent double cleanup (Bug #119)
+    }
+    
+    this.cleanedUp = true;
+    
+    // Clean up PTY (Bug #119)
     if (this.term) {
-      this.term.kill();
+      try {
+        // Try graceful termination first
+        this.term.kill('SIGTERM');
+        
+        // Force kill after timeout if still running
+        this.killTimeout = setTimeout(() => {
+          if (this.term) {
+            try {
+              this.term.kill('SIGKILL');
+            } catch (err) {
+              // Process might already be dead
+            }
+            this.term = null;
+          }
+        }, 5000);
+      } catch (err) {
+        console.warn('Failed to kill PTY:', err);
+      }
+    }
+    
+    // Restore or remove config (Bug #120)
+    if (this.configCleanupPath) {
+      try {
+        if (this.originalConfig !== null) {
+          // Restore original config
+          fs.writeFileSync(this.configCleanupPath, this.originalConfig);
+        } else {
+          // Remove test config
+          if (fs.existsSync(this.configCleanupPath)) {
+            fs.unlinkSync(this.configCleanupPath);
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to cleanup test config:', err);
+      }
+    }
+    
+    // Clear kill timeout
+    if (this.killTimeout) {
+      clearTimeout(this.killTimeout);
+      this.killTimeout = null;
     }
     
     // Generate test report
@@ -393,9 +489,9 @@ async function testSetupWizardFlow() {
   } catch (error) {
     console.log(chalk.red('✗ Setup Wizard Flow failed:', error.message));
     test.captureState('failure');
+  } finally {
+    return await test.cleanup();
   }
-  
-  return await test.cleanup();
 }
 
 // Test 2: Configuration Editor
@@ -455,9 +551,9 @@ async function testConfigurationEditor() {
   } catch (error) {
     console.log(chalk.red('✗ Configuration Editor failed:', error.message));
     test.captureState('failure');
+  } finally {
+    return await test.cleanup();
   }
-  
-  return await test.cleanup();
 }
 
 // Test 3: Tool Execution Display
@@ -525,9 +621,9 @@ async function testToolExecutionDisplay() {
   } catch (error) {
     console.log(chalk.red('✗ Tool Execution Display failed:', error.message));
     test.captureState('failure');
+  } finally {
+    return await test.cleanup();
   }
-  
-  return await test.cleanup();
 }
 
 // Test 4: Keyboard Navigation and Shortcuts
@@ -569,9 +665,9 @@ async function testKeyboardNavigation() {
   } catch (error) {
     console.log(chalk.red('✗ Keyboard Navigation failed:', error.message));
     test.captureState('failure');
+  } finally {
+    return await test.cleanup();
   }
-  
-  return await test.cleanup();
 }
 
 // Test 5: Error Handling and Recovery
@@ -616,9 +712,9 @@ async function testErrorHandling() {
   } catch (error) {
     console.log(chalk.red('✗ Error Handling failed:', error.message));
     test.captureState('failure');
+  } finally {
+    return await test.cleanup();
   }
-  
-  return await test.cleanup();
 }
 
 // Test 6: Performance and Flicker Detection
@@ -662,9 +758,9 @@ async function testPerformanceAndFlicker() {
   } catch (error) {
     console.log(chalk.red('✗ Performance and Flicker failed:', error.message));
     test.captureState('failure');
+  } finally {
+    return await test.cleanup();
   }
-  
-  return await test.cleanup();
 }
 
 // Test 7: Safety Mechanisms
@@ -716,9 +812,9 @@ async function testSafetyMechanisms() {
   } catch (error) {
     console.log(chalk.red('✗ Safety Mechanisms failed:', error.message));
     test.captureState('failure');
+  } finally {
+    return await test.cleanup();
   }
-  
-  return await test.cleanup();
 }
 
 // Test 8: Memory and State Management
@@ -768,9 +864,9 @@ async function testMemoryAndState() {
   } catch (error) {
     console.log(chalk.red('✗ Memory and State Management failed:', error.message));
     test.captureState('failure');
+  } finally {
+    return await test.cleanup();
   }
-  
-  return await test.cleanup();
 }
 
 /**

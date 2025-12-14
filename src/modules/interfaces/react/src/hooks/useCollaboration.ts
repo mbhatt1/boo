@@ -177,22 +177,22 @@ export function useCollaboration(config: UseCollaborationConfig): UseCollaborati
             log('Cursor update from user:', message.userId);
             break;
 
-          case 'comment_added':
+          case 'comment.created':
             setComments((prev) => [
               ...prev,
               {
-                id: message.commentId,
+                id: message.comment.id,
                 sessionId: message.sessionId,
-                authorId: message.author.userId,
-                targetType: message.targetType,
-                targetId: message.targetId,
-                content: message.content,
-                metadata: message.metadata || {},
+                authorId: message.comment.author.userId,
+                targetType: message.comment.targetType,
+                targetId: message.comment.targetId,
+                content: message.comment.content,
+                metadata: message.comment.metadata || {},
                 createdAt: new Date(message.timestamp),
                 updatedAt: new Date(message.timestamp),
               },
             ]);
-            log('Comment added:', message.commentId);
+            log('Comment added:', message.comment.id);
             break;
 
           case 'session_created':
@@ -224,7 +224,8 @@ export function useCollaboration(config: UseCollaborationConfig): UseCollaborati
         console.error('Failed to parse WebSocket message:', err);
       }
     },
-    [log]
+    // Bug #99 Fix: Add subscribeToActivities to dependency array
+    [log, subscribeToActivities]
   );
 
   /**
@@ -301,7 +302,7 @@ export function useCollaboration(config: UseCollaborationConfig): UseCollaborati
       setError(err as Error);
       setConnectionState('error');
     }
-  }, [url, token, sessionId, handleMessage, reconnectInterval, maxReconnectAttempts, log, sendMessage]);
+  }, [url, token, sessionId, handleMessage, reconnectInterval, maxReconnectAttempts, log]);
 
   /**
    * Disconnect from WebSocket server
@@ -381,9 +382,8 @@ export function useCollaboration(config: UseCollaborationConfig): UseCollaborati
     (status: UserStatus) => {
       setUserStatus(status);
       sendMessage({
-        type: 'presence_update' as any,
+        type: 'heartbeat',
         sessionId,
-        status,
         cursor: cursorPosition || undefined,
       });
     },
@@ -416,16 +416,26 @@ export function useCollaboration(config: UseCollaborationConfig): UseCollaborati
 
     // Set user back to online if they were away
     if (userStatus === 'away') {
-      updateUserStatus('online');
+      setUserStatus('online');
+      // Send heartbeat without triggering resetAwayTimer again
+      // Use direct WebSocket send instead of sendMessage to break cycle
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.send(JSON.stringify({
+          type: 'heartbeat',
+          sessionId,
+          cursor: cursorPosition || undefined,
+        }));
+      }
     }
 
     // Set away after 2 minutes of inactivity
     awayTimeoutRef.current = setTimeout(() => {
       if (userStatus === 'online') {
-        updateUserStatus('away');
+        setUserStatus('away');
+        // Don't send message here to avoid triggering resetAwayTimer
       }
     }, 120000); // 2 minutes
-  }, [userStatus, updateUserStatus]);
+  }, [userStatus, sessionId, cursorPosition]);
 
   /**
    * Add a comment
@@ -433,7 +443,7 @@ export function useCollaboration(config: UseCollaborationConfig): UseCollaborati
   const addComment = useCallback(
     (targetType: CommentTargetType, targetId: string, content: string, metadata?: CommentMetadata) => {
       sendMessage({
-        type: 'comment_add',
+        type: 'comment.create',
         sessionId,
         targetType,
         targetId,
@@ -450,9 +460,10 @@ export function useCollaboration(config: UseCollaborationConfig): UseCollaborati
   const editComment = useCallback(
     (commentId: string, content: string) => {
       sendMessage({
-        type: 'comment_edit',
+        type: 'comment.edit',
         commentId,
         content,
+        sessionId,
       });
     },
     [sendMessage]
@@ -464,8 +475,9 @@ export function useCollaboration(config: UseCollaborationConfig): UseCollaborati
   const deleteComment = useCallback(
     (commentId: string) => {
       sendMessage({
-        type: 'comment_delete',
+        type: 'comment.delete',
         commentId,
+        sessionId,
       });
     },
     [sendMessage]
@@ -509,7 +521,7 @@ export function useCollaboration(config: UseCollaborationConfig): UseCollaborati
         clearTimeout(awayTimeoutRef.current);
       }
     };
-  }, [autoConnect]); // Only run on mount/unmount
+  }, [autoConnect, connect, disconnect]); // Bug #100 Fix: Include connect and disconnect to prevent stale closure
 
   /**
    * Setup activity detection (Phase 2)

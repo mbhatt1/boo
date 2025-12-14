@@ -1,5 +1,5 @@
 export class ByteBudgetRingBuffer<T> {
-  private items: T[] = [];
+  private items: Array<{item: T, size: number}> = [];
   private byteLimit: number;
   private currentBytes = 0;
   private estimator: (item: T) => number;
@@ -75,8 +75,17 @@ export class ByteBudgetRingBuffer<T> {
       return;
     }
 
-    this.items.push(toStore);
-    this.currentBytes += size;
+    // Store item with its size (Bug #111 fix - prevents estimator inconsistency)
+    this.items.push({item: toStore, size});
+    
+    // Check for integer overflow before adding (Bug #110 fix)
+    if (this.currentBytes > Number.MAX_SAFE_INTEGER - size) {
+      console.warn('ByteBudgetRingBuffer: Integer overflow detected, recalculating bytes');
+      this.recalculateBytes();
+    } else {
+      this.currentBytes += size;
+    }
+    
     this.enforceBudget();
   }
 
@@ -92,13 +101,38 @@ export class ByteBudgetRingBuffer<T> {
     // Remove 10% headroom in one go to reduce churn
     const target = Math.floor(this.byteLimit * 0.9);
     while (this.items.length > 0 && this.currentBytes > target) {
-      const removed = this.items.shift()!;
-      this.currentBytes -= this.estimator(removed);
+      const {item, size} = this.items.shift()!;
+      this.currentBytes -= size;  // Use stored size, not re-estimated (Bug #111 fix)
+      
+      // Safety check: prevent negative bytes (Bug #111 fix)
+      if (this.currentBytes < 0) {
+        console.warn('ByteBudgetRingBuffer: currentBytes went negative, recalculating');
+        this.recalculateBytes();
+        break;
+      }
+    }
+  }
+
+  /**
+   * Recalculate total bytes from stored sizes (Bug #110 & #111 fix)
+   * Used as fallback when corruption is detected
+   */
+  private recalculateBytes(): void {
+    this.currentBytes = this.items.reduce((sum, entry) => {
+      return sum + entry.size;
+    }, 0);
+    
+    // Verify the recalculated value is within safe integer range
+    if (this.currentBytes > Number.MAX_SAFE_INTEGER) {
+      console.error('ByteBudgetRingBuffer: currentBytes exceeds safe integer range after recalculation');
+      // Force clear to prevent corruption
+      this.items = [];
+      this.currentBytes = 0;
     }
   }
 
   toArray(): T[] {
-    return this.items.slice();
+    return this.items.map(entry => entry.item);
   }
 
   size(): number {

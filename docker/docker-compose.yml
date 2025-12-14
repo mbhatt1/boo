@@ -1,3 +1,9 @@
+# SECURITY WARNING:
+# All secrets MUST be provided via environment variables.
+# DO NOT commit .env files with real secrets to version control.
+# Copy .env.example to .env and fill in secure values.
+# Run ./validate-env.sh before starting services.
+
 services:
   boo:
     image: boo:latest
@@ -123,15 +129,15 @@ services:
       
       # Auth configuration (required for browser access)
       NEXTAUTH_URL: http://localhost:3000
-      NEXTAUTH_SECRET: mysecret
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?NEXTAUTH_SECRET must be set in environment}
       
       # Network binding
       HOST: 0.0.0.0
       HOSTNAME: 0.0.0.0
       
       # Security keys - regenerate with: openssl rand -hex 32 & openssl rand -hex 16
-      ENCRYPTION_KEY: ${LANGFUSE_ENCRYPTION_KEY:-a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456}
-      SALT: ${LANGFUSE_SALT:-boo-dev-salt-12345}
+      ENCRYPTION_KEY: ${LANGFUSE_ENCRYPTION_KEY:?LANGFUSE_ENCRYPTION_KEY must be set}
+      SALT: ${LANGFUSE_SALT:?LANGFUSE_SALT must be set}
       
       # ClickHouse configuration
       CLICKHOUSE_URL: http://clickhouse:8123
@@ -143,7 +149,7 @@ services:
       # Redis configuration
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_AUTH: myredissecret
+      REDIS_AUTH: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
       
       # MinIO/S3 configuration for batch exports
       LANGFUSE_S3_BATCH_EXPORT_BUCKET: langfuse
@@ -230,8 +236,8 @@ services:
       DIRECT_URL: postgresql://postgres:postgres@postgres:5432/postgres
       
       # Security keys - regenerate with: openssl rand -hex 32 & openssl rand -hex 16
-      ENCRYPTION_KEY: ${LANGFUSE_ENCRYPTION_KEY:-a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456}
-      SALT: ${LANGFUSE_SALT:-boo-dev-salt-12345}
+      ENCRYPTION_KEY: ${LANGFUSE_ENCRYPTION_KEY:?LANGFUSE_ENCRYPTION_KEY must be set}
+      SALT: ${LANGFUSE_SALT:?LANGFUSE_SALT must be set}
       
       # ClickHouse configuration
       CLICKHOUSE_URL: http://clickhouse:8123
@@ -242,7 +248,7 @@ services:
       # Redis configuration
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      REDIS_AUTH: myredissecret
+      REDIS_AUTH: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
       
       # MinIO/S3 configuration
       LANGFUSE_S3_BATCH_EXPORT_BUCKET: langfuse
@@ -318,9 +324,9 @@ services:
     image: docker.io/redis:7
     container_name: boo-langfuse-redis
     restart: unless-stopped
-    command: --requirepass myredissecret
+    command: --requirepass ${REDIS_PASSWORD}
     healthcheck:
-      test: ["CMD-SHELL", "redis-cli -h 127.0.0.1 -p 6379 -a myredissecret ping | grep PONG"]
+      test: ["CMD-SHELL", "redis-cli -h 127.0.0.1 -p 6379 -a ${REDIS_PASSWORD} ping | grep PONG"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -348,7 +354,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: boo_user
-      POSTGRES_PASSWORD: ${COLLAB_DB_PASSWORD:-changeme}
+      POSTGRES_PASSWORD: ${COLLAB_DB_PASSWORD:?COLLAB_DB_PASSWORD must be set}
       POSTGRES_DB: boo_collaboration
     volumes:
       - collaboration_db_data:/var/lib/postgresql/data
@@ -391,14 +397,14 @@ services:
       - COLLAB_DB_PORT=5432
       - COLLAB_DB_NAME=boo_collaboration
       - COLLAB_DB_USER=boo_user
-      - COLLAB_DB_PASSWORD=${COLLAB_DB_PASSWORD:-changeme}
+      - COLLAB_DB_PASSWORD=${COLLAB_DB_PASSWORD:?COLLAB_DB_PASSWORD must be set}
       - COLLAB_DB_SSL=false
       - COLLAB_DB_MAX_CONNECTIONS=20
       
       # Redis Configuration (reuse langfuse redis)
       - COLLAB_REDIS_HOST=redis
       - COLLAB_REDIS_PORT=6379
-      - COLLAB_REDIS_PASSWORD=myredissecret
+      - COLLAB_REDIS_PASSWORD=${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
       - COLLAB_REDIS_DB=1
       - COLLAB_REDIS_PREFIX=collab:
       

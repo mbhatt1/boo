@@ -14,8 +14,8 @@
  */
 
 import React, { useState } from 'react';
-import { SessionMetadata, PresenceUser } from '../../../../collaboration/types';
-import { PresenceList } from './PresenceIndicator';
+import { SessionMetadata, PresenceUser } from '../../../../../collaboration/types/index.js';
+import { PresenceList } from './PresenceIndicator.js';
 
 export interface SessionPanelProps {
   /** Current session metadata */

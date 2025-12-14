@@ -27,6 +27,7 @@ import type { PresenceManager } from '../services/PresenceManager';
 import type { ActivityLogger } from '../services/ActivityLogger';
 import type { CommentService } from '../services/CommentService';
 import type { NotificationService } from '../services/NotificationService';
+import type { RateLimiter } from '../security/RateLimiter.js';
 
 /**
  * Extended WebSocket with metadata
@@ -50,6 +51,7 @@ export class CollaborationWebSocketServer extends EventEmitter {
   private activityLogger?: ActivityLogger;
   private commentService?: CommentService;
   private notificationService?: NotificationService;
+  private rateLimiter?: RateLimiter;
   private connections: Map<string, ExtendedWebSocket>;
   private sessionConnections: Map<string, Set<string>>; // sessionId -> Set<connectionId>
   private pingInterval: NodeJS.Timeout | null;
@@ -61,7 +63,8 @@ export class CollaborationWebSocketServer extends EventEmitter {
     presenceManager?: PresenceManager,
     activityLogger?: ActivityLogger,
     commentService?: CommentService,
-    notificationService?: NotificationService
+    notificationService?: NotificationService,
+    rateLimiter?: RateLimiter
   ) {
     super();
     this.config = config;
@@ -71,6 +74,7 @@ export class CollaborationWebSocketServer extends EventEmitter {
     this.activityLogger = activityLogger;
     this.commentService = commentService;
     this.notificationService = notificationService;
+    this.rateLimiter = rateLimiter;
     this.connections = new Map();
     this.sessionConnections = new Map();
     this.pingInterval = null;
@@ -150,13 +154,24 @@ export class CollaborationWebSocketServer extends EventEmitter {
 
       // Handle connection close
       ws.on('close', () => {
-        this.handleDisconnect(connectionId);
+        // Bug #81 Fix: Clear auth timeout
+        if (ws.authTimeout) {
+          clearTimeout(ws.authTimeout);
+          ws.authTimeout = undefined;
+        }
+        // Bug #86 Fix: Handle async disconnect properly
+        this.handleDisconnect(connectionId).catch(err => {
+          console.error('[WS] Error in handleDisconnect:', err);
+        });
       });
 
       // Handle errors
       ws.on('error', (error) => {
         console.error(`[WS] Connection error:`, error);
-        this.handleDisconnect(connectionId);
+        // Bug #86 Fix: Handle async disconnect properly
+        this.handleDisconnect(connectionId).catch(err => {
+          console.error('[WS] Error in handleDisconnect:', err);
+        });
       });
 
       // Store connection (unauthenticated initially)
@@ -347,6 +362,21 @@ export class CollaborationWebSocketServer extends EventEmitter {
   }
 
   /**
+   * Bug #82 Fix: Centralized connection cleanup method
+   * Clears all timers and resources associated with a WebSocket connection
+   */
+  private cleanupConnection(ws: ExtendedWebSocket): void {
+    // Clear authentication timeout
+    if (ws.authTimeout) {
+      clearTimeout(ws.authTimeout);
+      ws.authTimeout = undefined;
+    }
+    
+    // Additional cleanup can be added here as needed
+    // (e.g., heartbeat intervals, other timers)
+  }
+
+  /**
    * Handle session create message (Phase 2)
    */
   private async handleSessionCreate(
@@ -489,6 +519,21 @@ export class CollaborationWebSocketServer extends EventEmitter {
       return;
     }
 
+    // Bug #83 Fix: Add rate limiting on session join
+    if (this.rateLimiter) {
+      try {
+        await this.rateLimiter.checkOperationLimit(
+          ws.metadata.userId,
+          'session.join',
+          ws.metadata.role as 'viewer' | 'operator' | 'admin' | 'analyst'
+        );
+      } catch (error) {
+        console.error('[WS] Rate limit exceeded for session join:', error);
+        this.sendError(ws, CollaborationErrorCode.RATE_LIMIT_EXCEEDED, 'Rate limit exceeded for session join');
+        return;
+      }
+    }
+
     const { sessionId, role } = message;
     if (!sessionId) {
       this.sendError(ws, CollaborationErrorCode.INVALID_MESSAGE, 'Missing sessionId');
@@ -570,8 +615,10 @@ export class CollaborationWebSocketServer extends EventEmitter {
     }
 
     // Remove from session connections
-    if (this.sessionConnections.has(sessionId)) {
-      this.sessionConnections.get(sessionId)!.delete(connectionId);
+    // Bug #84 Fix: Replace non-null assertion with safe access
+    const connections = this.sessionConnections.get(sessionId);
+    if (connections) {
+      connections.delete(connectionId);
     }
 
     // Remove participant from session (Phase 2)
@@ -695,26 +742,15 @@ export class CollaborationWebSocketServer extends EventEmitter {
       // Get version history for the edited comment
       const versions = await this.commentService.getCommentVersions(commentId, ws.metadata.userId);
       
-      // Broadcast to all session participants
-      // Only include previousVersion if versions exist to avoid undefined access
-      if (versions.length > 0) {
-        this.broadcastToSession(sessionId, {
-          type: 'comment.edited',
-          comment,
-          previousVersion: versions[0],
-          sessionId,
-          timestamp: Date.now()
-        });
-      } else {
-        // No version history available, broadcast without previousVersion
-        this.broadcastToSession(sessionId, {
-          type: 'comment.edited',
-          comment,
-          previousVersion: undefined as any, // Type workaround for optional field
-          sessionId,
-          timestamp: Date.now()
-        });
-      }
+      // Bug #85 Fix: Properly handle optional previousVersion field
+      // Broadcast to all session participants with optional previousVersion
+      this.broadcastToSession(sessionId, {
+        type: 'comment.edited',
+        comment,
+        previousVersion: versions.length > 0 ? versions[0] : undefined,
+        sessionId,
+        timestamp: Date.now()
+      } as WebSocketMessage);
 
       // Log activity
       if (this.activityLogger) {
@@ -922,8 +958,9 @@ export class CollaborationWebSocketServer extends EventEmitter {
 
   /**
    * Handle client disconnect
+   * Bug #86 Fix: Make async for proper error handling
    */
-  private handleDisconnect(connectionId: string): void {
+  private async handleDisconnect(connectionId: string): Promise<void> {
     const ws = this.connections.get(connectionId);
     if (!ws) return;
 
@@ -935,18 +972,22 @@ export class CollaborationWebSocketServer extends EventEmitter {
         if (connections.has(connectionId)) {
           connections.delete(connectionId);
           
-          // Remove presence
+          // Remove presence with proper error handling
           if (this.presenceManager) {
-            this.presenceManager.removePresence(sessionId, ws.metadata.userId).catch(err => {
+            try {
+              await this.presenceManager.removePresence(sessionId, ws.metadata.userId);
+            } catch (err) {
               console.error('[WS] Error removing presence on disconnect:', err);
-            });
+            }
           }
           
-          // Log activity
+          // Log activity with proper error handling
           if (this.activityLogger) {
-            this.activityLogger.logUserLeft(sessionId, ws.metadata.userId).catch(err => {
+            try {
+              await this.activityLogger.logUserLeft(sessionId, ws.metadata.userId);
+            } catch (err) {
               console.error('[WS] Error logging user left:', err);
-            });
+            }
           }
           
           this.emit('session_leave', connectionId, sessionId);
@@ -1036,7 +1077,10 @@ export class CollaborationWebSocketServer extends EventEmitter {
         if (ws.isAlive === false) {
           console.log(`[WS] Terminating dead connection: ${connectionId}`);
           ws.terminate();
-          this.handleDisconnect(connectionId);
+          // Bug #86 Fix: Handle async disconnect properly
+          this.handleDisconnect(connectionId).catch(err => {
+            console.error('[WS] Error in handleDisconnect:', err);
+          });
           continue;
         }
 

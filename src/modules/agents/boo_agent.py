@@ -525,8 +525,12 @@ def create_agent(
     except Exception:
         logger.debug("Unable to set overlay environment context", exc_info=True)
 
-    initialize_memory_system(memory_config, operation_id, target_name, has_existing_memories)
-    print_status(f"Memory system initialized for operation: {operation_id}", "SUCCESS")
+    try:
+        initialize_memory_system(memory_config, operation_id, target_name, has_existing_memories)
+        print_status(f"Memory system initialized for operation: {operation_id}", "SUCCESS")
+    except Exception as e:
+        logger.error(f"Memory system initialization failed: {e}")
+        raise RuntimeError(f"Failed to initialize memory system: {e}")
 
     # Get memory overview for system prompt enhancement and UI display
     memory_overview = None

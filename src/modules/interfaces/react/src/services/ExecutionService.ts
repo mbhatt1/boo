@@ -99,19 +99,32 @@ export interface ExecutionCapabilities {
   supportsStreaming: boolean;
   /** Whether this service supports parallel execution */
   supportsParallel: boolean;
-  /** Maximum concurrent executions supported */
+  /** Whether this service requires Docker */
+  requiresDocker: boolean;
+  /** Maximum concurrent executions supported (0 = unlimited) */
   maxConcurrent: number;
-  /** Required system resources */
-  requirements: string[];
 }
 
 /**
  * Unified Execution Service Interface
- * 
- * All execution services (Python, Docker) must implement this interface
- * to ensure consistent behavior and lifecycle management.
+ *
+ * All execution services must implement this interface AND extend EventEmitter.
+ *
+ * Required EventEmitter Methods:
+ * - on(event: string, listener: Function): this
+ * - emit(event: string, ...args: any[]): boolean
+ * - removeListener(event: string, listener: Function): this
+ * - off(event: string, listener: Function): this
+ * - removeAllListeners(event?: string): this
  */
-export interface ExecutionService extends EventEmitter {
+export interface ExecutionService {
+  // EventEmitter methods (implementations must extend EventEmitter)
+  on(event: string, listener: Function): this;
+  emit(event: string, ...args: any[]): boolean;
+  removeListener(event: string, listener: Function): this;
+  off(event: string, listener: Function): this;
+  removeAllListeners(event?: string): this;
+  
   /**
    * Get the execution mode this service handles
    */
@@ -209,5 +222,5 @@ export const DEFAULT_EXECUTION_CONFIG: ExecutionConfig = {
   preferredMode: undefined, // Will be set based on user's deployment mode selection
   fallbackModes: [], // No fallbacks - enforce user's mode choice
   requireConfirmationForFallback: true,
-  validationTimeoutMs: 30000  // Increased to 30s to handle slower Python environment checks
+  validationTimeoutMs: 5000  // Reduced from 30000 to 5000 (5s is adequate for validation)
 };

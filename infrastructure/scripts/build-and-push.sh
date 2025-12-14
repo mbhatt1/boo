@@ -31,7 +31,32 @@ if [ -z "$AWS_ACCOUNT" ]; then
 fi
 
 ECR_REPO="$AWS_ACCOUNT.dkr.ecr.$AWS_REGION.amazonaws.com/${ENVIRONMENT}-boo-collaboration"
-IMAGE_TAG="$(git rev-parse --short HEAD 2>/dev/null || echo 'latest')"
+
+# Determine image tag with proper git validation
+if ! command -v git >/dev/null 2>&1; then
+    echo -e "${YELLOW}Warning: git not found, using 'latest' tag${NC}"
+    echo "Install git for proper version tracking"
+    IMAGE_TAG="latest"
+elif ! git rev-parse --git-dir >/dev/null 2>&1; then
+    echo -e "${YELLOW}Warning: not in a git repository, using 'latest' tag${NC}"
+    echo "Initialize git repo for version tracking: git init"
+    IMAGE_TAG="latest"
+else
+    IMAGE_TAG="$(git rev-parse --short HEAD)"
+    if [ -z "$IMAGE_TAG" ]; then
+        echo -e "${YELLOW}Warning: could not determine git commit, using 'latest' tag${NC}"
+        IMAGE_TAG="latest"
+    else
+        echo "Using git commit tag: $IMAGE_TAG"
+        
+        # Check for uncommitted changes
+        if ! git diff-index --quiet HEAD -- 2>/dev/null; then
+            echo -e "${YELLOW}Warning: You have uncommitted changes${NC}"
+            IMAGE_TAG="${IMAGE_TAG}-dirty"
+            echo "Modified image tag: $IMAGE_TAG"
+        fi
+    fi
+fi
 
 echo -e "${GREEN}Building and pushing Docker image...${NC}"
 echo -e "Repository: ${YELLOW}$ECR_REPO${NC}"
@@ -39,8 +64,25 @@ echo -e "Tag: ${YELLOW}$IMAGE_TAG${NC}"
 
 # Login to ECR
 echo -e "\n${GREEN}[1/4] Logging in to ECR...${NC}"
-aws ecr get-login-password --region "$AWS_REGION" | \
-    docker login --username AWS --password-stdin "$AWS_ACCOUNT.dkr.ecr.$AWS_REGION.amazonaws.com"
+
+# Store password in temporary file with restricted permissions
+PASS_FILE=$(mktemp)
+chmod 600 "$PASS_FILE"
+trap "rm -f $PASS_FILE" EXIT
+
+if ! aws ecr get-login-password --region "$AWS_REGION" > "$PASS_FILE"; then
+    echo -e "${RED}Error: Failed to retrieve ECR password${NC}"
+    rm -f "$PASS_FILE"
+    exit 1
+fi
+
+if ! docker login --username AWS --password-stdin "$AWS_ACCOUNT.dkr.ecr.$AWS_REGION.amazonaws.com" < "$PASS_FILE"; then
+    echo -e "${RED}Error: Docker login failed${NC}"
+    rm -f "$PASS_FILE"
+    exit 1
+fi
+
+rm -f "$PASS_FILE"
 
 # Build image
 echo -e "\n${GREEN}[2/4] Building Docker image...${NC}"

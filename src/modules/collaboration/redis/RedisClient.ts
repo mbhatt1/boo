@@ -134,6 +134,16 @@ export class RedisClient extends EventEmitter {
       this.metrics.lastError = error as Error;
       this.emit('error', error);
       
+      // Bug #87 Fix: Clear existing timers before scheduling reconnect
+      if (this.reconnectTimer) {
+        clearTimeout(this.reconnectTimer);
+        this.reconnectTimer = undefined;
+      }
+      if (this.healthCheckTimer) {
+        clearInterval(this.healthCheckTimer);
+        this.healthCheckTimer = undefined;
+      }
+      
       // Attempt reconnection
       this.scheduleReconnect();
       
@@ -260,12 +270,14 @@ export class RedisClient extends EventEmitter {
       return;
     }
 
-    // Clear timers
+    // Bug #87 Fix: Clear timers and set to undefined
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = undefined;
     }
     if (this.healthCheckTimer) {
       clearInterval(this.healthCheckTimer);
+      this.healthCheckTimer = undefined;
     }
 
     // Cleanup clients
@@ -479,6 +491,11 @@ export class RedisClient extends EventEmitter {
 
     console.log(`[RedisClient] Scheduling reconnection attempt ${this.metrics.reconnectAttempts + 1} in ${delay}ms`);
 
+    // Bug #89 Fix: Clear existing timer before creating new one
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+    }
+
     this.reconnectTimer = setTimeout(() => {
       this.metrics.reconnectAttempts++;
       this.state = 'reconnecting';
@@ -501,6 +518,13 @@ export class RedisClient extends EventEmitter {
         console.error('[RedisClient] Health check failed:', error);
         this.emit('health_check', false);
         this.state = 'error';
+        
+        // Bug #90 Fix: Stop health check interval on error
+        if (this.healthCheckTimer) {
+          clearInterval(this.healthCheckTimer);
+          this.healthCheckTimer = undefined;
+        }
+        
         this.scheduleReconnect();
       }
     }, 30000); // Check every 30 seconds
@@ -529,6 +553,7 @@ export class RedisClient extends EventEmitter {
 
   /**
    * Flush all data (use with caution!)
+   * Bug #91 Fix: Batch delete operations for efficiency
    */
   async flushAll(): Promise<void> {
     if (this.state !== 'connected') {
@@ -538,13 +563,24 @@ export class RedisClient extends EventEmitter {
       );
     }
     
-    // Clear all data with our prefix
+    // Clear all data with our prefix using batch deletion
     const keys = await this.keys('*');
-    for (const key of keys) {
-      await this.del(key);
+    const BATCH_SIZE = 100;
+    const batches: string[][] = [];
+    
+    // Split keys into batches
+    for (let i = 0; i < keys.length; i += BATCH_SIZE) {
+      batches.push(keys.slice(i, i + BATCH_SIZE));
     }
     
-    console.log(`[RedisClient] Flushed ${keys.length} keys`);
+    // Delete batches in parallel
+    await Promise.all(
+      batches.map(batch =>
+        Promise.all(batch.map(key => this.del(key)))
+      )
+    );
+    
+    console.log(`[RedisClient] Flushed ${keys.length} keys in ${batches.length} batches`);
   }
 }
 

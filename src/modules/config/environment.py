@@ -21,6 +21,9 @@ def clean_operation_memory(operation_id: str, target_name: str = None):
     Args:
         operation_id: The operation identifier
         target_name: The sanitized target name (optional, for unified output structure)
+        
+    Security:
+        This function sanitizes target_name to prevent path traversal attacks.
     """
     logger = logging.getLogger(__name__)
     logger.debug(
@@ -33,34 +36,54 @@ def clean_operation_memory(operation_id: str, target_name: str = None):
         logger.warning("No target_name provided, skipping memory cleanup")
         return
 
-    # Unified output structure - per-target memory
-    memory_path = os.path.join("outputs", target_name, "memory", f"mem0_faiss_{target_name}")
-    logger.debug("Checking memory path: %s", memory_path)
+    # SECURITY: Sanitize target_name to prevent path traversal
+    # Remove any path separators and parent directory references
+    safe_target_name = os.path.basename(target_name).replace('..', '')
+    if not safe_target_name or safe_target_name != target_name:
+        logger.error(
+            "SECURITY: Invalid target_name contains path traversal: %s",
+            target_name
+        )
+        return
 
-    if os.path.exists(memory_path):
+    # Use Path for safe path construction
+    base_dir = Path("outputs").resolve()
+    memory_path = base_dir / safe_target_name / "memory" / f"mem0_faiss_{safe_target_name}"
+    
+    # Verify the resolved path is still within outputs directory
+    try:
+        memory_path = memory_path.resolve()
+        if not str(memory_path).startswith(str(base_dir)):
+            logger.error(
+                "SECURITY: Path traversal attempt detected: %s",
+                memory_path
+            )
+            return
+    except Exception as e:
+        logger.error("Failed to resolve memory path: %s", e)
+        return
+
+    # Proceed with cleanup only if path is safe
+    if memory_path.exists():
         try:
-            # Safety check - ensure we're only removing memory directories
-            if "mem0_faiss_" not in memory_path:
-                logger.error(
-                    "SAFETY CHECK FAILED: Path does not contain expected memory patterns: %s",
-                    memory_path,
-                )
-                return
-
-            logger.debug("About to remove memory path: %s", memory_path)
-            if os.path.isdir(memory_path):
-                shutil.rmtree(memory_path)
-            else:
-                os.remove(memory_path)
-
-            logger.info("Cleaned up operation memory: %s", memory_path)
-            print_status(f"Cleaned up operation memory: {memory_path}", "SUCCESS")
-
+            shutil.rmtree(memory_path)
+            logger.info(
+                "Cleaned up memory data for target_name=%s at %s",
+                safe_target_name,
+                memory_path,
+            )
         except Exception as e:
-            logger.error("Failed to clean %s: %s", memory_path, e)
-            print_status(f"Failed to clean {memory_path}: {e}", "ERROR")
+            logger.warning(
+                "Failed to clean up memory data for target_name=%s: %s",
+                safe_target_name,
+                e,
+            )
     else:
-        logger.debug("Memory path does not exist: %s", memory_path)
+        logger.debug(
+            "Memory path does not exist for target_name=%s: %s",
+            safe_target_name,
+            memory_path,
+        )
 
 
 def auto_setup(skip_mem0_cleanup: bool = False) -> List[str]:
@@ -318,16 +341,20 @@ class TeeOutput:
 
     def close(self):
         with self.lock:
-            if self.log:
-                try:
-                    # Flush any remaining buffered content
-                    if self.line_buffer:
-                        self.log.write(self.line_buffer)
-                        self.log.flush()
-                    self.log.close()
-                except (OSError, AttributeError):
-                    pass
-            self.log = None
+            if self.log is None:
+                return  # Already closed, prevent double-close
+                
+            try:
+                # Flush any remaining buffered content
+                if self.line_buffer:
+                    self.log.write(self.line_buffer)
+                    self.line_buffer = ''
+                    self.log.flush()
+                self.log.close()
+            except (OSError, AttributeError, ValueError):
+                pass
+            finally:
+                self.log = None  # Mark as closed
 
     # Additional methods to fully mimic file objects
     def fileno(self):
@@ -343,8 +370,14 @@ class TeeOutput:
             return False
 
 
+# Module-level cleanup coordination
+_cleanup_lock = threading.Lock()
+_cleanup_registered = False
+
 def setup_logging(log_file: str = "boo_operations.log", verbose: bool = False):
     """Configure unified logging for all operations with complete terminal capture"""
+    global _cleanup_registered
+    
     # Ensure the directory exists
     log_dir = os.path.dirname(log_file)
     if log_dir and not os.path.exists(log_dir):
@@ -357,22 +390,39 @@ def setup_logging(log_file: str = "boo_operations.log", verbose: bool = False):
         f.write("=" * 80 + "\n\n")
 
     # Set up stdout and stderr redirection to capture ALL terminal output
-    sys.stdout = TeeOutput(sys.stdout, log_file)
-    sys.stderr = TeeOutput(sys.stderr, log_file)
+    # Check if already wrapped to prevent nesting
+    if not isinstance(sys.stdout, TeeOutput):
+        sys.stdout = TeeOutput(sys.stdout, log_file)
+    if not isinstance(sys.stderr, TeeOutput):
+        sys.stderr = TeeOutput(sys.stderr, log_file)
 
-    # Register cleanup handler to ensure log files are properly closed
-    _cleanup_lock = threading.Lock()
-    
     def cleanup_tee_outputs():
+        global _cleanup_registered
         with _cleanup_lock:
+            if not _cleanup_registered:
+                return  # Already cleaned up
+                
             if isinstance(sys.stdout, TeeOutput):
-                sys.stdout.close()
+                try:
+                    sys.stdout.close()
+                except Exception:
+                    pass
                 sys.stdout = sys.__stdout__
+                
             if isinstance(sys.stderr, TeeOutput):
-                sys.stderr.close()
+                try:
+                    sys.stderr.close()
+                except Exception:
+                    pass
                 sys.stderr = sys.__stderr__
+                
+            _cleanup_registered = False
 
-    atexit.register(cleanup_tee_outputs)
+    # Register cleanup handler with lock protection
+    with _cleanup_lock:
+        if not _cleanup_registered:
+            atexit.register(cleanup_tee_outputs)
+            _cleanup_registered = True
 
     # Traditional logger setup for structured logging
     formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S")

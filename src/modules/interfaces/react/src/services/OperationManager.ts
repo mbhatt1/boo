@@ -455,14 +455,37 @@ export class OperationManager {
   }
 
   private loadSessionData(): void {
-    // Load session data from memory (localStorage not available in Node.js)
-    // In production, this would use a file-based storage or database
     try {
-      // For now, just use in-memory storage
-      // Session data initialized silently
+      // Attempt to load session data from config or storage
+      // For now, we'll check if config has session storage capabilities
+      if (this.config && typeof this.config === 'object') {
+        // Check for stored session cost
+        const storedCost = (this.config as any).sessionCost;
+        if (storedCost && typeof storedCost === 'object') {
+          // Validate that it has the required CostInfo structure
+          if (typeof storedCost.estimatedCost === 'number' && storedCost.estimatedCost >= 0) {
+            this.sessionCost = {
+              tokensUsed: storedCost.tokensUsed || 0,
+              estimatedCost: storedCost.estimatedCost || 0,
+              inputTokens: storedCost.inputTokens || 0,
+              outputTokens: storedCost.outputTokens || 0,
+              modelPricing: storedCost.modelPricing || { inputCostPer1k: 0, outputCostPer1k: 0 }
+            };
+          }
+        }
+        
+        // Check for stored operations
+        const storedOps = (this.config as any).operations;
+        if (Array.isArray(storedOps)) {
+          // Restore operations state if needed
+          // For now, just log that we found stored operations
+          console.log(`Found ${storedOps.length} stored operations`);
+        }
+      }
     } catch (error) {
-      // Only log errors to avoid interfering with React Ink UI
-      loggingService.warn('Failed to load session data:', error);
+      // Silently fail and continue with defaults
+      // Don't crash if session data is unavailable or corrupted
+      console.warn('Failed to load session data, using defaults:', error);
     }
   }
 

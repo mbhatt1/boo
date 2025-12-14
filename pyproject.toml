@@ -27,9 +27,9 @@ classifiers = [
     "Topic :: System :: Systems Administration",
     "Environment :: Console"
 ]
-requires-python = ">=3.10,<3.14"
+requires-python = ">=3.10,<4.0"  # Allow all Python 3.x versions
 dependencies = [
-    "strands-agents[ollama,otel,litellm]==1.11.0",
+    "strands-agents[ollama,otel,litellm]>=1.11.0,<2.0.0",  # Allow patch/minor updates
     "strands-agents-tools==0.2.9", 
     "mem0ai",
     "boto3>=1.39.10",

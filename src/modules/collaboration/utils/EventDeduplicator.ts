@@ -182,7 +182,7 @@ export interface EventDeduplicatorConfig {
 export class EventDeduplicator {
   private filter: BloomFilter;
   private config: Required<EventDeduplicatorConfig>;
-  private cleanupInterval: NodeJS.Timeout | null = null;
+  private cleanupInterval: ReturnType<typeof setInterval> | null = null;
   private recentEvents: Map<string, number>; // Fallback for accuracy
   
   /**
@@ -308,9 +308,14 @@ export class EventDeduplicator {
    * Start periodic cleanup of expired entries
    */
   private startCleanup(): void {
+    // Bug #97 Fix: Add unref() to allow process exit in Node.js
     this.cleanupInterval = setInterval(() => {
       this.cleanup();
     }, this.config.cleanupIntervalMs);
+    // Call unref() if available (Node.js only)
+    if (this.cleanupInterval && typeof (this.cleanupInterval as any).unref === 'function') {
+      (this.cleanupInterval as any).unref();
+    }
   }
   
   /**

@@ -14,7 +14,7 @@
  */
 
 import React, { useMemo } from 'react';
-import { PresenceUser, UserRole } from '../../../../collaboration/types';
+import { PresenceUser, UserRole } from '../../../../../collaboration/types/index.js';
 
 export interface UserAvatarProps {
   /** User presence data */

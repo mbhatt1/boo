@@ -29,7 +29,6 @@ import time
 import traceback
 import warnings
 from datetime import datetime
-import threading
 
 # Constants
 DEFAULT_AWS_REGION = "us-east-1"
@@ -75,47 +74,69 @@ def get_initial_prompt():  # noqa: D401
     return ""
 
 
+# Thread-safe caching for deployment mode detection
+_deployment_mode_cache = None
+_deployment_mode_lock = threading.Lock()
+
 def detect_deployment_mode():
     """
-    Detect deployment mode for appropriate observability defaults.
-    
-    Uses configuration-based approach for Docker detection.
-
-    Returns:
-        str: 'cli' (Python CLI), 'container' (single container), or 'compose' (full stack)
+    Detect deployment mode for appropriate observability defaults (thread-safe, cached).
+    Returns: 'compose', 'container', or 'cli'
     """
-    # Use configuration-based Docker detection
-    config = get_config()
+    global _deployment_mode_cache
     
-    def is_langfuse_available():
-        """Check if Langfuse service is available."""
-        try:
-            if config.is_docker_mode():
-                # In Docker, try to connect to langfuse-web service
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    # Return cached value if available
+    if _deployment_mode_cache is not None:
+        return _deployment_mode_cache
+    
+    # Acquire lock to prevent concurrent detection
+    with _deployment_mode_lock:
+        # Double-check after acquiring lock
+        if _deployment_mode_cache is not None:
+            return _deployment_mode_cache
+        
+        config = get_config()
+        
+        def is_langfuse_available():
+            """Check if Langfuse service is available."""
+            try:
+                if config.is_docker_mode():
+                    # In Docker, try to connect to langfuse-web service
+                    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                        sock.settimeout(2)
+                        result = sock.connect_ex(("langfuse-web", 3000))
+                        return result == 0
+                else:
+                    # Outside Docker, check localhost
+                    response = requests.get(
+                        "http://localhost:3000/api/public/health",
+                        timeout=2
+                    )
+                    return response.status_code == 200
+            except Exception as e:
+                # Get logger if available, otherwise fall back to setup_logging
                 try:
-                    sock.settimeout(2)
-                    result = sock.connect_ex(("langfuse-web", 3000))
-                    return result == 0
-                finally:
-                    sock.close()
-            else:
-                # Outside Docker, check localhost
-                response = requests.get("http://localhost:3000/api/public/health", timeout=2)
-                return response.status_code == 200
+                    from modules.config.environment import get_logger
+                    logger = get_logger()
+                    logger.debug(f"Langfuse availability check failed: {e}")
+                except Exception:
+                    pass  # Logger not yet initialized
+                return False
+        
+        if config.is_docker_mode():
+            mode = "compose" if is_langfuse_available() else "container"
+        else:
+            mode = "compose" if is_langfuse_available() else "cli"
+        
+        _deployment_mode_cache = mode
+        # Log only if logger is available
+        try:
+            from modules.config.environment import get_logger
+            logger = get_logger()
+            logger.info(f"Detected deployment mode: {mode}")
         except Exception:
-            return False
-
-    if config.is_docker_mode():
-        if is_langfuse_available():
-            return "compose"  # Full Docker Compose stack
-        else:
-            return "container"  # Single container mode
-    else:
-        if is_langfuse_available():
-            return "compose"  # Local development with Langfuse
-        else:
-            return "cli"  # Pure Python CLI mode
+            pass  # Logger not yet initialized
+        return mode
 
 
 def setup_telemetry(logger):

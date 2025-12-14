@@ -13,8 +13,8 @@
  */
 
 import React from 'react';
-import { PresenceUser } from '../../../../collaboration/types';
-import { UserAvatar } from './UserAvatar';
+import { PresenceUser } from '../../../../../collaboration/types/index.js';
+import { UserAvatar } from './UserAvatar.js';
 
 export interface PresenceIndicatorProps {
   /** List of online users */

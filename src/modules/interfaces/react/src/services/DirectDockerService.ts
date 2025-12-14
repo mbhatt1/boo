@@ -77,6 +77,15 @@ export class DirectDockerService extends EventEmitter {
   private toolOutputBuffer = '';
   private sawBackendToolOutput = false;
   private _currentToolName: string | undefined = undefined;
+  
+  // Mutex for preventing concurrent executions (Bug #106 fix)
+  private executionMutex: {
+    locked: boolean;
+    queue: Array<() => void>;
+  } = {
+    locked: false,
+    queue: []
+  };
 
   /** Emit a chunk of buffered tool output */
   private emitToolOutputChunk(content: string): void {
@@ -104,7 +113,8 @@ export class DirectDockerService extends EventEmitter {
     
     // Safety: if buffer exceeds max size, force flush entire buffer
     if (this.toolOutputBuffer.length > MAX_BUFFER_SIZE) {
-      logger.warn(`Tool output buffer exceeded ${MAX_BUFFER_SIZE} bytes, force flushing`);
+      logger.warn(`Tool output buffer exceeded ${MAX_BUFFER_SIZE} bytes (${this.toolOutputBuffer.length} bytes), force flushing`);
+      logger.warn(`Current tool: ${this._currentToolName || 'unknown'}`);
       this.emitToolOutputChunk(this.toolOutputBuffer);
       this.toolOutputBuffer = '';
       return;
@@ -124,11 +134,61 @@ export class DirectDockerService extends EventEmitter {
   }
 
   /**
+   * Clear tool output buffer and reset tool execution state
+   * Prevents memory leaks from unbounded buffer growth across tool invocations
+   */
+  private clearToolBuffer(): void {
+    if (this.toolOutputBuffer.length > 0) {
+      // Flush any remaining content before clearing
+      this.flushToolOutputChunks(true);
+    }
+    this.toolOutputBuffer = '';
+    this.inToolExecution = false;
+    this._currentToolName = undefined;
+    logger.debug('Tool buffer cleared');
+  }
+
+  /**
+   * Acquire execution mutex lock (Bug #106 fix)
+   * Prevents concurrent executions by queueing requests
+   */
+  private async acquireLock(): Promise<void> {
+    return new Promise((resolve) => {
+      if (!this.executionMutex.locked) {
+        this.executionMutex.locked = true;
+        resolve();
+      } else {
+        this.executionMutex.queue.push(resolve);
+      }
+    });
+  }
+
+  /**
+   * Release execution mutex lock (Bug #106 fix)
+   * Processes next queued request if any
+   */
+  private releaseLock(): void {
+    const next = this.executionMutex.queue.shift();
+    if (next) {
+      next();
+    } else {
+      this.executionMutex.locked = false;
+    }
+  }
+
+  /**
    * Initialize the Docker service with connection to Docker daemon
    */
   constructor() {
     super();
     this.dockerClient = new Dockerode();
+    
+    // Ensure cleanup on process exit to prevent resource leaks
+    if (typeof process !== 'undefined') {
+      process.on('exit', () => {
+        this.cleanup();
+      });
+    }
   }
 
   /**
@@ -138,17 +198,20 @@ export class DirectDockerService extends EventEmitter {
     params: AssessmentParams,
     config: Config
   ): Promise<void> {
-    // Reset per-run state to ensure clean behavior when reusing the service in the same app session
-    this.resetSessionState();
-    this.abortController = new AbortController();
-    if (this.isExecutionActive) {
-      throw new Error('Assessment already running');
-    }
-
-    this.isExecutionActive = true;
-    this.abortController = new AbortController();
-
+    // Acquire mutex to prevent concurrent executions (Bug #106 fix)
+    await this.acquireLock();
+    
     try {
+      // Reset per-run state to ensure clean behavior when reusing the service in the same app session
+      this.resetSessionState();
+      this.abortController = new AbortController();
+      if (this.isExecutionActive) {
+        throw new Error('Assessment already running');
+      }
+
+      this.isExecutionActive = true;
+      this.abortController = new AbortController();
+
       // Validate params before proceeding
       if (!params || !params.module || !params.target) {
         const error = new Error(`Invalid assessment parameters: ${JSON.stringify(params)}`);
@@ -616,6 +679,8 @@ export class DirectDockerService extends EventEmitter {
         this.abortController = undefined;
         // Clear stream buffer to prevent stale prompt detection
         this.streamEventBuffer = '';
+        // Clear tool buffer on stream end
+        this.clearToolBuffer();
         // Only emit "complete" when backend signaled operation_complete
         if (this.seenOperationComplete) this.emit('complete');
         else this.emit('stopped');
@@ -747,8 +812,15 @@ export class DirectDockerService extends EventEmitter {
       this.isExecutionActive = false;
       this.abortController = undefined;
       this.streamEventBuffer = '';
+      // Clear tool buffer on error
+      this.clearToolBuffer();
       this.emit('error', error);
       throw error;
+    } finally {
+      // Ensure cleanup happens even on success or error
+      this.cleanup();
+      // Always release lock, even on error (Bug #106 fix)
+      this.releaseLock();
     }
   }
 
@@ -803,8 +875,9 @@ export class DirectDockerService extends EventEmitter {
 
         // Track tool execution state for raw output buffering
         if (eventData.type === 'tool_start' || eventData.type === 'tool_invocation_start') {
+          // Clear buffer before starting new tool to ensure clean state
+          this.clearToolBuffer();
           this.inToolExecution = true;
-          this.toolOutputBuffer = '';
           this.sawBackendToolOutput = false;
           try { this._currentToolName = eventData.tool_name || eventData.toolName || eventData.tool || undefined; } catch {}
         } else if (
@@ -819,10 +892,9 @@ export class DirectDockerService extends EventEmitter {
             // Flush remaining buffered output in chunks
             this.flushToolOutputChunks(true);
           }
-          this.toolOutputBuffer = '';
-          this.inToolExecution = false;
+          // Clear tool buffer to prevent memory leaks
+          this.clearToolBuffer();
           this.sawBackendToolOutput = false;
-          try { this._currentToolName = undefined; } catch {}
         }
 
         // Handle tool discovery events with improved formatting
@@ -1030,26 +1102,13 @@ export class DirectDockerService extends EventEmitter {
         } catch {}
       }
 
-      // Clean up container/exec stream if exists
-      if (this.containerStream) {
-        try {
-          this.containerStream.destroy();
-        } catch {}
-        this.containerStream = undefined;
-      }
-
-      this.activeExec = undefined;
-      this.activeContainer = undefined;
-      this.isExecutionActive = false;
-      this.abortController = undefined;
+      // Comprehensive cleanup
+      this.cleanup();
       this.emit('stopped');
       // Don't log here - let the App component handle user-facing messages
     } catch {
       // Force cleanup even if termination fails
-      this.activeExec = undefined;
-      this.activeContainer = undefined;
-      this.isExecutionActive = false;
-      this.abortController = undefined;
+      this.cleanup();
       this.emit('stopped');
     }
   }
@@ -1122,43 +1181,52 @@ export class DirectDockerService extends EventEmitter {
 
   /**
    * Cleanup resources and remove all event listeners
+   * Comprehensive cleanup to prevent memory leaks from AbortController and tool buffers
    */
   cleanup(): void {
-    // Stop any active container
-    if (this.activeContainer) {
-      this.stopContainer().catch(error => {
-        // Silently handle cleanup errors - not critical for user experience
-      });
+    logger.debug('Cleanup initiated', {
+      hasContainer: !!this.activeContainer,
+      hasStream: !!this.containerStream,
+      hasAbortController: !!this.abortController,
+      toolBufferSize: this.toolOutputBuffer.length
+    });
+
+    // Clean up abort controller
+    if (this.abortController) {
+      // Abort if not already aborted
+      if (!this.abortController.signal.aborted) {
+        this.abortController.abort();
+      }
+      this.abortController = undefined;
     }
     
-    // Destroy stream if exists
+    // Clean up container stream
     if (this.containerStream) {
       try {
         this.containerStream.destroy();
       } catch (error) {
-        // Silently handle cleanup errors - not critical for user experience
+        logger.debug('Error destroying container stream during cleanup', error);
       }
       this.containerStream = undefined;
     }
     
-    // Abort any pending operations
-    this.abortController?.abort();
+    // Clear tool buffer to prevent memory leaks
+    this.clearToolBuffer();
     
-    // Remove all event listeners to prevent memory leaks
-    this.removeAllListeners();
-    
-    // Reset state
+    // Reset execution state
     this.isExecutionActive = false;
-    this.activeContainer = undefined;
-    this.containerStream = undefined;
-    this.abortController = undefined;
     
-    // DirectDockerService cleaned up - emit event instead of console.log
-    this.emit('event', {
-      type: 'output',
-      content: 'DirectDockerService cleaned up',
-      timestamp: Date.now()
-    });
+    // Stop any active container
+    if (this.activeContainer) {
+      this.stopContainer().catch(error => {
+        logger.debug('Error stopping container during cleanup', error);
+      });
+    }
+    
+    // Clean up exec reference
+    this.activeExec = undefined;
+    
+    logger.debug('Cleanup completed');
   }
 
   /**
@@ -1276,6 +1344,8 @@ export class DirectDockerService extends EventEmitter {
       this.isExecutionActive = false;
       this.abortController = undefined;
       this.streamEventBuffer = '';
+      // Clear tool buffer on exec stream end
+      this.clearToolBuffer();
       logger.info('Exec stream ended', { seenOperationComplete: this.seenOperationComplete });
       if (this.seenOperationComplete) this.emit('complete');
       else this.emit('stopped');

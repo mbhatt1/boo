@@ -51,90 +51,89 @@ export const useEventStream = (
     setState(prev => ({ ...prev, events }));
   }, [events]);
 
-  const actions = React.useMemo<EventStreamActions>(() => ({
-    addEvent: (event: DisplayStreamEvent) => {
-      eventStoreRef.current.append(event);
+  // Return actions directly without useMemo to avoid stale closures
+  const addEvent = (event: DisplayStreamEvent) => {
+    eventStoreRef.current.append(event);
+    setVersion(v => v + 1);
+  };
+
+  const clearEvents = () => {
+    eventStoreRef.current.clear();
+    setVersion(v => v + 1);
+    setState(prev => ({
+      ...prev,
+      events: [],
+      currentStep: 0,
+      reasoningBuffer: [],
+      lastToolName: null,
+    }));
+  };
+
+  const processEvent = (event: DisplayStreamEvent) => {
+    setState(prev => {
+      const newState = { ...prev };
+
+      switch (event.type) {
+        case EVENT_TYPES.STEP_HEADER:
+          if ('step' in event && typeof event.step === 'number') {
+            newState.currentStep = event.step;
+          }
+          if ('maxSteps' in event && typeof event.maxSteps === 'number') {
+            newState.maxSteps = event.maxSteps;
+          }
+          break;
+
+        case EVENT_TYPES.THINKING:
+          newState.isThinking = true;
+          break;
+
+        case EVENT_TYPES.THINKING_END:
+          newState.isThinking = false;
+          break;
+
+        case EVENT_TYPES.TOOL_START:
+          if ('tool_name' in event && typeof event.tool_name === 'string') {
+            newState.lastToolName = event.tool_name;
+          }
+          break;
+
+        case EVENT_TYPES.REASONING:
+          if ('content' in event && typeof event.content === 'string') {
+            newState.reasoningBuffer.push(event.content);
+          }
+          break;
+      }
+
+      // Don't add event here - add to store after state update
+      return newState;
+    });
+    
+    // Add event to store after state update
+    eventStoreRef.current.append(event);
+    setVersion(v => v + 1);
+  };
+
+  const flushReasoningBuffer = () => {
+    setState(prev => {
+      if (prev.reasoningBuffer.length === 0) return prev;
+
+      const reasoningEvent: DisplayStreamEvent = {
+        type: EVENT_TYPES.REASONING,
+        content: prev.reasoningBuffer.join(''),
+      };
+
+      eventStoreRef.current.append(reasoningEvent);
       setVersion(v => v + 1);
-    },
-
-    clearEvents: () => {
-      eventStoreRef.current.clear();
-      setVersion(v => v + 1);
-      setState(prev => ({
-        ...prev,
-        events: [],
-        currentStep: 0,
-        reasoningBuffer: [],
-        lastToolName: null,
-      }));
-    },
-
-    processEvent: (event: DisplayStreamEvent) => {
-      setState(prev => {
-        const newState = { ...prev };
-
-        switch (event.type) {
-          case EVENT_TYPES.STEP_HEADER:
-            if ('step' in event && typeof event.step === 'number') {
-              newState.currentStep = event.step;
-            }
-            if ('maxSteps' in event && typeof event.maxSteps === 'number') {
-              newState.maxSteps = event.maxSteps;
-            }
-            break;
-
-          case EVENT_TYPES.THINKING:
-            newState.isThinking = true;
-            break;
-
-          case EVENT_TYPES.THINKING_END:
-            newState.isThinking = false;
-            break;
-
-          case EVENT_TYPES.TOOL_START:
-            if ('tool_name' in event && typeof event.tool_name === 'string') {
-              newState.lastToolName = event.tool_name;
-            }
-            break;
-
-          case EVENT_TYPES.REASONING:
-            if ('content' in event && typeof event.content === 'string') {
-              newState.reasoningBuffer.push(event.content);
-            }
-            break;
-        }
-
-        // Don't add event here - add to store after state update
-        return newState;
-      });
       
-      // Add event to store after state update
-      eventStoreRef.current.append(event);
-      setVersion(v => v + 1);
-    },
+      return {
+        ...prev,
+        events: eventStoreRef.current.toArray(),
+        reasoningBuffer: [],
+      };
+    });
+  };
 
-    flushReasoningBuffer: () => {
-      setState(prev => {
-        if (prev.reasoningBuffer.length === 0) return prev;
-
-        const reasoningEvent: DisplayStreamEvent = {
-          type: EVENT_TYPES.REASONING,
-          content: prev.reasoningBuffer.join(''),
-        };
-
-        eventStoreRef.current.append(reasoningEvent);
-        setVersion(v => v + 1);
-        
-        return {
-          ...prev,
-          events: eventStoreRef.current.toArray(),
-          reasoningBuffer: [],
-        };
-      });
-    },
-  }), []); // Actions use eventStoreRef which doesn't need dependencies
-
-  return [state, actions];
+  return [state, { addEvent, clearEvents, processEvent, flushReasoningBuffer }];
 };
 
 /**
