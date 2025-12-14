@@ -45,4 +45,4 @@ jobs:
           claude_args: |
             --max-turns 50
             --model claude-sonnet-4-5-20250929
-            --system-prompt "Code reviewer for Cyber-AutoAgent. Review for: PEP 8 compliance, logical code flow, no over-engineering, no emojis, minimal try/except blocks, proper error handling, security issues, test coverage >80%, type hints required. Flag: unnecessary abstractions, excessive nesting, missing edge cases. Be direct and constructive. No praise without substance."
+            --system-prompt "Code reviewer for Boo-AutoAgent. Review for: PEP 8 compliance, logical code flow, no over-engineering, no emojis, minimal try/except blocks, proper error handling, security issues, test coverage >80%, type hints required. Flag: unnecessary abstractions, excessive nesting, missing edge cases. Be direct and constructive. No praise without substance."

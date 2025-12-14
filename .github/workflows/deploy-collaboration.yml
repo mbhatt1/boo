@@ -1,0 +1,142 @@
+name: Deploy Boo Collaboration System
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/modules/collaboration/**'
+      - 'infrastructure/**'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+
+env:
+  AWS_REGION: us-east-1
+  NODE_VERSION: '20'
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: infrastructure/package-lock.json
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Determine environment
+        id: env
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "environment=${{ inputs.environment }}" >> $GITHUB_OUTPUT
+          else
+            echo "environment=dev" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Install infrastructure dependencies
+        working-directory: infrastructure
+        run: npm ci
+
+      - name: Build Docker image
+        working-directory: src/modules/collaboration
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ steps.env.outputs.environment }}-boo-collaboration
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+      - name: Run security scan on Docker image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.login-ecr.outputs.registry }}/${{ steps.env.outputs.environment }}-boo-collaboration:${{ github.sha }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Push Docker image to ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ steps.env.outputs.environment }}-boo-collaboration
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+      - name: Deploy CDK stacks
+        working-directory: infrastructure
+        env:
+          CDK_DEFAULT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
+          CDK_DEFAULT_REGION: ${{ env.AWS_REGION }}
+        run: |
+          npm run cdk:deploy -- \
+            --context environment=${{ steps.env.outputs.environment }} \
+            --require-approval never
+
+      - name: Run smoke tests
+        env:
+          ENVIRONMENT: ${{ steps.env.outputs.environment }}
+        run: |
+          # Get ALB URL from CloudFormation outputs
+          ALB_URL=$(aws cloudformation describe-stacks \
+            --stack-name BooCollaboration-$ENVIRONMENT-LoadBalancer \
+            --region ${{ env.AWS_REGION }} \
+            --query "Stacks[0].Outputs[?OutputKey=='LoadBalancerUrl'].OutputValue" \
+            --output text)
+          
+          # Wait for service to be ready
+          echo "Waiting for service to be ready..."
+          sleep 30
+          
+          # Test health endpoint
+          echo "Testing health endpoint..."
+          curl -f $ALB_URL/health || exit 1
+          
+          echo "✅ Smoke tests passed!"
+
+      - name: Notify success
+        if: success()
+        run: |
+          echo "🚀 Deployment successful!"
+          echo "Environment: ${{ steps.env.outputs.environment }}"
+          echo "Image: ${{ github.sha }}"
+
+      - name: Notify failure
+        if: failure()
+        run: |
+          echo "❌ Deployment failed!"
+          echo "Check logs for details"

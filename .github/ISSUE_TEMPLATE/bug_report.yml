@@ -67,7 +67,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: Cyber-AutoAgent Version
+      label: Boo-AutoAgent Version
       placeholder: "e.g., 0.1.3, main branch, commit hash"
     validations:
       required: false
