@@ -550,6 +550,9 @@ def create_agent(
             import importlib.util
             import sys
 
+            # Track loaded modules for cleanup
+            loaded_module_names: List[str] = []
+
             # Dynamically load each tool module
             for tool_path in module_tool_paths:
                 try:
@@ -559,6 +562,7 @@ def create_agent(
                     if spec and spec.loader:
                         tool_module = importlib.util.module_from_spec(spec)
                         sys.modules[module_name] = tool_module
+                        loaded_module_names.append(module_name)
                         spec.loader.exec_module(tool_module)
 
                         # Find all @tool decorated functions
@@ -569,8 +573,10 @@ def create_agent(
                                 loaded_module_tools.append(attr)
                                 agent_logger.debug("Found module tool: %s", attr_name)
 
+                except ImportError as ie:
+                    agent_logger.error("Failed to import tool module from %s: %s", tool_path, ie, exc_info=True)
                 except Exception as e:
-                    agent_logger.warning("Failed to load tool from %s: %s", tool_path, e)
+                    agent_logger.error("Failed to load tool from %s: %s", tool_path, e, exc_info=True)
 
             tool_names = [tool.__name__ for tool in loaded_module_tools] if loaded_module_tools else []
 
@@ -819,8 +825,10 @@ Guidance and tool names in prompts are illustrative, not prescriptive. Always ch
     # Tests import modules.handlers.react.react_bridge_handler directly
     try:
         from modules.handlers.react import ReactBridgeHandler as _RBH  # noqa: F401
-    except Exception:
-        pass
+    except ImportError as ie:
+        agent_logger.warning("Failed to import ReactBridgeHandler for validation: %s", ie)
+    except Exception as e:
+        agent_logger.warning("Unexpected error importing ReactBridgeHandler: %s", e)
 
     callback_handler = ReactBridgeHandler(
         max_steps=config.max_steps,

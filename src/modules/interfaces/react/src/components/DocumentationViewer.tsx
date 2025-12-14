@@ -3,7 +3,7 @@
  * Interactive documentation browser for Boo-AutoAgent
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { themeManager } from '../themes/theme-manager.js';
 import * as fs from 'fs/promises';
@@ -28,6 +28,9 @@ export const DocumentationViewer: React.FC<DocumentationViewerProps> = React.mem
   const [scrollOffset, setScrollOffset] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Track if component is mounted to prevent state updates after unmount
+  const isMountedRef = useRef(true);
 
   const documents: DocumentInfo[] = [
     { 
@@ -66,6 +69,13 @@ export const DocumentationViewer: React.FC<DocumentationViewerProps> = React.mem
       description: 'Dynamic prompt configuration with Langfuse' 
     }
   ];
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   // Load document content
   useEffect(() => {
@@ -185,8 +195,12 @@ Use /help for available commands or refer to the project repository for complete
   };
 
   const loadDocument = async (filename: string) => {
+    // Only proceed if component is still mounted
+    if (!isMountedRef.current) return;
+    
     setLoading(true);
     setError(null);
+    
     try {
       // Get current working directory info for debugging
       const cwd = process.cwd();
@@ -205,14 +219,22 @@ Use /help for available commands or refer to the project repository for complete
       let foundPath = '';
       
       for (const testPath of possiblePaths) {
+        // Check if still mounted before each async operation
+        if (!isMountedRef.current) return;
+        
         try {
           content = await fs.readFile(testPath, 'utf-8');
           foundPath = testPath;
           break;
         } catch (err) {
+          // Log each failed attempt for debugging
+          console.debug(`[DocumentationViewer] Failed to load from ${testPath}:`, err);
           continue;
         }
       }
+      
+      // Check if still mounted before state updates
+      if (!isMountedRef.current) return;
       
       // If file loading failed, use fallback content
       if (!foundPath) {
@@ -223,12 +245,18 @@ Use /help for available commands or refer to the project repository for complete
       setDocumentContent(content);
       setScrollOffset(0);
     } catch (err) {
+      // Check if still mounted before error handling
+      if (!isMountedRef.current) return;
+      
       // If everything fails, use fallback content
       // console.error('[DocumentationViewer] All loading methods failed, using fallback for:', filename);
       setDocumentContent(getFallbackContent(filename));
       setScrollOffset(0);
     } finally {
-      setLoading(false);
+      // Only update loading state if still mounted
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   };
 

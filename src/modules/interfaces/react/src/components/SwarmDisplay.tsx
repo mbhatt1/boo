@@ -3,7 +3,7 @@
  * Shows detailed information about sub-agents, their tasks, tools, and collaboration
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Box, Text } from 'ink';
 import { themeManager } from '../themes/theme-manager.js';
 import { formatDuration } from '../utils/toolFormatters.js';
@@ -62,14 +62,27 @@ export const SwarmDisplay: React.FC<SwarmDisplayProps> = ({ swarmState, collapse
   const theme = themeManager.getCurrentTheme();
   const [elapsedTime, setElapsedTime] = useState(0);
   const [expanded, setExpanded] = useState(true); // Start expanded to show details
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Update elapsed time every second while running
   useEffect(() => {
+    // Clear any existing interval first
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+
     if (swarmState.status === 'running') {
-      const interval = setInterval(() => {
+      intervalRef.current = setInterval(() => {
         setElapsedTime(Date.now() - swarmState.startTime);
-      }, 1000);
-      return () => clearInterval(interval);
+      }, 1000) as unknown as NodeJS.Timeout;
+      
+      return () => {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+      };
     } else if (swarmState.endTime) {
       setElapsedTime(swarmState.endTime - swarmState.startTime);
     }

@@ -31,6 +31,34 @@ export const SetupWizard: React.FC<SetupWizardProps> = React.memo(({
   const [stepRenderKey, setStepRenderKey] = useState(0);
   const [isExiting, setIsExiting] = useState(false);
   const prevStepRef = useRef(state.currentStep);
+  
+  // Track timers for cleanup
+  const detectionBudgetTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const fastSwitchTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const skipTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const clearTerminalTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Cleanup all timers on unmount
+  useEffect(() => {
+    return () => {
+      if (detectionBudgetTimerRef.current) {
+        clearTimeout(detectionBudgetTimerRef.current);
+        detectionBudgetTimerRef.current = null;
+      }
+      if (fastSwitchTimerRef.current) {
+        clearTimeout(fastSwitchTimerRef.current);
+        fastSwitchTimerRef.current = null;
+      }
+      if (skipTimerRef.current) {
+        clearTimeout(skipTimerRef.current);
+        skipTimerRef.current = null;
+      }
+      if (clearTerminalTimerRef.current) {
+        clearTimeout(clearTerminalTimerRef.current);
+        clearTerminalTimerRef.current = null;
+      }
+    };
+  }, []);
 
   // Handle setup completion
   const handleSetupComplete = useCallback(async () => {
@@ -111,7 +139,16 @@ export const SetupWizard: React.FC<SetupWizardProps> = React.memo(({
 
             delete process.env.BOO_SHOW_SETUP;
             setIsExiting(true);
-            setTimeout(() => onComplete(`Switched to ${modeDisplayName} deployment`), 0);
+            
+            // Track fast switch completion timer
+            if (fastSwitchTimerRef.current) {
+              clearTimeout(fastSwitchTimerRef.current);
+            }
+            fastSwitchTimerRef.current = setTimeout(() => {
+              fastSwitchTimerRef.current = null;
+              onComplete(`Switched to ${modeDisplayName} deployment`);
+            }, 0) as unknown as NodeJS.Timeout;
+            
             didFastSwitch = true;
             // eslint-disable-next-line no-console
             console.log('[OK] setup: fast-switched to healthy deployment');
@@ -119,6 +156,7 @@ export const SetupWizard: React.FC<SetupWizardProps> = React.memo(({
         }
       } catch (e) {
         // Detection failed; proceed to setup
+        console.error('Setup wizard deployment detection error:', e);
       }
 
       if (!didFastSwitch) {

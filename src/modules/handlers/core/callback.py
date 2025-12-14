@@ -363,16 +363,22 @@ class ReasoningHandler(PrintingCallbackHandler):
                     evaluator = BooAgentEvaluator()
                     import asyncio
 
-                    # Evaluate all traces for this operation
-                    logger.info("Running evaluation for trace ID: %s", agent_trace_id)
-                    result = asyncio.run(evaluator.evaluate_trace(trace_id=agent_trace_id))
-                    logger.info("Evaluation completed. Results: %s", result)
+                    # Create new event loop for this thread (proper pattern for thread-based async)
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    try:
+                        # Evaluate all traces for this operation
+                        logger.info("Running evaluation for trace ID: %s", agent_trace_id)
+                        result = loop.run_until_complete(evaluator.evaluate_trace(trace_id=agent_trace_id))
+                        logger.info("Evaluation completed. Results: %s", result)
+                    finally:
+                        loop.close()
                 except Exception as e:
                     logger.error("Error running evaluation: %s", e, exc_info=True)
 
             self.state.evaluation_thread = threading.Thread(target=run_evaluation)
-            # Don't use daemon thread - allow evaluation to complete
-            self.state.evaluation_thread.daemon = False
+            # Use daemon thread to allow clean shutdown
+            self.state.evaluation_thread.daemon = True
             self.state.evaluation_thread.start()
 
             # Wait a moment to ensure evaluation starts

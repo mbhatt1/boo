@@ -231,6 +231,7 @@ const MAX_EVENTS = Number(process.env.BOO_MAX_EVENTS || 3000); // Keep last N ev
   // Throttle for active tail updates when animations are disabled
   const activeUpdateTimerRef = useRef<NodeJS.Timeout | null>(null);
   const pendingActiveUpdaterRef = useRef<((prev: DisplayStreamEvent[]) => DisplayStreamEvent[]) | null>(null);
+  const operationCompleteCleanupTimerRef = useRef<NodeJS.Timeout | null>(null);
   const ACTIVE_EMIT_INTERVAL_MS = 16;
 
   const setActiveThrottled = (
@@ -420,6 +421,7 @@ const MAX_EVENTS = Number(process.env.BOO_MAX_EVENTS || 3000); // Keep last N ev
         global.gc();
       } catch (e) {
         // GC not available, that's okay
+        console.debug('[Terminal] Manual GC failed:', e);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1208,39 +1210,55 @@ const MAX_EVENTS = Number(process.env.BOO_MAX_EVENTS || 3000); // Keep last N ev
 
         // CRITICAL: Aggressive memory cleanup after operation completes
         // Keep only the most recent events to prevent 6GB heap exhaustion
-        setTimeout(() => {
-          // Keep only last 100 completed events (enough for final report + metrics)
-          const MAX_RETAINED_EVENTS = 100;
-          const allCompleted = completedBufRef.current.toArray();
+        // Clear any existing cleanup timer first
+        if (operationCompleteCleanupTimerRef.current) {
+          clearTimeout(operationCompleteCleanupTimerRef.current);
+          operationCompleteCleanupTimerRef.current = null;
+        }
+        
+        operationCompleteCleanupTimerRef.current = setTimeout(() => {
+          try {
+            // Keep only last 100 completed events (enough for final report + metrics)
+            const MAX_RETAINED_EVENTS = 100;
+            const allCompleted = completedBufRef.current.toArray();
 
-          if (allCompleted.length > MAX_RETAINED_EVENTS) {
-            const toKeep = allCompleted.slice(-MAX_RETAINED_EVENTS);
-            completedBufRef.current.clear();
-            for (const evt of toKeep) {
+            if (allCompleted.length > MAX_RETAINED_EVENTS) {
+              const toKeep = allCompleted.slice(-MAX_RETAINED_EVENTS);
+              completedBufRef.current.clear();
+              for (const evt of toKeep) {
+                completedBufRef.current.push(evt);
+              }
+              setCompletedEvents(toKeep);
+            }
+
+            // Move final active events to completed
+            const activeSnapshot = activeBufRef.current.toArray();
+            for (const evt of activeSnapshot) {
               completedBufRef.current.push(evt);
             }
-            setCompletedEvents(toKeep);
-          }
 
-          // Move final active events to completed
-          const activeSnapshot = activeBufRef.current.toArray();
-          for (const evt of activeSnapshot) {
-            completedBufRef.current.push(evt);
-          }
+            // Clear active buffer completely
+            activeBufRef.current.clear();
+            setActiveEvents([]);
 
-          // Clear active buffer completely
-          activeBufRef.current.clear();
-          setActiveEvents([]);
-
-          // Force garbage collection to release memory immediately
-          if (global.gc) {
-            try {
-              global.gc();
-            } catch (e) {
-              // GC not available
+            // Force garbage collection to release memory immediately
+            if (global.gc) {
+              try {
+                global.gc();
+              } catch (e) {
+                // GC not available
+                console.debug('[Terminal] Manual GC on cleanup failed:', e);
+              }
             }
+          } catch (error) {
+            // Log error but don't crash on cleanup failure
+            try {
+              loggingService.error('Error during operation complete cleanup', error);
+            } catch {}
+          } finally {
+            operationCompleteCleanupTimerRef.current = null;
           }
-        }, 1000); // Wait 1s for final renders to complete
+        }, 1000) as unknown as NodeJS.Timeout; // Wait 1s for final renders to complete
 
         break;
         
@@ -1339,7 +1357,8 @@ const MAX_EVENTS = Number(process.env.BOO_MAX_EVENTS || 3000); // Keep last N ev
     
     // Listen for events from Docker service
     const handleEvent = (rawEvent: any) => {
-      const event = normalizeEvent(rawEvent);
+      try {
+        const event = normalizeEvent(rawEvent);
       // Debug logging disabled for production use
       // console.error(`[DEBUG] UnconstrainedTerminal received event:`, {
       //   type: event.type,
@@ -1552,9 +1571,15 @@ completedBufRef.current.pushMany(newCompletedEvents);
         }
       }
       
-      // Forward original event to parent
-      if (onEvent) {
-        onEvent(event);
+        // Forward original event to parent
+        if (onEvent) {
+          onEvent(event);
+        }
+      } catch (error) {
+        // Log error but don't crash the component
+        try {
+          loggingService.error('Error processing event in Terminal', error);
+        } catch {}
       }
     };
 
@@ -1593,14 +1618,32 @@ completedBufRef.current.pushMany(newCompletedEvents);
       cancelDelayedThinking();
       cancelPostToolIdleTimer();
       cancelPostReasoningIdleTimer();
+      
+      // Clean up metrics throttle timer
       if (pendingTimerRef.current) {
         clearTimeout(pendingTimerRef.current);
         pendingTimerRef.current = null;
       }
+      
+      // Clean up active update throttle timer
       if (activeUpdateTimerRef.current) {
         clearTimeout(activeUpdateTimerRef.current);
         activeUpdateTimerRef.current = null;
       }
+      
+      // Clean up operation complete cleanup timer
+      if (operationCompleteCleanupTimerRef.current) {
+        clearTimeout(operationCompleteCleanupTimerRef.current);
+        operationCompleteCleanupTimerRef.current = null;
+      }
+      
+      // Clean up pending reasoning timer
+      if (pendingReasoningTimerRef.current) {
+        clearTimeout(pendingReasoningTimerRef.current);
+        pendingReasoningTimerRef.current = null;
+      }
+      
+      // Unsubscribe from all event listeners
       executionService.off('event', handleEvent);
       executionService.off('complete', handleComplete);
       executionService.off('stopped', handleStopped);

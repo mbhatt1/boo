@@ -106,6 +106,16 @@ export const MultiLineTextInput: React.FC<MultiLineTextInputProps> = ({
     }
   }, [value]);
 
+  // Cleanup timeout on unmount
+  React.useEffect(() => {
+    return () => {
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+        updateTimeoutRef.current = null;
+      }
+    };
+  }, []);
+
   // Split current full value for rendering previous lines
   const lines = fullValueRef.current.split('\n');
   const previousLines = lines.slice(0, -1);

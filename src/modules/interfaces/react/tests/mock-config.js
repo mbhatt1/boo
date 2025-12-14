@@ -13,7 +13,9 @@ export const mockConfiguredState = {
   modelProvider: 'bedrock',
   modelId: 'us.anthropic.claude-sonnet-4-20250514-v1:0',
   awsRegion: 'us-east-1',
-  awsBearerToken: process.env.AWS_BEARER_TOKEN_BEDROCK || 'test-token',
+  // Never provide fallback for credentials - fail fast if missing
+  awsBearerToken: process.env.AWS_BEARER_TOKEN_BEDROCK ||
+    (() => { throw new Error('AWS_BEARER_TOKEN_BEDROCK required for tests'); })(),
   
   // Container settings
   dockerImage: 'boo:latest',

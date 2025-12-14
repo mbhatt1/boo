@@ -6,6 +6,7 @@ A single, comprehensive tool that the report agent can use to build
 security assessment reports from operation evidence.
 """
 
+import html
 import json
 import logging
 import os
@@ -27,6 +28,69 @@ from modules.config.manager import get_config_manager
 from modules.handlers.core.utils import sanitize_target_name
 
 logger = logging.getLogger(__name__)
+
+# Bug #71 fix: Pre-compile regex patterns at module level
+_WHERE_PATTERN = re.compile(r"\[WHERE\]\s*([^\n\r]+)")
+
+
+def _check_fd_limit() -> bool:
+    """Check if we're approaching file descriptor limits (Bug #70 fix).
+    
+    Returns:
+        True if FD usage is within safe limits, False if approaching limit
+    """
+    try:
+        import resource
+        soft_limit, hard_limit = resource.getrlimit(resource.RLIMIT_NOFILE)
+        
+        # Count currently open file descriptors
+        try:
+            import psutil
+            process = psutil.Process()
+            open_fds = process.num_fds() if hasattr(process, 'num_fds') else len(process.open_files())
+            
+            # Warn if we're using more than 80% of soft limit
+            if open_fds > (soft_limit * 0.8):
+                logger.warning("Approaching file descriptor limit: %d/%d open", open_fds, soft_limit)
+                return False
+            return True
+        except (ImportError, AttributeError):
+            # psutil not available, use proc filesystem on Linux
+            try:
+                import glob
+                open_fds = len(glob.glob(f'/proc/{os.getpid()}/fd/*'))
+                if open_fds > (soft_limit * 0.8):
+                    logger.warning("Approaching file descriptor limit: %d/%d open", open_fds, soft_limit)
+                    return False
+                return True
+            except Exception:
+                # Can't determine FD count, assume OK
+                return True
+    except (ImportError, ValueError, OSError) as e:
+        # resource module not available or error reading limits
+        logger.debug("Could not check FD limits: %s", e)
+        return True
+
+
+def _sanitize_anchor_id(id_str: str) -> str:
+    """Sanitize ID for use in HTML anchor (Bug #75 fix).
+    
+    Args:
+        id_str: The ID string to sanitize
+        
+    Returns:
+        A safe ID string for use in HTML anchors
+    """
+    if not id_str:
+        return ""
+    # HTML escape first
+    safe = html.escape(str(id_str))
+    # Keep only alphanumeric, hyphens, underscores
+    safe = re.sub(r'[^a-zA-Z0-9_-]', '', safe)
+    # Ensure it starts with letter (HTML requirement)
+    if safe and not safe[0].isalpha():
+        safe = 'f' + safe
+    return safe[:100]  # Limit length
 
 
 def sanitize_target_for_path(target: str) -> str:
@@ -243,8 +307,14 @@ def build_report_sections(
                                 item.update(parsed)
                                 evidence.append(item)
                                 continue
-                        except json.JSONDecodeError:
-                            pass
+                        except json.JSONDecodeError as e:
+                            # Bug #73 fix: Log malformed JSON instead of silent failure
+                            logger.warning(
+                                "Skipping malformed JSON finding (id=%s): %s",
+                                memory_item.get("id", "unknown"),
+                                str(e)[:100]
+                            )
+                            # Continue processing other findings
 
                     # Text-based structured evidence (markers)
                     if any(
@@ -299,13 +369,18 @@ def build_report_sections(
         # Format evidence for report
         evidence_text = format_evidence_for_report(evidence)
 
-        # Count severities from actual evidence, not just text
-        severity_counts = {
-            "critical": sum(1 for e in evidence if str(e.get("severity", "")).upper() == "CRITICAL"),
-            "high": sum(1 for e in evidence if str(e.get("severity", "")).upper() == "HIGH"),
-            "medium": sum(1 for e in evidence if str(e.get("severity", "")).upper() == "MEDIUM"),
-            "low": sum(1 for e in evidence if str(e.get("severity", "")).upper() == "LOW"),
-        }
+        # Bug #74 fix: Count severities in single pass instead of 4 iterations
+        severity_counts = {"critical": 0, "high": 0, "medium": 0, "low": 0}
+        for e in evidence:
+            severity = str(e.get("severity", "")).upper()
+            if severity == "CRITICAL":
+                severity_counts["critical"] += 1
+            elif severity == "HIGH":
+                severity_counts["high"] += 1
+            elif severity == "MEDIUM":
+                severity_counts["medium"] += 1
+            elif severity == "LOW":
+                severity_counts["low"] += 1
 
         # Generate findings table (structured, deterministic)
         findings_table = generate_findings_summary_table(evidence)
@@ -391,27 +466,31 @@ def build_report_sections(
             safe_target_name = sanitize_target_for_path(target)
             log_path = os.path.join("outputs", safe_target_name, operation_id, "boo_operations.log")
             if os.path.exists(log_path):
-                with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
-                    for line in f:
-                        if "__BOO_EVENT__" in line and '"type": "metrics_update"' in line:
-                            # Extract JSON between markers
-                            try:
-                                start = line.index("__BOO_EVENT__") + len("__BOO_EVENT__")
-                                end = line.index("__BOO_EVENT_END__")
-                                payload = json.loads(line[start:end])
-                                m = payload.get("metrics", {}) if isinstance(payload, dict) else {}
-                                # Prefer the most recent values (overwrite as we go)
-                                metrics_input = int(m.get("inputTokens", metrics_input) or 0)
-                                metrics_output = int(m.get("outputTokens", metrics_output) or 0)
-                                metrics_total = int(m.get("totalTokens", m.get("tokens", metrics_total) or 0))
-                                metrics_duration = str(m.get("duration", metrics_duration) or metrics_duration)
-                                if "cost" in m:
-                                    try:
-                                        metrics_cost = float(m.get("cost"))
-                                    except Exception:
-                                        pass
-                            except Exception:
-                                continue
+                # Check FD limits before opening file (Bug #70 fix)
+                if not _check_fd_limit():
+                    logger.warning("Skipping log file reading due to FD limit concerns")
+                else:
+                    with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
+                        for line in f:
+                            if "__BOO_EVENT__" in line and '"type": "metrics_update"' in line:
+                                # Extract JSON between markers
+                                try:
+                                    start = line.index("__BOO_EVENT__") + len("__BOO_EVENT__")
+                                    end = line.index("__BOO_EVENT_END__")
+                                    payload = json.loads(line[start:end])
+                                    m = payload.get("metrics", {}) if isinstance(payload, dict) else {}
+                                    # Prefer the most recent values (overwrite as we go)
+                                    metrics_input = int(m.get("inputTokens", metrics_input) or 0)
+                                    metrics_output = int(m.get("outputTokens", metrics_output) or 0)
+                                    metrics_total = int(m.get("totalTokens", m.get("tokens", metrics_total) or 0))
+                                    metrics_duration = str(m.get("duration", metrics_duration) or metrics_duration)
+                                    if "cost" in m:
+                                        try:
+                                            metrics_cost = float(m.get("cost"))
+                                        except Exception:
+                                            pass
+                                except Exception:
+                                    continue
         except Exception:
             # Ignore metrics extraction failures silently
             pass
@@ -426,7 +505,9 @@ def build_report_sections(
             p = top.get("parsed", {}) if isinstance(top.get("parsed"), dict) else {}
             anchor_link = str(top.get("anchor") or "").strip()
             if not anchor_link and str(top.get("id") or "").strip():
-                anchor_link = f"#finding-{top['id']}"
+                # Bug #75 fix: Sanitize ID to prevent XSS
+                safe_id = _sanitize_anchor_id(top['id'])
+                anchor_link = f"#finding-{safe_id}"
             canonical_findings[sev] = {
                 "id": top.get("id", ""),
                 "title": (p.get("vulnerability") or _safe_truncate(str(top.get("content", "")), 60)).strip(),
@@ -755,11 +836,20 @@ def _generate_findings_table(evidence_text: str, severity_counts: Dict[str, int]
     def _first_finding_for(sev_label: str) -> tuple[str, str, str]:
         if not evidence_text:
             return "", "", ""
-        import re
-
-        # Find the section starting with the severity heading
-        pattern = rf"###\s*{sev_label}\s*Findings(.*?)(?:\n###\s*[A-Z][a-z]+\s*Findings|\Z)"
-        m = re.search(pattern, evidence_text, flags=re.DOTALL)
+        
+        # Bug #80 fix: Prevent ReDoS with regex injection protection and bounded quantifier
+        # Escape severity label to prevent regex injection
+        safe_label = re.escape(sev_label)
+        
+        # Use bounded quantifier (max 50000 chars) instead of unlimited .*?
+        pattern = rf"###\s*{safe_label}\s*Findings(.{{0,50000}}?)(?:\n###\s*[A-Z][a-z]+\s*Findings|\Z)"
+        
+        try:
+            m = re.search(pattern, evidence_text, flags=re.DOTALL)
+        except Exception as e:
+            logger.error("Regex error searching for %s findings: %s", sev_label, e)
+            return "", "", ""
+        
         if not m:
             return "", "", ""
         block = m.group(1)

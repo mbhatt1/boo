@@ -29,22 +29,31 @@ export class ErrorBoundary extends Component<Props, State> {
     this.state = { hasError: false, error: null, errorInfo: null };
   }
 
-  static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error, errorInfo: null };
+  static getDerivedStateFromError(error: unknown): State {
+    // Convert any thrown value to an Error object for type safety
+    const errorObj = error instanceof Error
+      ? error
+      : new Error(String(error));
+    return { hasError: true, error: errorObj, errorInfo: null };
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+  componentDidCatch(error: unknown, errorInfo: React.ErrorInfo) {
+    // Ensure error is an Error object for consistent handling
+    const errorObj = error instanceof Error
+      ? error
+      : new Error(String(error));
+      
     this.setState({
-      error,
+      error: errorObj,
       errorInfo
     });
 
     // Log error for debugging
-    loggingService.error('ErrorBoundary caught an error:', error, errorInfo);
+    loggingService.error('ErrorBoundary caught an error:', errorObj, errorInfo);
 
     // Detect WASM memory errors (common after large operations)
-    const isWasmMemoryError = error.message?.includes('memory access out of bounds') ||
-                               error.message?.includes('getComputedWidth');
+    const isWasmMemoryError = errorObj.message?.includes('memory access out of bounds') ||
+                               errorObj.message?.includes('getComputedWidth');
 
     if (isWasmMemoryError) {
       loggingService.warn('WASM memory exhaustion detected - application restart recommended');
@@ -52,7 +61,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
     // Call optional error handler
     if (this.props.onError) {
-      this.props.onError(error, errorInfo);
+      this.props.onError(errorObj, errorInfo);
     }
   }
 

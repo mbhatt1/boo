@@ -5,7 +5,7 @@
  * Provides step-by-step onboarding for new users.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Box, Text, useInput } from 'ink';
 import Spinner from 'ink-spinner';
 import { HealthMonitor, HealthStatus } from '../services/HealthMonitor.js';
@@ -60,6 +60,11 @@ export const InitializationFlow: React.FC<InitializationFlowProps> = ({ onComple
   const envConfig = getEnvironmentConfig();
   const logger = createLogger('InitializationFlow');
   const [currentStep, setCurrentStep] = useState<InitStep>('welcome');
+  
+  // Track timers for cleanup
+  const modeSwitchTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const autoContinueTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const retryTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Screen clearing is handled by App.tsx refreshStatic() when /setup is triggered
   const [deploymentMode, setDeploymentMode] = useState<DeploymentMode>('full-stack');
@@ -139,11 +144,29 @@ export const InitializationFlow: React.FC<InitializationFlowProps> = ({ onComple
     }
   ];
 
+  // Cleanup all timers on unmount
+  useEffect(() => {
+    return () => {
+      if (modeSwitchTimerRef.current) {
+        clearTimeout(modeSwitchTimerRef.current);
+        modeSwitchTimerRef.current = null;
+      }
+      if (autoContinueTimerRef.current) {
+        clearTimeout(autoContinueTimerRef.current);
+        autoContinueTimerRef.current = null;
+      }
+      if (retryTimerRef.current) {
+        clearTimeout(retryTimerRef.current);
+        retryTimerRef.current = null;
+      }
+    };
+  }, []);
+
   useEffect(() => {
     // Only auto-proceed if we're past the selection screens and not in setup progress
     // Add more guards to prevent infinite loops
-    if (currentStep !== 'welcome' && 
-        currentStep !== 'deployment-selection' && 
+    if (currentStep !== 'welcome' &&
+        currentStep !== 'deployment-selection' &&
         currentStep !== 'setup-progress-screen' &&
         currentStep !== 'switching-containers' &&
         currentStep !== 'starting-containers' &&
@@ -197,10 +220,17 @@ export const InitializationFlow: React.FC<InitializationFlowProps> = ({ onComple
         // Mark that we're switching mode to prevent duplicates
         setIsSwitchingMode(true);
         
+        // Clear any existing mode switch timer
+        if (modeSwitchTimerRef.current) {
+          clearTimeout(modeSwitchTimerRef.current);
+          modeSwitchTimerRef.current = null;
+        }
+        
         // Switch containers based on selected mode
-        setTimeout(() => {
+        modeSwitchTimerRef.current = setTimeout(() => {
+          modeSwitchTimerRef.current = null;
           switchDeploymentMode(selected.id);
-        }, 100);
+        }, 100) as unknown as NodeJS.Timeout;
       } else if (key.escape) {
         // Screen clearing handled by app component
         onComplete();
@@ -376,7 +406,9 @@ export const InitializationFlow: React.FC<InitializationFlowProps> = ({ onComple
         try {
           await execAsync(`docker-compose -f ${composePath} start`);
           return true;
-        } catch {
+        } catch (startError) {
+          // Log first attempt failure for debugging
+          logger.debug('Docker compose start failed, trying up --no-recreate', startError as Error);
           // If start fails, try up without -d to avoid conflicts
           try {
             await execAsync(`docker-compose -f ${composePath} up --no-recreate -d`);
@@ -464,10 +496,17 @@ export const InitializationFlow: React.FC<InitializationFlowProps> = ({ onComple
       setIsSetupComplete(true);
       setIsSwitchingMode(false);
       
+      // Clear any existing auto-continue timer
+      if (autoContinueTimerRef.current) {
+        clearTimeout(autoContinueTimerRef.current);
+        autoContinueTimerRef.current = null;
+      }
+      
       // Auto-continue after a short delay to show success
-      setTimeout(() => {
+      autoContinueTimerRef.current = setTimeout(() => {
+        autoContinueTimerRef.current = null;
         handleSetupContinue();
-      }, 1500);
+      }, 1500) as unknown as NodeJS.Timeout;
       
     } catch (error) {
       logger.error('Failed to switch deployment mode', error as Error);

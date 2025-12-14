@@ -79,6 +79,7 @@ export const MainAppView: React.FC<MainAppViewProps> = ({
   const [deferStreamMount, setDeferStreamMount] = useState(false);
   const prevShowStreamRef = useRef<boolean>(false);
   const [hasStreamBegun, setHasStreamBegun] = useState(false);
+  const deferTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const prev = prevShowStreamRef.current;
@@ -88,7 +89,10 @@ export const MainAppView: React.FC<MainAppViewProps> = ({
       // causing the viewport to jump to the top and the footer to disappear briefly.
       // Instead, only defer the stream mount so the header paints first on this tick.
       setDeferStreamMount(true);
-      setTimeout(() => setDeferStreamMount(false), 0);
+      deferTimerRef.current = setTimeout(() => {
+        deferTimerRef.current = null;
+        setDeferStreamMount(false);
+      }, 0) as unknown as NodeJS.Timeout;
       // A new stream is starting; allow header for this run
       setHasAnyOperationEnded(false);
     }
@@ -101,6 +105,14 @@ export const MainAppView: React.FC<MainAppViewProps> = ({
     }
 
     prevShowStreamRef.current = showOperationStream;
+    
+    // Cleanup timer on unmount or when dependencies change
+    return () => {
+      if (deferTimerRef.current) {
+        clearTimeout(deferTimerRef.current);
+        deferTimerRef.current = null;
+      }
+    };
   }, [showOperationStream, stdout]);
 
   // Reset flag when operation changes

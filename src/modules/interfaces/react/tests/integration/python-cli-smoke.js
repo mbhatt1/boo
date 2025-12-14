@@ -26,13 +26,48 @@ const path = require('path');
 
     const env = { ...process.env, NO_COLOR: '1', CI: 'true' };
 
-    const child = spawn(cmd, args, { cwd: projectRoot, env });
+    const child = spawn(cmd, args, {
+      cwd: projectRoot,
+      env,
+      timeout: 60000  // 60 second timeout
+    });
 
     let output = '';
-    child.stdout.on('data', d => output += d.toString());
-    child.stderr.on('data', d => output += d.toString());
+    let killed = false;
+    const MAX_OUTPUT_SIZE = 10 * 1024 * 1024; // 10MB limit
 
-    const exitCode = await new Promise(resolve => child.on('close', resolve));
+    // Add manual timeout handler as backup
+    const timeoutId = setTimeout(() => {
+      if (!killed) {
+        console.log('Python CLI test timeout after 60s, killing process');
+        killed = true;
+        child.kill('SIGTERM');
+        setTimeout(() => child.kill('SIGKILL'), 5000);
+      }
+    }, 60000);
+
+    const appendOutput = (data) => {
+      const str = data.toString();
+      if (output.length + str.length > MAX_OUTPUT_SIZE) {
+        console.warn('Output buffer limit reached, truncating');
+        if (output.length < MAX_OUTPUT_SIZE) {
+          output += str.substring(0, MAX_OUTPUT_SIZE - output.length);
+          output += '\n... [OUTPUT TRUNCATED]';
+        }
+      } else {
+        output += str;
+      }
+    };
+
+    child.stdout.on('data', appendOutput);
+    child.stderr.on('data', appendOutput);
+
+    const exitCode = await new Promise(resolve => {
+      child.on('close', code => {
+        clearTimeout(timeoutId);
+        resolve(code);
+      });
+    });
 
     if (exitCode !== 0) {
       console.log('Python CLI exited non-zero; output follows (non-fatal in smoke test):');

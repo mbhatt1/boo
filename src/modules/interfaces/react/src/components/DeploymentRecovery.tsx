@@ -5,7 +5,7 @@
  * Shows inline recovery options without requiring full setup wizard.
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Box, Text, useInput } from 'ink';
 import Spinner from 'ink-spinner';
 import { useConfig } from '../contexts/ConfigContext.js';
@@ -31,11 +31,18 @@ export const DeploymentRecovery: React.FC<DeploymentRecoveryProps> = ({
   const [recoveryMessage, setRecoveryMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
   const { updateConfig, saveConfig } = useConfig();
+  
+  // Track timers for cleanup
+  const completionTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Handle recovery based on deployment mode and issues
   const handleRecovery = useCallback(async () => {
     setIsRecovering(true);
     setError(null);
+    
+    // Create abort controller for this recovery session
+    abortControllerRef.current = new AbortController();
     
     try {
       switch (deployment.mode) {
@@ -59,31 +66,46 @@ export const DeploymentRecovery: React.FC<DeploymentRecoveryProps> = ({
       await saveConfig();
       
       setRecoveryMessage('✅ Recovery complete!');
-      setTimeout(() => onComplete(true), 1500);
+      
+      // Clear any existing completion timer
+      if (completionTimerRef.current) {
+        clearTimeout(completionTimerRef.current);
+      }
+      
+      completionTimerRef.current = setTimeout(() => {
+        completionTimerRef.current = null;
+        onComplete(true);
+      }, 1500) as unknown as NodeJS.Timeout;
       
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Recovery failed');
       setIsRecovering(false);
+    } finally {
+      abortControllerRef.current = null;
     }
   }, [deployment, updateConfig, saveConfig, onComplete]);
 
   // Recovery functions for each deployment type
   const recoverPythonEnvironment = async () => {
-    setRecoveryMessage('Setting up Python environment...');
-    
-    // Check what's missing
-    if (!deployment.details.venvExists) {
-      setRecoveryMessage('Creating virtual environment...');
-      await execAsync('python3 -m venv .venv');
+    try {
+      setRecoveryMessage('Setting up Python environment...');
+      
+      // Check what's missing
+      if (!deployment.details.venvExists) {
+        setRecoveryMessage('Creating virtual environment...');
+        await execAsync('python3 -m venv .venv');
+      }
+      
+      setRecoveryMessage('Installing dependencies...');
+      const venvPip = '.venv/bin/pip';
+      await execAsync(`${venvPip} install --upgrade pip`);
+      await execAsync(`${venvPip} install -e .`);
+      
+      setRecoveryMessage('Verifying installation...');
+      await execAsync('.venv/bin/python -c "import cyberautoagent"');
+    } catch (err) {
+      throw new Error(`Python environment recovery failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
-    
-    setRecoveryMessage('Installing dependencies...');
-    const venvPip = '.venv/bin/pip';
-    await execAsync(`${venvPip} install --upgrade pip`);
-    await execAsync(`${venvPip} install -e .`);
-    
-    setRecoveryMessage('Verifying installation...');
-    await execAsync('.venv/bin/python -c "import cyberautoagent"');
   };
 
   const recoverDockerContainer = async () => {
@@ -142,9 +164,21 @@ export const DeploymentRecovery: React.FC<DeploymentRecoveryProps> = ({
       const maxRetries = 10;
       for (let i = 0; i < maxRetries; i++) {
         try {
-          const response = await fetch('http://localhost:3000/api/public/health');
-          if (response.ok) break;
-        } catch {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000);
+          
+          try {
+            const response = await fetch('http://localhost:3000/api/public/health', {
+              signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+            
+            if (response.ok) break;
+          } catch (fetchErr) {
+            clearTimeout(timeoutId);
+            throw fetchErr;
+          }
+        } catch (fetchErr) {
           if (i === maxRetries - 1) {
             throw new Error('Langfuse service not responding after recovery');
           }
@@ -152,9 +186,26 @@ export const DeploymentRecovery: React.FC<DeploymentRecoveryProps> = ({
         }
       }
     } catch (err) {
-      throw new Error('Failed to recover full stack deployment');
+      throw new Error(`Failed to recover full stack deployment: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
   };
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      // Clear completion timer
+      if (completionTimerRef.current) {
+        clearTimeout(completionTimerRef.current);
+        completionTimerRef.current = null;
+      }
+      
+      // Abort any ongoing async operations
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+    };
+  }, []);
 
   // Keyboard input handling
   useInput((input, key) => {

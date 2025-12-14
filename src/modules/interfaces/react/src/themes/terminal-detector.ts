@@ -21,11 +21,12 @@ export function detectTerminalBackground(): BackgroundType {
   // - 0-7 = dark background
   // - 8-15 = light background
   const colorFgBg = process.env.COLORFGBG;
-  if (colorFgBg) {
+  if (colorFgBg && typeof colorFgBg === 'string') {
     const parts = colorFgBg.split(';');
-    if (parts.length >= 2) {
+    // Validate format: need at least 2 parts and second part should be numeric
+    if (parts.length >= 2 && parts[1] && /^\d+$/.test(parts[1].trim())) {
       const bg = parseInt(parts[1], 10);
-      if (!isNaN(bg)) {
+      if (!isNaN(bg) && isFinite(bg)) {
         // 0-7 = dark colors, 8-15 = light colors
         if (bg >= 0 && bg <= 7) {
           return 'dark';

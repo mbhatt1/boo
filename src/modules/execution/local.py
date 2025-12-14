@@ -39,14 +39,22 @@ class LocalExecutionService(ExecutionService):
             cmd.append('--auto-run')
         
         # Start subprocess
-        self._is_active = True
-        self.process = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            bufsize=1
-        )
+        # Bug #42 fix: Cleanup on exception
+        try:
+            self._is_active = True
+            # Bug #41 & #50 fix: Use DEVNULL to prevent pipe deadlock
+            # Pipes were never read, causing deadlock when buffers fill (>64KB)
+            self.process = subprocess.Popen(
+                cmd,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                text=True
+            )
+        except Exception:
+            # Reset state if subprocess creation fails
+            self._is_active = False
+            self.process = None
+            raise
     
     async def stop(self) -> None:
         """Stop the local execution."""

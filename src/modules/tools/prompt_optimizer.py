@@ -6,15 +6,28 @@ from __future__ import annotations
 import json
 import logging
 import os
+import threading
+from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from strands import tool
+from modules.config.manager import get_config_manager
+from modules.agents.boo_agent import (
+    _create_local_model,
+    _create_remote_model,
+    _create_litellm_model,
+)
+from strands import Agent
 
 OVERLAY_FILENAME = "adaptive_prompt.json"
 logger = logging.getLogger(__name__)
+
+# Module-level thread-safe storage for failure tracking (Bug #67)
+_failure_counts = defaultdict(int)
+_failure_lock = threading.Lock()
 
 
 class PromptOptimizerError(Exception):
@@ -238,8 +251,13 @@ def prompt_optimizer(
         }
 
     if action_normalised == "reset":
-        if os.path.exists(overlay_file):
+        # Bug #76 fix: Use try-except instead of check-then-act to avoid TOCTOU
+        try:
             os.remove(overlay_file)
+        except FileNotFoundError:
+            pass  # Already deleted, that's fine
+        except Exception as e:
+            logger.warning("Failed to remove overlay file: %s", e)
         os.environ.pop("BOO_PROMPT_OVERLAY_LAST_STEP", None)
         return {
             "status": "success",
@@ -483,16 +501,7 @@ def _llm_rewrite_execution_prompt(
     Returns:
         Rewritten execution prompt
     """
-    import os
-    from modules.config.manager import get_config_manager
-    from modules.agents.boo_agent import (
-        _create_local_model,
-        _create_remote_model,
-        _create_litellm_model,
-    )
-    from strands import Agent
-
-    # Load active provider configuration
+    # Load active provider configuration (imports now at module top - Bug #66)
     config_manager = get_config_manager()
     provider = (
         os.getenv("PROVIDER")
@@ -503,9 +512,16 @@ def _llm_rewrite_execution_prompt(
 
     try:
         server_config = config_manager.get_server_config(provider)
-    except Exception:
+    except Exception as e:
+        logger.warning("Failed to get config for provider '%s': %s, falling back to ollama", provider, e)
         provider = "ollama"
-        server_config = config_manager.get_server_config(provider)
+        try:
+            server_config = config_manager.get_server_config(provider)
+        except Exception as fallback_err:
+            logger.error("Fallback provider 'ollama' also unavailable: %s", fallback_err)
+            raise PromptOptimizerError(
+                f"Cannot load configuration for provider '{provider}' or fallback 'ollama': {fallback_err}"
+            )
 
     region_name = os.getenv("AWS_REGION") or config_manager.get_default_region()
     model_id = server_config.llm.model_id
@@ -551,6 +567,14 @@ def _llm_rewrite_execution_prompt(
     else:
         raise ValueError(f"Unsupported provider: {provider}")
 
+    # Bug #68 fix: Validate and sanitize inputs
+    if not isinstance(learned_patterns, str):
+        learned_patterns = str(learned_patterns) if learned_patterns else ""
+    if not isinstance(remove_tactics, list):
+        remove_tactics = []
+    if not isinstance(focus_tactics, list):
+        focus_tactics = []
+    
     # Limit evidence input to 5K chars
     max_evidence_chars = 5000
     truncated_patterns = learned_patterns[:max_evidence_chars] if len(learned_patterns) > max_evidence_chars else learned_patterns
@@ -733,13 +757,17 @@ Return ONLY the optimized prompt text (no explanation, no preamble, no commentar
 Length: ≤ {len(current_prompt)} chars (STRICT enforcement, zero tolerance)
 </output_format>"""
 
-    if not hasattr(_llm_rewrite_execution_prompt, '_failure_count'):
-        _llm_rewrite_execution_prompt._failure_count = 0
-
-    if _llm_rewrite_execution_prompt._failure_count >= 3:
-        logger.warning("Too many rewrite failures (%d), using original prompt", _llm_rewrite_execution_prompt._failure_count)
-        return current_prompt
-
+    # Bug #67 fix: Use thread-safe failure tracking with operation-scoped tracking
+    operation_id = os.getenv("BOO_OPERATION_ID", "default")
+    
+    with _failure_lock:
+        failure_count = _failure_counts[operation_id]
+        
+        if failure_count >= 3:
+            logger.warning("Too many rewrite failures (%d) for operation %s",
+                         failure_count, operation_id)
+            return current_prompt
+    
     try:
         logger.debug("Calling LLM rewriter with %d char prompt", len(request))
         result = rewriter(request)
@@ -756,7 +784,8 @@ Length: ≤ {len(current_prompt)} chars (STRICT enforcement, zero tolerance)
                 len(current_prompt), len(rewritten), len(rewritten) - len(current_prompt),
                 min_allowed, max_allowed
             )
-            _llm_rewrite_execution_prompt._failure_count += 1
+            with _failure_lock:
+                _failure_counts[operation_id] += 1
             return current_prompt
 
         # Check if actually changed
@@ -764,14 +793,25 @@ Length: ≤ {len(current_prompt)} chars (STRICT enforcement, zero tolerance)
             logger.info("Prompt optimizer: No changes (no violations detected)")
             return current_prompt
 
-        change_pct = ((len(rewritten) - len(current_prompt)) / len(current_prompt)) * 100
-        logger.info(
-            "Prompt optimization: %d → %d chars (%+d, %+.1f%%)",
-            len(current_prompt), len(rewritten), len(rewritten) - len(current_prompt), change_pct
-        )
-        _llm_rewrite_execution_prompt._failure_count = 0
+        # Bug #72 fix: Safe percentage calculation with zero check
+        if len(current_prompt) > 0:
+            change_pct = ((len(rewritten) - len(current_prompt)) / len(current_prompt)) * 100
+            logger.info(
+                "Prompt optimization: %d → %d chars (%+d, %+.1f%%)",
+                len(current_prompt), len(rewritten), len(rewritten) - len(current_prompt), change_pct
+            )
+        else:
+            logger.info(
+                "Prompt optimization: 0 → %d chars (new prompt)",
+                len(rewritten)
+            )
+        
+        with _failure_lock:
+            _failure_counts[operation_id] = 0  # Reset on success
+        
         return rewritten
     except Exception as e:
         logger.error("LLM rewrite failed: %s", e)
-        _llm_rewrite_execution_prompt._failure_count += 1
+        with _failure_lock:
+            _failure_counts[operation_id] += 1
         return current_prompt

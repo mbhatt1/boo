@@ -93,7 +93,10 @@ export const StatusIndicator: React.FC<StatusIndicatorProps> = React.memo(({
     updateDeploymentMode();
 
     // Reduce polling frequency to prevent memory leaks - 10 seconds is sufficient for mode detection
-    const deploymentModeInterval = overrideMode ? null : setInterval(updateDeploymentMode, 10000);
+    let deploymentModeInterval: NodeJS.Timeout | null = null;
+    if (!overrideMode) {
+      deploymentModeInterval = setInterval(updateDeploymentMode, 10000) as unknown as NodeJS.Timeout;
+    }
 
     // Initial check
     monitor.checkHealth();
@@ -102,6 +105,7 @@ export const StatusIndicator: React.FC<StatusIndicatorProps> = React.memo(({
       unsubscribe();
       if (deploymentModeInterval) {
         clearInterval(deploymentModeInterval);
+        deploymentModeInterval = null;
       }
       // Stop monitoring when component unmounts to prevent memory leaks
       monitor.stopMonitoring();

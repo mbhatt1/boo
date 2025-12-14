@@ -67,8 +67,11 @@ def _lf_host() -> str:
 
 
 def _lf_auth_header() -> str:
-    pk = os.getenv("LANGFUSE_PUBLIC_KEY", "boo-public")
-    sk = os.getenv("LANGFUSE_SECRET_KEY", "boo-secret")
+    """Get Langfuse authentication header from environment variables."""
+    pk = os.getenv("LANGFUSE_PUBLIC_KEY", "")
+    sk = os.getenv("LANGFUSE_SECRET_KEY", "")
+    if not pk or not sk:
+        logger.warning("Langfuse credentials not configured: LANGFUSE_PUBLIC_KEY or LANGFUSE_SECRET_KEY missing")
     token = base64.b64encode(f"{pk}:{sk}".encode()).decode()
     return f"Basic {token}"
 
@@ -100,21 +103,30 @@ def _lf_get_prompt(name: str, label: str) -> Optional[Dict[str, Any]]:
     cached = _lf_cache_get(name, label)
     if cached is not None:
         return cached
+    
+    # Use configurable timeout with 30 second default
+    timeout = int(os.getenv("LANGFUSE_REQUEST_TIMEOUT", "30"))
+    
     try:
         url = f"{_lf_host()}/api/public/v2/prompts/{_urlparse.quote(name)}?label={_urlparse.quote(label)}"
         req = _urlreq.Request(url, method="GET")
         req.add_header("Authorization", _lf_auth_header())
         req.add_header("Accept", "application/json")
-        with _urlreq.urlopen(req, timeout=5) as resp:  # nosec - local network
+        with _urlreq.urlopen(req, timeout=timeout) as resp:  # nosec - local network
             if resp.status == 200:
-                data = json.loads(resp.read().decode("utf-8"))
-                if isinstance(data, dict):
-                    _lf_cache_set(name, label, data)
-                    return data
+                try:
+                    data = json.loads(resp.read().decode("utf-8"))
+                    if isinstance(data, dict):
+                        _lf_cache_set(name, label, data)
+                        return data
+                    else:
+                        logger.warning("Langfuse prompt GET returned non-dict data for %s", name)
+                except json.JSONDecodeError as je:
+                    logger.error("Failed to parse JSON response from Langfuse for %s: %s", name, je)
             else:
                 logger.debug("Langfuse prompts GET %s -> %s", url, resp.status)
     except Exception as e:  # pragma: no cover
-        logger.debug("Langfuse prompts GET error: %s", e)
+        logger.warning("Langfuse prompts GET error for %s: %s", name, e)
     return None
 
 
@@ -129,6 +141,10 @@ def _lf_create_prompt_version(*, name: str, prompt_text: str, label: str, tags: 
         "tags": tags or ["boo-autoagent"],
         "commitMessage": commit,
     }
+    
+    # Use configurable timeout with 30 second default
+    timeout = int(os.getenv("LANGFUSE_REQUEST_TIMEOUT", "30"))
+    
     try:
         url = f"{_lf_host()}/api/public/v2/prompts"
         body = json.dumps(payload).encode("utf-8")
@@ -136,17 +152,20 @@ def _lf_create_prompt_version(*, name: str, prompt_text: str, label: str, tags: 
         req.add_header("Authorization", _lf_auth_header())
         req.add_header("Content-Type", "application/json")
         req.add_header("Accept", "application/json")
-        with _urlreq.urlopen(req, data=body, timeout=7) as resp:  # nosec - local network
+        with _urlreq.urlopen(req, data=body, timeout=timeout) as resp:  # nosec - local network
             if 200 <= resp.status < 300:
-                data = json.loads(resp.read().decode("utf-8"))
-                # Invalidate cache for this name/label
-                with _LF_CACHE_LOCK:
-                    _LF_CACHE.pop(_lf_ck(name, label), None)
-                return data
+                try:
+                    data = json.loads(resp.read().decode("utf-8"))
+                    # Invalidate cache for this name/label
+                    with _LF_CACHE_LOCK:
+                        _LF_CACHE.pop(_lf_ck(name, label), None)
+                    return data
+                except json.JSONDecodeError as je:
+                    logger.error("Failed to parse JSON response from Langfuse POST for %s: %s", name, je)
             else:
-                logger.debug("Langfuse prompts POST %s -> %s", url, resp.status)
+                logger.warning("Langfuse prompts POST %s -> %s", url, resp.status)
     except Exception as e:  # pragma: no cover
-        logger.debug("Langfuse prompts POST error: %s", e)
+        logger.warning("Langfuse prompts POST error for %s: %s", name, e)
     return None
 
 
@@ -236,15 +255,22 @@ def _load_overlay_json(path: Path) -> Optional[Dict[str, Any]]:
     if not path.exists():
         return None
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError:
-        logger.warning("Overlay file at %s is invalid JSON; removing", path)
+        content = path.read_text(encoding="utf-8")
         try:
-            path.unlink()
-        except OSError:
-            pass
+            data = json.loads(content)
+            if not isinstance(data, dict):
+                logger.warning("Overlay file at %s contains non-dict JSON; ignoring", path)
+                return None
+            return data
+        except json.JSONDecodeError as je:
+            logger.warning("Overlay file at %s is invalid JSON (line %d, col %d): %s; removing",
+                          path, je.lineno, je.colno, je.msg)
+            try:
+                path.unlink()
+            except OSError as ue:
+                logger.debug("Failed to unlink invalid overlay file %s: %s", path, ue)
     except OSError as exc:
-        logger.debug("Unable to read overlay file %s: %s", path, exc)
+        logger.warning("Unable to read overlay file %s: %s", path, exc)
     return None
 
 

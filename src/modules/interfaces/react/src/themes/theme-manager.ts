@@ -22,11 +22,14 @@ class ThemeManager {
 
     const supportsColors = supportsRichColors();
 
+    // Safely handle potentially undefined process.stdout.columns
+    const terminalWidth = process.stdout?.columns ?? 80;
+
     this.config = {
       theme: this.currentTheme,
       enableGradients: supportsColors, // Only enable gradients if terminal supports rich colors
       enableAnimations: true,
-      terminalWidth: process.stdout.columns || 80
+      terminalWidth: terminalWidth
     };
   }
 

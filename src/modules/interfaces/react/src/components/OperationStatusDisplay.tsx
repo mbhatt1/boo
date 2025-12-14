@@ -67,17 +67,18 @@ export const OperationStatusDisplay: React.FC<OperationStatusDisplayProps> = Rea
   const [spinIndex, setSpinIndex] = useState(0);
   const spinTimerRef = useRef<NodeJS.Timeout | null>(null);
   useEffect(() => {
+    // Clear any existing interval first to prevent leaks on rapid status changes
+    if (spinTimerRef.current) {
+      clearInterval(spinTimerRef.current);
+      spinTimerRef.current = null;
+    }
+
     if (currentOperation?.status === 'running') {
       spinTimerRef.current = setInterval(() => {
         setSpinIndex((i) => (i + 1) % spinnerFrames.length);
-      }, 120);
-      return () => {
-        if (spinTimerRef.current) {
-          clearInterval(spinTimerRef.current);
-          spinTimerRef.current = null;
-        }
-      };
+      }, 120) as unknown as NodeJS.Timeout;
     }
+    
     return () => {
       if (spinTimerRef.current) {
         clearInterval(spinTimerRef.current);
