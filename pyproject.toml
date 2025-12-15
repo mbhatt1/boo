@@ -30,7 +30,7 @@ classifiers = [
 requires-python = ">=3.10,<4.0"  # Allow all Python 3.x versions
 dependencies = [
     "strands-agents[ollama,otel,litellm]>=1.11.0,<2.0.0",  # Allow patch/minor updates
-    "strands-agents-tools==0.2.9", 
+    "strands-agents-tools==0.2.9",
     "mem0ai",
     "boto3>=1.39.10",
     "botocore>=1.39.10",
@@ -45,7 +45,8 @@ dependencies = [
     "ragas>=0.3.0",
     "langfuse>=2.0.0",
     "langchain-aws>=0.2.0",
-    "langchain-ollama>=0.2.0"
+    "langchain-ollama>=0.2.0",
+    "sentence-transformers"
 ]
 
 [project.optional-dependencies]
@@ -154,6 +155,7 @@ dev = [
     "pylint>=3.3.7",
     "pyright>=1.1.402",
     "pytest>=8.4.1",
+    "pytest-asyncio>=0.21.0",
     "pytest-mock>=3.14.1",
     "ruff>=0.12.1",
 ]
