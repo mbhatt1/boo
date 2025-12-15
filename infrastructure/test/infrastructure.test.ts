@@ -65,7 +65,7 @@ describe('Infrastructure Configuration', () => {
   test('Stack dependencies can be set', () => {
     const app = new cdk.App();
     const stack1 = new cdk.Stack(app, 'Stack1');
-    const _stack2 = new cdk.Stack(app, 'Stack2');
+    const stack2 = new cdk.Stack(app, 'Stack2');
     
     stack2.addDependency(stack1);
     
@@ -297,7 +297,7 @@ describe('Infrastructure Configuration', () => {
   test('Stack can handle circular dependencies detection', () => {
     const app = new cdk.App();
     const stack1 = new cdk.Stack(app, 'Stack1');
-    const _stack2 = new cdk.Stack(app, 'Stack2');
+    const stack2 = new cdk.Stack(app, 'Stack2');
     
     // Create dependency in one direction
     stack2.addDependency(stack1);
