@@ -57,7 +57,7 @@ jobs:
     - name: Lint React Interface
       working-directory: src/modules/interfaces/react
       run: |
-        npm ci
+        npm ci --legacy-peer-deps
         npm run typecheck
     
     - name: Test React Interface
@@ -67,7 +67,7 @@ jobs:
     - name: Lint Collaboration Module
       working-directory: src/modules/collaboration
       run: |
-        npm ci
+        npm ci --legacy-peer-deps
         npm run typecheck || echo "No typecheck script, skipping"
     
     - name: Test Collaboration Module
@@ -77,7 +77,7 @@ jobs:
     - name: Lint Infrastructure
       working-directory: infrastructure
       run: |
-        npm ci
+        npm ci --legacy-peer-deps
         npm run lint
         npm run typecheck
     

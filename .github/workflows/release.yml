@@ -1,0 +1,156 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., 0.2.1)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '20'
+
+jobs:
+  build-and-release:
+    name: Build and Release
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install UV
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=v$VERSION" >> $GITHUB_OUTPUT
+          echo "Release version: $VERSION"
+
+      - name: Update version in pyproject.toml
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          sed -i "s/^version = .*/version = \"$VERSION\"/" pyproject.toml
+          cat pyproject.toml | grep "^version = "
+
+      - name: Install Python dependencies
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          export PYTHONPATH="${PWD}/src:${PYTHONPATH}"
+          uv sync --all-extras --dev
+          uv pip install -e .
+
+      - name: Run Python tests
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          export PYTHONPATH="${PWD}/src:${PYTHONPATH}"
+          PYTHONPATH="${PWD}/src:${PYTHONPATH}" uv run pytest tests/ -v
+
+      - name: Build Python package
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          uv build
+
+      - name: Build React Interface
+        working-directory: src/modules/interfaces/react
+        run: |
+          npm ci --legacy-peer-deps
+          npm run build
+          tar -czf ../../../boo-react-${{ steps.version.outputs.version }}.tar.gz dist/
+
+      - name: Build Collaboration Module
+        working-directory: src/modules/collaboration
+        run: |
+          npm ci --legacy-peer-deps
+          npm run build
+          tar -czf ../../../boo-collaboration-${{ steps.version.outputs.version }}.tar.gz dist/
+
+      - name: Build Infrastructure
+        working-directory: infrastructure
+        run: |
+          npm ci --legacy-peer-deps
+          npm run build
+          tar -czf ../../boo-infrastructure-${{ steps.version.outputs.version }}.tar.gz lib/
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          if [ -f "CHANGELOG.md" ]; then
+            # Extract changelog for this version
+            CHANGELOG=$(sed -n "/## \[${{ steps.version.outputs.version }}\]/,/## \[/p" CHANGELOG.md | head -n -1)
+            if [ -z "$CHANGELOG" ]; then
+              CHANGELOG="Release ${{ steps.version.outputs.version }}"
+            fi
+          else
+            CHANGELOG="Release ${{ steps.version.outputs.version }}"
+          fi
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: Release ${{ steps.version.outputs.version }}
+          body: ${{ steps.changelog.outputs.changelog }}
+          draft: false
+          prerelease: false
+          files: |
+            dist/*.whl
+            dist/*.tar.gz
+            boo-react-${{ steps.version.outputs.version }}.tar.gz
+            boo-collaboration-${{ steps.version.outputs.version }}.tar.gz
+            boo-infrastructure-${{ steps.version.outputs.version }}.tar.gz
+
+      - name: Publish to PyPI
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          uv pip install twine
+          uv run twine upload dist/* --skip-existing
+
+      - name: Create release summary
+        run: |
+          echo "## 🚀 Release ${{ steps.version.outputs.version }} Published!"
+          echo ""
+          echo "### 📦 Artifacts"
+          echo "- Python package (PyPI): \`pip install boo==${{ steps.version.outputs.version }}\`"
+          echo "- React Interface: \`boo-react-${{ steps.version.outputs.version }}.tar.gz\`"
+          echo "- Collaboration Module: \`boo-collaboration-${{ steps.version.outputs.version }}.tar.gz\`"
+          echo "- Infrastructure: \`boo-infrastructure-${{ steps.version.outputs.version }}.tar.gz\`"
+          echo ""
+          echo "### 🔗 Links"
+          echo "- GitHub Release: https://github.com/${{ github.repository }}/releases/tag/${{ steps.version.outputs.tag }}"
+          echo "- PyPI: https://pypi.org/project/boo/${{ steps.version.outputs.version }}/"

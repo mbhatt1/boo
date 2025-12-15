@@ -63,7 +63,7 @@ jobs:
 
       - name: Install infrastructure dependencies
         working-directory: infrastructure
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       - name: Build Docker image
         working-directory: src/modules/collaboration
