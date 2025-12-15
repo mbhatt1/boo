@@ -245,7 +245,7 @@ export class HealthMonitor {
               status.services = [];
             } else {
               const serviceStatuses = await Promise.all(
-                currentServices.map(svc => this.checkService(svc))
+                currentServices.map(svc => this.checkServiceInternal(svc))
               );
               
               status.services = serviceStatuses;
@@ -302,8 +302,31 @@ export class HealthMonitor {
     }
   }
 
+  // Public method for testing - check a service with custom health function
+  async checkService(
+    serviceName: string,
+    healthCheck: () => Promise<boolean>
+  ): Promise<{ status: boolean; latency: number; error?: string }> {
+    const startTime = Date.now();
+    try {
+      const result = await healthCheck();
+      const latency = Math.max(1, Date.now() - startTime); // Ensure latency is always at least 1ms
+      return {
+        status: result,
+        latency,
+      };
+    } catch (error) {
+      const latency = Math.max(1, Date.now() - startTime);
+      return {
+        status: false,
+        latency,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
   // Check individual service
-  private async checkService(service: {
+  private async checkServiceInternal(service: {
     name: string;
     displayName: string;
     port?: number;

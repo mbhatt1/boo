@@ -16,30 +16,6 @@
 import crypto from 'crypto';
 import { CollaborationError, CollaborationErrorCode } from '../types/index.js';
 
-// Type declarations for Node.js built-ins (when @types/node is not available)
-declare global {
-  const Buffer: {
-    from(data: string | Uint8Array | number[], encoding?: string): any;
-    byteLength(string: string, encoding?: string): number;
-  } & {
-    new (data: string | Uint8Array | number[], encoding?: string): any;
-  };
-  const process: {
-    env: {
-      NODE_ENV?: string;
-      [key: string]: string | undefined;
-    };
-    uptime(): number;
-  };
-}
-
-// Local Buffer interface for type safety
-interface BufferLike {
-  length: number;
-  toString(encoding?: string): string;
-  fill(value: number): void;
-}
-
 /**
  * Encryption configuration
  */
@@ -134,7 +110,7 @@ export class EncryptionService {
       const iv = crypto.randomBytes(12);
       
       // Create cipher
-      const cipher = crypto.createCipheriv(this.config.algorithm, key, iv);
+      const cipher = crypto.createCipheriv(this.config.algorithm, key, iv) as any;
       
       // Add additional authenticated data (AAD) if context provided
       if (context) {
@@ -175,12 +151,15 @@ export class EncryptionService {
    * Decrypt data
    */
   decrypt(encryptedData: EncryptedData, context?: Record<string, any>): string {
+    // Validate encrypted data
+    if (!encryptedData.encrypted) {
+      throw new CollaborationError(
+        CollaborationErrorCode.INVALID_MESSAGE,
+        'Data is not encrypted'
+      );
+    }
+    
     try {
-      // Validate encrypted data
-      if (!encryptedData.encrypted) {
-        throw new Error('Data is not encrypted');
-      }
-      
       // Get encryption key for the version used
       const key = this.getKey(encryptedData.keyVersion);
       
@@ -189,7 +168,7 @@ export class EncryptionService {
       const authTag = Buffer.from(encryptedData.authTag, 'base64');
       
       // Create decipher
-      const decipher = crypto.createDecipheriv(encryptedData.algorithm, key, iv);
+      const decipher = crypto.createDecipheriv(encryptedData.algorithm, key, iv) as any;
       
       // Set auth tag
       decipher.setAuthTag(authTag);

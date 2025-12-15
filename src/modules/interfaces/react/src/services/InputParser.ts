@@ -32,6 +32,10 @@ export class InputParser {
     {
       pattern: /^(?:find|search\s+for|look\s+for)\s+(.+?)\s+(?:in|on|at)\s+(.+)$/i,
       type: 'search' as const
+    },
+    {
+      pattern: /^find\s+(.+?)\s+in\s+(.+)$/i,
+      type: 'search' as const
     }
   ];
 
@@ -39,7 +43,7 @@ export class InputParser {
   private targetPatterns = [
     { pattern: /^https?:\/\//, type: 'url' },
     { pattern: /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/, type: 'ip' },
-    { pattern: /^[a-zA-Z0-9-]+\.[a-zA-Z]{2,}/, type: 'domain' },
+    { pattern: /^[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+/, type: 'domain' }, // Updated to handle subdomains
     { pattern: /^\/|^\.\/|^~\//, type: 'path' },
     { pattern: /^[a-zA-Z]:\\/, type: 'windows_path' }
   ];
@@ -147,17 +151,31 @@ export class InputParser {
     for (const pattern of this.commandPatterns) {
       const match = input.match(pattern.pattern);
       if (match) {
-        const target = match[1];
-        const objective = match[2] || '';
-        
-        // Don't detect module - use current module from context
-        if (this.looksLikeTarget(target)) {
-          return {
-            type: 'natural',
-            target: this.normalizeTarget(target),
-            objective: objective || '',
-            confidence: 0.8
-          };
+        // For search patterns, swap target and objective
+        if (pattern.type === 'search') {
+          const objective = match[1];
+          const target = match[2];
+          
+          if (this.looksLikeTarget(target)) {
+            return {
+              type: 'natural',
+              target: this.normalizeTarget(target),
+              objective: objective || '',
+              confidence: 0.8
+            };
+          }
+        } else {
+          const target = match[1];
+          const objective = match[2] || '';
+          
+          if (this.looksLikeTarget(target)) {
+            return {
+              type: 'natural',
+              target: this.normalizeTarget(target),
+              objective: objective || '',
+              confidence: 0.8
+            };
+          }
         }
       }
     }
@@ -208,7 +226,7 @@ export class InputParser {
 
   // Check if text looks like a URL
   private looksLikeUrl(text: string): boolean {
-    return /^https?:\/\//.test(text) || /^[a-zA-Z0-9-]+\.[a-zA-Z]{2,}/.test(text);
+    return /^https?:\/\//.test(text) || /^[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+/.test(text);
   }
 
   // Check if text looks like a path
@@ -218,8 +236,12 @@ export class InputParser {
 
   // Normalize target format
   private normalizeTarget(target: string): string {
-    // Add protocol if missing for domains
-    if (/^[a-zA-Z0-9-]+\.[a-zA-Z]{2,}/.test(target) && !target.startsWith('http')) {
+    // Don't add protocol to IP addresses
+    if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/.test(target)) {
+      return target;
+    }
+    // Add protocol if missing for domains (including subdomains)
+    if (/^[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+/.test(target) && !target.startsWith('http')) {
       return `https://${target}`;
     }
     return target;

@@ -12,7 +12,7 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
-import cyberautoagent
+import boo
 
 
 class TestCLIArguments:
@@ -23,7 +23,7 @@ class TestCLIArguments:
         with patch(
             "sys.argv",
             [
-                "cyberautoagent.py",
+                "boo.py",
                 "--target",
                 "test.com",
                 "--objective",
@@ -32,13 +32,13 @@ class TestCLIArguments:
         ):
             # Mock the setup and execution parts
             with (
-                patch("cyberautoagent.setup_logging"),
-                patch("cyberautoagent.auto_setup", return_value=[]),
-                patch("cyberautoagent.create_agent", return_value=(Mock(), Mock())),
-                patch("cyberautoagent.get_initial_prompt"),
-                patch("cyberautoagent.print_banner"),
-                patch("cyberautoagent.print_section"),
-                patch("cyberautoagent.print_status"),
+                patch("boo.setup_logging"),
+                patch("boo.auto_setup", return_value=[]),
+                patch("boo.create_agent", return_value=(Mock(), Mock())),
+                patch("boo.get_initial_prompt"),
+                patch("boo.print_banner"),
+                patch("boo.print_section"),
+                patch("boo.print_status"),
             ):
                 # Parse arguments without executing main
                 parser = argparse.ArgumentParser()
@@ -144,17 +144,17 @@ class TestCLIArguments:
 class TestMainFunction:
     """Test main function execution flow"""
 
-    @patch("cyberautoagent.setup_logging")
-    @patch("cyberautoagent.auto_setup")
-    @patch("cyberautoagent.create_agent")
-    @patch("cyberautoagent.get_initial_prompt")
-    @patch("cyberautoagent.print_banner")
-    @patch("cyberautoagent.print_section")
-    @patch("cyberautoagent.print_status")
+    @patch("boo.setup_logging")
+    @patch("boo.auto_setup")
+    @patch("boo.create_agent")
+    @patch("boo.get_initial_prompt")
+    @patch("boo.print_banner")
+    @patch("boo.print_section")
+    @patch("boo.print_status")
     @patch(
         "sys.argv",
         [
-            "cyberautoagent.py",
+            "boo.py",
             "--target",
             "test.com",
             "--objective",
@@ -198,22 +198,22 @@ class TestMainFunction:
 
         # This should not raise any exceptions
         try:
-            cyberautoagent.main()
+            boo.main()
         except SystemExit as e:
             # main() calls sys.exit(0) on success, which is expected
             assert e.code in [None, 0]
 
-    @patch("cyberautoagent.setup_logging")
-    @patch("cyberautoagent.auto_setup")
-    @patch("cyberautoagent.create_agent")
-    @patch("cyberautoagent.get_initial_prompt")
-    @patch("cyberautoagent.print_banner")
-    @patch("cyberautoagent.print_section")
-    @patch("cyberautoagent.print_status")
+    @patch("boo.setup_logging")
+    @patch("boo.auto_setup")
+    @patch("boo.create_agent")
+    @patch("boo.get_initial_prompt")
+    @patch("boo.print_banner")
+    @patch("boo.print_section")
+    @patch("boo.print_status")
     @patch(
         "sys.argv",
         [
-            "cyberautoagent.py",
+            "boo.py",
             "--target",
             "test.com",
             "--objective",
@@ -256,18 +256,18 @@ class TestMainFunction:
         mock_agent.return_value = "Agent response"
 
         try:
-            cyberautoagent.main()
+            boo.main()
         except SystemExit as e:
             # main() calls sys.exit(0) on success, which is expected
             assert e.code in [None, 0]
 
-    @patch("cyberautoagent.setup_logging")
-    @patch("cyberautoagent.auto_setup")
-    @patch("cyberautoagent.create_agent")
-    @patch("cyberautoagent.print_status")
+    @patch("boo.setup_logging")
+    @patch("boo.auto_setup")
+    @patch("boo.create_agent")
+    @patch("boo.print_status")
     @patch(
         "sys.argv",
-        ["cyberautoagent.py", "--target", "test.com", "--objective", "test objective"],
+        ["boo.py", "--target", "test.com", "--objective", "test objective"],
     )
     def test_main_create_agent_failure(self, mock_print_status, mock_create_agent, mock_auto_setup, mock_setup_logging):
         """Test main function when create_agent fails"""
@@ -276,7 +276,7 @@ class TestMainFunction:
         mock_auto_setup.return_value = []
 
         with pytest.raises(SystemExit) as exc_info:
-            cyberautoagent.main()
+            boo.main()
 
         assert exc_info.value.code == 1
 
@@ -288,7 +288,7 @@ class TestEnvironmentVariables:
     @patch(
         "sys.argv",
         [
-            "cyberautoagent.py",
+            "boo.py",
             "--target",
             "test.com",
             "--objective",
@@ -315,7 +315,7 @@ class TestEnvironmentVariables:
         assert "BYPASS_TOOL_CONSENT" not in os.environ
 
     @patch.dict(os.environ, {}, clear=True)
-    @patch("sys.argv", ["cyberautoagent.py", "--target", "test.com", "--objective", "test"])
+    @patch("sys.argv", ["boo.py", "--target", "test.com", "--objective", "test"])
     def test_no_confirmations_flag_sets_env_var(self):
         """Test that without --confirmations flag, environment variable is set"""
         parser = argparse.ArgumentParser()

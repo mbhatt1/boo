@@ -61,10 +61,10 @@ export class AuthService implements IAuthService {
 
       // Generate token
       const token = jwt.sign(payload, this.jwtConfig.secret, {
-        expiresIn: this.jwtConfig.expiresIn,
+        expiresIn: this.jwtConfig.expiresIn as string | number,
         issuer: this.jwtConfig.issuer,
         audience: this.jwtConfig.audience,
-      });
+      } as jwt.SignOptions);
 
       return token;
     } catch (error) {
@@ -104,10 +104,8 @@ export class AuthService implements IAuthService {
         );
       }
       if (error instanceof jwt.JsonWebTokenError) {
-        throw new CollaborationError(
-          CollaborationErrorCode.INVALID_TOKEN,
-          'Invalid token'
-        );
+        // Return null for invalid tokens instead of throwing
+        return null;
       }
       return null;
     }

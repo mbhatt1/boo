@@ -11,7 +11,7 @@ import requests
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
-from modules.agents.boo_autoagent import (
+from modules.agents.boo_agent import (
     check_existing_memories,
     create_agent,
 )
@@ -73,86 +73,46 @@ class TestOllamaHostDetection:
         # Should use localhost for native execution
         assert host == "http://localhost:11434"
 
-    @patch.dict(os.environ, {}, clear=True)
-    @patch("os.path.exists")
-    @patch("requests.get")
-    def test_get_ollama_host_docker_localhost_works(self, mock_test, mock_exists):
-        """Test Docker environment where localhost works (Linux host networking)"""
-        mock_exists.return_value = True  # /app exists
-        # Mock localhost works, host.docker.internal doesn't
-        mock_response = Mock()
-        mock_response.status_code = 200
-
-        def side_effect(url, timeout=None):
-            if "localhost" in url:
-                return mock_response
-            else:
-                raise Exception("Connection failed")
-
-        mock_test.side_effect = side_effect
-
+    @patch.dict(os.environ, {"BOO_DEPLOYMENT_MODE": "docker"}, clear=False)
+    def test_get_ollama_host_docker_localhost_works(self):
+        """Test Docker environment using localhost (config-based)"""
+        # In the new config system, Docker mode doesn't auto-detect
+        # It uses the configured/default ollama_url
         host = get_ollama_host()
         assert host == "http://localhost:11434"
 
-        # Verify it tested localhost first and found it working
-        assert mock_test.call_count >= 1
-        mock_test.assert_any_call("http://localhost:11434/api/version", timeout=2)
-
-    @patch.dict(os.environ, {}, clear=True)
-    @patch("os.path.exists")
-    @patch("requests.get")
-    def test_get_ollama_host_docker_host_internal_works(self, mock_test, mock_exists):
-        """Test Docker environment where host.docker.internal works (macOS/Windows)"""
-        mock_exists.return_value = True  # /app exists
-        # Mock localhost fails, host.docker.internal works
-        mock_response = Mock()
-        mock_response.status_code = 200
-
-        def side_effect(url, timeout=None):
-            if "host.docker.internal" in url:
-                return mock_response
-            else:
-                raise requests.exceptions.ConnectionError("Connection failed")
-
-        mock_test.side_effect = side_effect
-
+    @patch.dict(os.environ, {"BOO_DEPLOYMENT_MODE": "docker", "OLLAMA_HOST": "http://host.docker.internal:11434"}, clear=False)
+    def test_get_ollama_host_docker_host_internal_works(self):
+        """Test Docker environment with host.docker.internal configured"""
+        # In the new config system, use OLLAMA_HOST env var for Docker scenarios
         host = get_ollama_host()
         assert host == "http://host.docker.internal:11434"
 
-        # Verify it tested both options
-        assert mock_test.call_count >= 2
-        mock_test.assert_any_call("http://localhost:11434/api/version", timeout=2)
-        mock_test.assert_any_call("http://host.docker.internal:11434/api/version", timeout=2)
-
-    @patch.dict(os.environ, {}, clear=True)
-    @patch("os.path.exists")
-    @patch("requests.get")
-    def test_get_ollama_host_docker_no_connection(self, mock_test, mock_exists):
-        """Test Docker environment where neither option works"""
-        mock_exists.return_value = True  # /app exists
-        mock_test.side_effect = requests.exceptions.ConnectionError("Connection failed")  # Neither option works
-
+    @patch.dict(os.environ, {"BOO_DEPLOYMENT_MODE": "docker", "OLLAMA_HOST": "http://host.docker.internal:11434"}, clear=False)
+    def test_get_ollama_host_docker_no_connection(self):
+        """Test Docker environment with explicit host.docker.internal configuration"""
+        # In the new config system, explicit configuration takes precedence
+        # No runtime connection testing is performed
         host = get_ollama_host()
-        # Should fallback to host.docker.internal
         assert host == "http://host.docker.internal:11434"
 
 
 class TestMemoryConfig:
     """Test memory configuration generation"""
 
-    @patch("modules.agents.boo_autoagent.initialize_memory_system")
+    @patch("modules.agents.boo_agent.initialize_memory_system")
     def test_memory_config_local(self, mock_init_memory):
         """Test local memory configuration is created correctly"""
         # The current implementation builds memory config inline in create_agent
         # We'll test that the right config is passed to initialize_memory_system
         with patch("modules.config.ConfigManager.validate_requirements"):
-            with patch("modules.agents.boo_autoagent._create_local_model") as mock_create_local:
+            with patch("modules.agents.boo_agent._create_local_model") as mock_create_local:
                 mock_create_local.return_value = Mock()
-                with patch("modules.agents.boo_autoagent.Agent") as mock_agent_class:
+                with patch("modules.agents.boo_agent.Agent") as mock_agent_class:
                     mock_agent_class.return_value = Mock()
-                    with patch("modules.agents.boo_autoagent.ReasoningHandler") as mock_handler:
+                    with patch("modules.agents.boo_agent.ReasoningHandler") as mock_handler:
                         mock_handler.return_value = Mock()
-                        with patch("modules.agents.boo_autoagent.get_system_prompt"):
+                        with patch("modules.agents.boo_agent.get_system_prompt"):
                             # Call create_agent with local server
                             create_agent(target="test.com", objective="test", provider="ollama")
 
@@ -165,17 +125,17 @@ class TestMemoryConfig:
                             assert config["llm"]["provider"] == "ollama"
                             assert "ollama_base_url" in config["embedder"]["config"]
 
-    @patch("modules.agents.boo_autoagent.initialize_memory_system")
+    @patch("modules.agents.boo_agent.initialize_memory_system")
     def test_memory_config_remote(self, mock_init_memory):
         """Test remote memory configuration is created correctly"""
         with patch("modules.config.ConfigManager.validate_requirements"):
-            with patch("modules.agents.boo_autoagent._create_remote_model") as mock_create_remote:
+            with patch("modules.agents.boo_agent._create_remote_model") as mock_create_remote:
                 mock_create_remote.return_value = Mock()
-                with patch("modules.agents.boo_autoagent.Agent") as mock_agent_class:
+                with patch("modules.agents.boo_agent.Agent") as mock_agent_class:
                     mock_agent_class.return_value = Mock()
-                    with patch("modules.agents.boo_autoagent.ReasoningHandler") as mock_handler:
+                    with patch("modules.agents.boo_agent.ReasoningHandler") as mock_handler:
                         mock_handler.return_value = Mock()
-                        with patch("modules.agents.boo_autoagent.get_system_prompt"):
+                        with patch("modules.agents.boo_agent.get_system_prompt"):
                             # Call create_agent with remote server
                             create_agent(target="test.com", objective="test", provider="bedrock")
 
@@ -282,11 +242,11 @@ class TestCreateAgent:
     """Test agent creation functionality"""
 
     @patch("modules.config.ConfigManager.validate_requirements")
-    @patch("modules.agents.boo_autoagent._create_remote_model")
-    @patch("modules.agents.boo_autoagent.Agent")
+    @patch("modules.agents.boo_agent._create_remote_model")
+    @patch("modules.agents.boo_agent.Agent")
     @patch("modules.handlers.react.react_bridge_handler.ReactBridgeHandler")
-    @patch("modules.agents.boo_autoagent.get_system_prompt")
-    @patch("modules.agents.boo_autoagent.initialize_memory_system")
+    @patch("modules.agents.boo_agent.get_system_prompt")
+    @patch("modules.agents.boo_agent.initialize_memory_system")
     def test_create_agent_remote_success(
         self,
         mock_init_memory,
@@ -318,11 +278,11 @@ class TestCreateAgent:
         assert handler == mock_handler
 
     @patch("modules.config.ConfigManager.validate_requirements")
-    @patch("modules.agents.boo_autoagent._create_local_model")
-    @patch("modules.agents.boo_autoagent.Agent")
+    @patch("modules.agents.boo_agent._create_local_model")
+    @patch("modules.agents.boo_agent.Agent")
     @patch("modules.handlers.react.react_bridge_handler.ReactBridgeHandler")
-    @patch("modules.agents.boo_autoagent.get_system_prompt")
-    @patch("modules.agents.boo_autoagent.initialize_memory_system")
+    @patch("modules.agents.boo_agent.get_system_prompt")
+    @patch("modules.agents.boo_agent.initialize_memory_system")
     def test_create_agent_local_success(
         self,
         mock_init_memory,
@@ -362,9 +322,9 @@ class TestCreateAgent:
             create_agent(target="test.com", objective="test objective", provider="ollama")
 
     @patch("modules.config.ConfigManager.validate_requirements")
-    @patch("modules.agents.boo_autoagent._create_local_model")
-    @patch("modules.agents.boo_autoagent._handle_model_creation_error")
-    @patch("modules.agents.boo_autoagent.initialize_memory_system")
+    @patch("modules.agents.boo_agent._create_local_model")
+    @patch("modules.agents.boo_agent._handle_model_creation_error")
+    @patch("modules.agents.boo_agent.initialize_memory_system")
     def test_create_agent_model_creation_failure(
         self,
         mock_init_memory,
@@ -384,7 +344,7 @@ class TestCreateAgent:
 class TestCheckExistingMemories:
     """Test the check_existing_memories function"""
 
-    @patch("modules.agents.boo_autoagent.os.environ.get")
+    @patch("modules.agents.boo_agent.os.environ.get")
     def test_check_existing_memories_mem0_platform(self, mock_env_get):
         """Test check_existing_memories with Mem0 Platform"""
         mock_env_get.side_effect = lambda key, default=None: ("test-key" if key == "MEM0_API_KEY" else default)
@@ -392,7 +352,7 @@ class TestCheckExistingMemories:
         result = check_existing_memories("test.com", "bedrock")
         assert result is True
 
-    @patch("modules.agents.boo_autoagent.os.environ.get")
+    @patch("modules.agents.boo_agent.os.environ.get")
     def test_check_existing_memories_opensearch(self, mock_env_get):
         """Test check_existing_memories with OpenSearch"""
         mock_env_get.side_effect = lambda key, default=None: ("test-host" if key == "OPENSEARCH_HOST" else default)
@@ -400,9 +360,9 @@ class TestCheckExistingMemories:
         result = check_existing_memories("test.com", "bedrock")
         assert result is True
 
-    @patch("modules.agents.boo_autoagent.os.environ.get")
-    @patch("modules.agents.boo_autoagent.os.path.exists")
-    @patch("modules.agents.boo_autoagent.os.path.getsize")
+    @patch("modules.agents.boo_agent.os.environ.get")
+    @patch("modules.agents.boo_agent.os.path.exists")
+    @patch("modules.agents.boo_agent.os.path.getsize")
     def test_check_existing_memories_faiss_exists(self, mock_getsize, mock_exists, mock_env_get):
         """Test check_existing_memories with FAISS backend - directory exists with content"""
         mock_env_get.return_value = None  # No Mem0 or OpenSearch
@@ -412,8 +372,8 @@ class TestCheckExistingMemories:
         result = check_existing_memories("test.com", "ollama")
         assert result is True
 
-    @patch("modules.agents.boo_autoagent.os.environ.get")
-    @patch("modules.agents.boo_autoagent.os.path.exists")
+    @patch("modules.agents.boo_agent.os.environ.get")
+    @patch("modules.agents.boo_agent.os.path.exists")
     def test_check_existing_memories_faiss_not_exists(self, mock_exists, mock_env_get):
         """Test check_existing_memories with FAISS backend - directory doesn't exist"""
         mock_env_get.return_value = None  # No Mem0 or OpenSearch
@@ -422,9 +382,9 @@ class TestCheckExistingMemories:
         result = check_existing_memories("test.com", "ollama")
         assert result is False
 
-    @patch("modules.agents.boo_autoagent.os.environ.get")
-    @patch("modules.agents.boo_autoagent.os.path.exists")
-    @patch("modules.agents.boo_autoagent.os.path.getsize")
+    @patch("modules.agents.boo_agent.os.environ.get")
+    @patch("modules.agents.boo_agent.os.path.exists")
+    @patch("modules.agents.boo_agent.os.path.getsize")
     def test_check_existing_memories_faiss_empty(self, mock_getsize, mock_exists, mock_env_get):
         """Test check_existing_memories with FAISS backend - directory exists but empty"""
         mock_env_get.return_value = None  # No Mem0 or OpenSearch
@@ -441,9 +401,9 @@ class TestCheckExistingMemories:
         result = check_existing_memories("test.com", "ollama")
         assert result is False
 
-    @patch("modules.agents.boo_autoagent.os.environ.get")
-    @patch("modules.agents.boo_autoagent.os.path.exists")
-    @patch("modules.agents.boo_autoagent.os.path.getsize")
+    @patch("modules.agents.boo_agent.os.environ.get")
+    @patch("modules.agents.boo_agent.os.path.exists")
+    @patch("modules.agents.boo_agent.os.path.getsize")
     def test_check_existing_memories_faiss_zero_size_files(self, mock_getsize, mock_exists, mock_env_get):
         """Test check_existing_memories with FAISS backend - files exist but are zero size"""
         mock_env_get.return_value = None  # No Mem0 or OpenSearch
@@ -453,8 +413,8 @@ class TestCheckExistingMemories:
         result = check_existing_memories("test.com", "ollama")
         assert result is False  # Should return False for zero-size files
 
-    @patch("modules.agents.boo_autoagent.os.environ.get")
-    @patch("modules.agents.boo_autoagent.os.path.exists")
+    @patch("modules.agents.boo_agent.os.environ.get")
+    @patch("modules.agents.boo_agent.os.path.exists")
     def test_check_existing_memories_sanitizes_target(self, mock_exists, mock_env_get):
         """Test check_existing_memories properly sanitizes target names"""
         mock_env_get.return_value = None  # No Mem0 or OpenSearch
@@ -464,14 +424,14 @@ class TestCheckExistingMemories:
         assert result is False
         mock_exists.assert_called_with("outputs/test.com/memory")
 
-    @patch("modules.agents.boo_autoagent.os.environ.get")
-    @patch("modules.agents.boo_autoagent.os.path.exists")
+    @patch("modules.agents.boo_agent.os.environ.get")
+    @patch("modules.agents.boo_agent.os.path.exists")
     def test_check_existing_memories_exception_handling(self, mock_exists, mock_env_get):
         """Test check_existing_memories handles exceptions gracefully"""
         mock_env_get.return_value = None  # No Mem0 or OpenSearch
         mock_exists.side_effect = Exception("File system error")
 
-        with patch("modules.agents.boo_autoagent.logger") as mock_logger:
+        with patch("modules.agents.boo_agent.logger") as mock_logger:
             result = check_existing_memories("test.com", "ollama")
             assert result is False
             mock_logger.debug.assert_called_once()

@@ -11,15 +11,14 @@ export type NotificationType = 'mention' | 'reply' | 'reaction' | 'session' | 's
 export interface NotificationFactoryOptions {
   id?: string;
   type?: NotificationType;
-  recipient_id?: string;
-  sender_id?: string;
-  content?: string;
-  comment_id?: string | null;
-  session_id?: string | null;
-  status?: 'unread' | 'read' | 'archived';
-  created_at?: Date;
-  read_at?: Date | null;
-  metadata?: Record<string, any>;
+  userId?: string;
+  fromUserId?: string;
+  fromUsername?: string;
+  message?: string;
+  commentId?: string;
+  sessionId?: string;
+  isRead?: boolean;
+  createdAt?: Date;
 }
 
 export class NotificationFactory {
@@ -34,15 +33,14 @@ export class NotificationFactory {
     return {
       id: options.id || generateUUID(),
       type: options.type || 'mention',
-      recipient_id: options.recipient_id || generateUUID(),
-      sender_id: options.sender_id || generateUUID(),
-      content: options.content || `Test notification ${sequence}`,
-      comment_id: options.comment_id === undefined ? null : options.comment_id,
-      session_id: options.session_id === undefined ? null : options.session_id,
-      status: options.status || 'unread',
-      created_at: options.created_at || new Date(),
-      read_at: options.read_at === undefined ? null : options.read_at,
-      metadata: options.metadata || {},
+      userId: options.userId || generateUUID(),
+      fromUserId: options.fromUserId || generateUUID(),
+      fromUsername: options.fromUsername || `user${sequence}`,
+      message: options.message || `Test notification ${sequence}`,
+      commentId: options.commentId || generateUUID(),
+      sessionId: options.sessionId || generateUUID(),
+      isRead: options.isRead !== undefined ? options.isRead : false,
+      createdAt: options.createdAt || new Date(),
     };
   }
   
@@ -65,10 +63,10 @@ export class NotificationFactory {
     return this.create({
       ...options,
       type: 'mention',
-      recipient_id: recipientId,
-      sender_id: senderId,
-      comment_id: commentId,
-      content: `You were mentioned in a comment`,
+      userId: recipientId,
+      fromUserId: senderId,
+      commentId: commentId,
+      message: `You were mentioned in a comment`,
     });
   }
   
@@ -84,10 +82,10 @@ export class NotificationFactory {
     return this.create({
       ...options,
       type: 'reply',
-      recipient_id: recipientId,
-      sender_id: senderId,
-      comment_id: commentId,
-      content: `Someone replied to your comment`,
+      userId: recipientId,
+      fromUserId: senderId,
+      commentId: commentId,
+      message: `Someone replied to your comment`,
     });
   }
   
@@ -104,11 +102,10 @@ export class NotificationFactory {
     return this.create({
       ...options,
       type: 'reaction',
-      recipient_id: recipientId,
-      sender_id: senderId,
-      comment_id: commentId,
-      content: `Someone reacted ${reaction} to your comment`,
-      metadata: { reaction },
+      userId: recipientId,
+      fromUserId: senderId,
+      commentId: commentId,
+      message: `Someone reacted ${reaction} to your comment`,
     });
   }
   
@@ -125,10 +122,10 @@ export class NotificationFactory {
     return this.create({
       ...options,
       type: 'session',
-      recipient_id: recipientId,
-      sender_id: senderId,
-      session_id: sessionId,
-      content: message,
+      userId: recipientId,
+      fromUserId: senderId,
+      sessionId: sessionId,
+      message: message,
     });
   }
   
@@ -143,9 +140,9 @@ export class NotificationFactory {
     return this.create({
       ...options,
       type: 'system',
-      recipient_id: recipientId,
-      sender_id: undefined,
-      content: message,
+      userId: recipientId,
+      fromUserId: 'system',
+      message: message,
     });
   }
   
@@ -155,8 +152,7 @@ export class NotificationFactory {
   static createUnread(options: NotificationFactoryOptions = {}): any {
     return this.create({
       ...options,
-      status: 'unread',
-      read_at: null,
+      isRead: false,
     });
   }
   
@@ -166,8 +162,7 @@ export class NotificationFactory {
   static createRead(options: NotificationFactoryOptions = {}): any {
     return this.create({
       ...options,
-      status: 'read',
-      read_at: new Date(),
+      isRead: true,
     });
   }
   
@@ -177,8 +172,8 @@ export class NotificationFactory {
   static createArchived(options: NotificationFactoryOptions = {}): any {
     return this.create({
       ...options,
-      status: 'archived',
-      read_at: new Date(Date.now() - 86400000), // 1 day ago
+      isRead: true,
+      createdAt: new Date(Date.now() - 86400000), // 1 day ago
     });
   }
   
@@ -192,7 +187,7 @@ export class NotificationFactory {
   ): any[] {
     return this.createMany(count, {
       ...options,
-      recipient_id: userId,
+      userId: userId,
     });
   }
   
@@ -206,7 +201,7 @@ export class NotificationFactory {
   ): any[] {
     return this.createMany(count, {
       ...options,
-      sender_id: userId,
+      fromUserId: userId,
     });
   }
   
@@ -219,15 +214,13 @@ export class NotificationFactory {
     readCount: number
   ): any[] {
     const unread = this.createMany(unreadCount, {
-      recipient_id: recipientId,
-      status: 'unread',
-      read_at: null,
+      userId: recipientId,
+      isRead: false,
     });
     
     const read = this.createMany(readCount, {
-      recipient_id: recipientId,
-      status: 'read',
-      read_at: new Date(),
+      userId: recipientId,
+      isRead: true,
     });
     
     return [...unread, ...read];

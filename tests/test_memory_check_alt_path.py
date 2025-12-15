@@ -36,9 +36,9 @@ def test_check_existing_memories_alt_path(monkeypatch):
         return 0
 
     with (
-        patch("modules.agents.boo_autoagent.os.path.exists", side_effect=fake_exists),
-        patch("modules.agents.boo_autoagent.os.path.getsize", side_effect=fake_getsize),
+        patch("modules.agents.boo_agent.os.path.exists", side_effect=fake_exists),
+        patch("modules.agents.boo_agent.os.path.getsize", side_effect=fake_getsize),
     ):
-        from modules.agents.boo_autoagent import check_existing_memories
+        from modules.agents.boo_agent import check_existing_memories
 
         assert check_existing_memories("test.com", "bedrock") is True

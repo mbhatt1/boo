@@ -14,15 +14,16 @@ const MAX_EVENTS = 10000; // Maximum events to keep in memory
 
 /**
  * EventStore - Efficient append-only event storage
- * 
+ *
  * Instead of [...prev, newEvent] which is O(n), this uses chunked arrays
  * for O(1) append operations and efficient memory usage.
  */
-export class EventStore {
-  private chunks: DisplayStreamEvent[][] = [];
-  private currentChunk: DisplayStreamEvent[] = [];
+export class EventStore<T = DisplayStreamEvent> {
+  private chunks: T[][] = [];
+  private currentChunk: T[] = [];
   private totalCount = 0;
   private maxEvents: number;
+  private eventMap: Map<string, T> = new Map(); // For quick ID lookup
 
   constructor(maxEvents = MAX_EVENTS) {
     this.maxEvents = maxEvents;
@@ -31,7 +32,14 @@ export class EventStore {
   /**
    * Append a single event - O(1) operation
    */
-  append(event: DisplayStreamEvent): void {
+  append(event: T): void {
+    // Track by ID if event has one
+    const eventWithId = event as any;
+    if (eventWithId.id) {
+      // If ID exists, update the existing event in the map (for getById to return latest)
+      this.eventMap.set(eventWithId.id, event);
+    }
+
     // Add to current chunk
     this.currentChunk.push(event);
     this.totalCount++;
@@ -40,16 +48,25 @@ export class EventStore {
     if (this.currentChunk.length >= CHUNK_SIZE) {
       this.chunks.push(this.currentChunk);
       this.currentChunk = [];
-      
-      // Trim old chunks if over limit
+    }
+    
+    // Trim after adding if over limit to maintain capacity
+    if (this.totalCount > this.maxEvents) {
       this.trimToMaxSize();
     }
   }
 
   /**
+   * Add a single event (alias for append for compatibility)
+   */
+  add(event: T): void {
+    this.append(event);
+  }
+
+  /**
    * Append multiple events efficiently
    */
-  appendBatch(events: DisplayStreamEvent[]): void {
+  appendBatch(events: T[]): void {
     for (const event of events) {
       this.append(event);
     }
@@ -58,9 +75,9 @@ export class EventStore {
   /**
    * Get all events as array - only when needed for rendering
    */
-  toArray(): DisplayStreamEvent[] {
+  toArray(): T[] {
     // Only flatten when necessary
-    const result: DisplayStreamEvent[] = [];
+    const result: T[] = [];
     
     // Add completed chunks
     for (const chunk of this.chunks) {
@@ -74,15 +91,53 @@ export class EventStore {
   }
 
   /**
+   * Get all events (alias for toArray for compatibility)
+   */
+  getAll(): T[] {
+    return this.toArray();
+  }
+
+  /**
+   * Get event by id (if event has id property)
+   */
+  getById(id: string): T | undefined {
+    return this.eventMap.get(id);
+  }
+
+  /**
+   * Get events by type (if event has type property)
+   */
+  getByType(type: string): T[] {
+    const result: T[] = [];
+    for (const chunk of this.chunks) {
+      result.push(...chunk.filter((event: any) => event.type === type));
+    }
+    result.push(...this.currentChunk.filter((event: any) => event.type === type));
+    return result;
+  }
+
+  /**
+   * Filter events by predicate
+   */
+  filter(predicate: (event: T) => boolean): T[] {
+    const result: T[] = [];
+    for (const chunk of this.chunks) {
+      result.push(...chunk.filter(predicate));
+    }
+    result.push(...this.currentChunk.filter(predicate));
+    return result;
+  }
+
+  /**
    * Get recent events without copying all data
    */
-  getRecent(count: number): DisplayStreamEvent[] {
+  getRecent(count: number): T[] {
     const total = this.totalCount;
     if (count >= total) {
       return this.toArray();
     }
 
-    const result: DisplayStreamEvent[] = [];
+    const result: T[] = [];
     const needed = Math.min(count, total);
     
     // Start from current chunk and work backwards
@@ -111,8 +166,8 @@ export class EventStore {
   /**
    * Get events for a specific range (for virtualization)
    */
-  getRange(start: number, end: number): DisplayStreamEvent[] {
-    const result: DisplayStreamEvent[] = [];
+  getRange(start: number, end: number): T[] {
+    const result: T[] = [];
     let currentIndex = 0;
 
     // Iterate through chunks efficiently
@@ -158,45 +213,51 @@ export class EventStore {
   }
 
   /**
-   * Trim old events to stay under max size
+   * Trim old events to stay at or under max size
    */
   private trimToMaxSize(): void {
-    if (this.totalCount <= this.maxEvents) return;
-
-    const toRemove = this.totalCount - this.maxEvents;
-    let removed = 0;
-    let chunksToRemove = 0;
-
-    // Calculate how many complete chunks to remove
-    for (let i = 0; i < this.chunks.length && removed < toRemove; i++) {
-      const chunk = this.chunks[i];
-      if (removed + chunk.length <= toRemove) {
-        removed += chunk.length;
-        chunksToRemove++;
+    while (this.totalCount > this.maxEvents) {
+      // Remove oldest event (from first chunk or current chunk if no chunks)
+      if (this.chunks.length > 0) {
+        const oldestChunk = this.chunks[0];
+        const removedEvent = oldestChunk.shift();
+        
+        if (removedEvent) {
+          // Clean up eventMap for removed event
+          const eventWithId = removedEvent as any;
+          if (eventWithId.id) {
+            this.eventMap.delete(eventWithId.id);
+          }
+          this.totalCount--;
+        }
+        
+        // Remove empty chunk
+        if (oldestChunk.length === 0) {
+          this.chunks.shift();
+        }
+      } else if (this.currentChunk.length > 0) {
+        // No complete chunks, remove from current chunk
+        const removedEvent = this.currentChunk.shift();
+        
+        if (removedEvent) {
+          // Clean up eventMap for removed event
+          const eventWithId = removedEvent as any;
+          if (eventWithId.id) {
+            this.eventMap.delete(eventWithId.id);
+          }
+          this.totalCount--;
+        }
       } else {
+        // Safety break - should never happen
         break;
       }
     }
-
-    // Remove chunks in O(1) using splice
-    if (chunksToRemove > 0) {
-      this.chunks.splice(0, chunksToRemove);
-    }
-
-    // Partially trim first remaining chunk if needed
-    if (removed < toRemove && this.chunks.length > 0) {
-      const trimCount = toRemove - removed;
-      this.chunks[0] = this.chunks[0].slice(trimCount);
-      removed += trimCount;
-    }
-
-    this.totalCount -= removed;
   }
 
   /**
    * Create a snapshot for immutable rendering
    */
-  snapshot(): ReadonlyArray<DisplayStreamEvent> {
+  snapshot(): ReadonlyArray<T> {
     return Object.freeze(this.toArray());
   }
 
@@ -204,8 +265,8 @@ export class EventStore {
    * Split into completed and active events
    */
   split(activeCount: number): {
-    completed: DisplayStreamEvent[];
-    active: DisplayStreamEvent[];
+    completed: T[];
+    active: T[];
   } {
     const total = this.totalCount;
     
@@ -229,7 +290,7 @@ export class EventStore {
  * React Hook for using EventStore
  */
 export function useEventStore(maxEvents = MAX_EVENTS) {
-  const storeRef = React.useRef(new EventStore(maxEvents));
+  const storeRef = React.useRef(new EventStore<DisplayStreamEvent>(maxEvents));
   const [version, setVersion] = React.useState(0);
 
   // Stable callbacks without version dependency

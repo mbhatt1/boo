@@ -1,0 +1,130 @@
+name: Collaboration Module Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'boo/src/modules/collaboration/**'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'boo/src/modules/collaboration/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: boo/src/modules/collaboration/package-lock.json
+    
+    - name: Install dependencies
+      working-directory: boo/src/modules/collaboration
+      run: npm ci
+    
+    - name: Run TypeScript type check
+      working-directory: boo/src/modules/collaboration
+      run: npm run typecheck
+    
+    - name: Run linter
+      working-directory: boo/src/modules/collaboration
+      run: npm run lint
+      continue-on-error: true
+    
+    - name: Run unit tests
+      working-directory: boo/src/modules/collaboration
+      env:
+        DB_HOST: localhost
+        DB_PORT: 5432
+        DB_USER: postgres
+        DB_PASSWORD: postgres
+        REDIS_HOST: localhost
+        REDIS_PORT: 6379
+        NODE_ENV: test
+      run: npm run test:unit -- --ci --coverage --maxWorkers=2
+    
+    - name: Run integration tests
+      working-directory: boo/src/modules/collaboration
+      env:
+        DB_HOST: localhost
+        DB_PORT: 5432
+        DB_USER: postgres
+        DB_PASSWORD: postgres
+        REDIS_HOST: localhost
+        REDIS_PORT: 6379
+        NODE_ENV: test
+      run: npm run test:integration -- --ci --maxWorkers=2
+      continue-on-error: true
+    
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        files: ./boo/src/modules/collaboration/coverage/coverage-final.json
+        flags: collaboration
+        name: collaboration-coverage
+        fail_ci_if_error: false
+    
+    - name: Archive test results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-results-${{ matrix.node-version }}
+        path: |
+          boo/src/modules/collaboration/coverage/
+          boo/src/modules/collaboration/test_output.log
+        retention-days: 30
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Use Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 20.x
+        cache: 'npm'
+        cache-dependency-path: boo/src/modules/collaboration/package-lock.json
+    
+    - name: Install dependencies
+      working-directory: boo/src/modules/collaboration
+      run: npm ci
+    
+    - name: Run linter
+      working-directory: boo/src/modules/collaboration
+      run: npm run lint

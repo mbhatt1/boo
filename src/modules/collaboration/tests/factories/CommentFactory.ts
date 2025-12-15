@@ -1,10 +1,11 @@
 /**
  * Comment Factory
- * 
+ *
  * Generate test comment data
  */
 
 import { generateUUID, generateRandomString } from '../setup/test-helpers.js';
+import { UserFactory } from './UserFactory.js';
 
 export interface CommentFactoryOptions {
   id?: string;
@@ -163,6 +164,36 @@ export class CommentFactory {
     options: CommentFactoryOptions = {}
   ): any[] {
     return this.createMany(count, { ...options, author_id: userId });
+  }
+  
+  /**
+   * Create a CommentWithAuthor object (includes author details and reactions array)
+   */
+  static createWithAuthor(options: CommentFactoryOptions = {}): any {
+    const comment = this.create(options);
+    const user = UserFactory.create({ id: comment.author_id });
+    
+    return {
+      id: comment.id,
+      sessionId: comment.session_id,
+      authorId: comment.author_id,
+      targetType: 'event',
+      targetId: generateUUID(),
+      content: comment.content,
+      metadata: comment.metadata,
+      createdAt: comment.created_at,
+      updatedAt: comment.updated_at,
+      deletedAt: comment.deleted_at,
+      author: {
+        userId: user.id,
+        username: user.username,
+        fullName: user.full_name,
+        role: user.role,
+      },
+      reactions: [],
+      replyCount: 0,
+      mentions: [],
+    };
   }
   
   /**

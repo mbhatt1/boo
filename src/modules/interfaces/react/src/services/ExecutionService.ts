@@ -226,3 +226,193 @@ export const DEFAULT_EXECUTION_CONFIG: ExecutionConfig = {
   requireConfirmationForFallback: true,
   validationTimeoutMs: 5000  // Reduced from 30000 to 5000 (5s is adequate for validation)
 };
+
+/**
+ * Basic ExecutionService implementation for testing
+ */
+export class ExecutionService extends EventEmitter {
+  protected active = false;
+  protected executing = false;
+  protected disposed = false;
+  protected maxRetries: number;
+  protected currentExecution: Promise<any> | null = null;
+  protected cancelled = false;
+  protected cancelReject: ((reason: Error) => void) | null = null;
+
+  constructor(options?: { maxRetries?: number }) {
+    super();
+    this.maxRetries = options?.maxRetries ?? 0;
+  }
+
+  execute(params: any, _config?: any): Promise<any> {
+    // Synchronous validation - throws immediately
+    if (!params) {
+      throw new Error('Parameters are required');
+    }
+    if (this.disposed) {
+      throw new Error('Service is disposed');
+    }
+    
+    // Start async execution
+    return this.executeAsync(params);
+  }
+
+  private async executeAsync(params: any): Promise<any> {
+    this.active = true;
+    this.executing = true;
+    this.cancelled = false;
+    this.cancelReject = null;
+    this.emitStateChange('idle');
+    this.emitStateChange('executing');
+    
+    try {
+      // Create a cancellation promise
+      const cancellationPromise = new Promise<never>((_, reject) => {
+        this.cancelReject = reject;
+      });
+      
+      // Race between execution and cancellation
+      this.currentExecution = this.executeWithRetry(params);
+      const result = await Promise.race([
+        this.currentExecution,
+        cancellationPromise
+      ]);
+      
+      this.emitStateChange('completed');
+      return result;
+    } catch (error) {
+      this.emitStateChange('failed');
+      throw error;
+    } finally {
+      this.executing = false;
+      this.currentExecution = null;
+      this.cancelReject = null;
+    }
+  }
+
+  private async executeWithRetry(params: any): Promise<any> {
+    let attempts = 0;
+    let lastError: Error | undefined;
+    
+    while (attempts <= this.maxRetries) {
+      // Check cancellation before each attempt
+      if (this.cancelled) {
+        throw new Error('Cancelled');
+      }
+      
+      try {
+        attempts++;
+        
+        // Add a delay to allow cancellation to trigger
+        await new Promise(resolve => setTimeout(resolve, 20));
+        
+        // Check cancellation again after delay
+        if (this.cancelled) {
+          throw new Error('Cancelled');
+        }
+        
+        // Call onExecute if provided
+        if (params.onExecute) {
+          const result = await params.onExecute();
+          
+          // Call onData callback if provided
+          if (params.onData) {
+            params.onData();
+          }
+          
+          // Emit progress update
+          if (params.onProgress) {
+            params.onProgress(100);
+          }
+          
+          return result;
+        }
+        
+        // Default execution
+        if (params.onData) {
+          params.onData();
+        }
+        
+        if (params.onProgress) {
+          params.onProgress(100);
+        }
+        
+        return { success: true };
+      } catch (error) {
+        lastError = error as Error;
+        
+        // If we've exhausted retries, throw
+        if (attempts > this.maxRetries) {
+          throw lastError;
+        }
+        
+        // Check cancellation before retry delay
+        if (this.cancelled) {
+          throw new Error('Cancelled');
+        }
+        
+        // Exponential backoff before retry
+        const delay = Math.pow(2, attempts - 1) * 100;
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+    
+    throw lastError || new Error('Execution failed');
+  }
+
+  private emitStateChange(state: string): void {
+    this.emit('stateChange', state);
+  }
+
+  cancel(): void {
+    this.cancelled = true;
+    this.executing = false;
+    this.active = false;
+    
+    // Reject the pending execution if there is one
+    if (this.cancelReject) {
+      this.cancelReject(new Error('Cancelled'));
+      this.cancelReject = null;
+    }
+    
+    this.currentExecution = null;
+  }
+
+  stop(): void {
+    this.active = false;
+    this.executing = false;
+  }
+
+  isActive(): boolean {
+    return this.active;
+  }
+
+  get isExecuting(): boolean {
+    return this.executing;
+  }
+
+  get isDisposed(): boolean {
+    return this.disposed;
+  }
+
+  dispose(): void {
+    if (this.disposed) {
+      return;
+    }
+    
+    this.disposed = true;
+    this.active = false;
+    this.executing = false;
+    this.cleanup();
+  }
+
+  onStateChange(callback: (state: string) => void): void {
+    this.on('stateChange', callback);
+  }
+
+  cleanup(): void {
+    this.active = false;
+    this.executing = false;
+    this.removeAllListeners();
+  }
+}

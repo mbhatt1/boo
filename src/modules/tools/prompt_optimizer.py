@@ -11,16 +11,11 @@ from collections import defaultdict
 from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional, Dict
 
 from strands import tool
-from modules.config.manager import get_config_manager
-from modules.agents.boo_agent import (
-    _create_local_model,
-    _create_remote_model,
-    _create_litellm_model,
-)
 from strands import Agent
+from modules.config.manager import get_config_manager
 
 OVERLAY_FILENAME = "adaptive_prompt.json"
 logger = logging.getLogger(__name__)
@@ -163,13 +158,13 @@ def prompt_optimizer(
     note: Optional[str] = None,
     current_step: Optional[int] = None,
     expires_after_steps: Optional[int] = None,
-    metadata: Optional[Dict[str, Any]] = None,
+    metadata: Optional[dict[str, Any]] = None,
     prompt: Optional[str] = None,
     context: Optional[str] = None,
     learned_patterns: Optional[str] = None,
-    remove_dead_ends: Optional[List[str]] = None,
-    focus_areas: Optional[List[str]] = None,
-) -> Dict[str, Any]:
+    remove_dead_ends: Optional[list[str]] = None,
+    focus_areas: Optional[list[str]] = None,
+) -> dict[str, Any]:
     """Manage adaptive prompt overlays and execution prompt optimization.
 
     Supported actions:

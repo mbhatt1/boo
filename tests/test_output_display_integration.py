@@ -197,7 +197,7 @@ class TestEnvironmentLoggingIntegration:
             assert "No target_name provided" in warning_call
 
     def test_clean_operation_memory_error_logging(self):
-        """Test that cleanup logs errors properly."""
+        """Test that cleanup logs warnings properly when cleanup fails."""
         target_name = "example.com"
         operation_id = "OP_20250718_123456"
 
@@ -210,16 +210,16 @@ class TestEnvironmentLoggingIntegration:
                 "modules.config.environment.shutil.rmtree",
                 side_effect=OSError("Permission denied"),
             ):
-                with patch("modules.config.environment.os.path.exists", return_value=True):
+                with patch("modules.config.environment.Path.exists", return_value=True):
                     # Call cleanup
                     clean_operation_memory(operation_id, target_name)
 
-                    # Verify error was logged
-                    mock_log.error.assert_called()
-                    error_call = mock_log.error.call_args[0]
-                    assert "Failed to clean" in error_call[0]
+                    # Verify warning was logged (not error, since cleanup failures are non-critical)
+                    mock_log.warning.assert_called()
+                    warning_call = mock_log.warning.call_args[0]
+                    assert "Failed to clean" in warning_call[0]
                     # The actual error may be different depending on the mock setup
-                    assert len(error_call) >= 2  # Should have path and error message
+                    assert len(warning_call) >= 2  # Should have path and error message
 
 
 class TestPathConsistency:

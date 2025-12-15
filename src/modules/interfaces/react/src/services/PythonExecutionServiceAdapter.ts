@@ -28,7 +28,7 @@ const logger = createLogger('PythonExecutionServiceAdapter');
 /**
  * Adapter that wraps PythonExecutionService to implement ExecutionService interface
  */
-export class PythonExecutionServiceAdapter extends EventEmitter implements ExecutionService {
+export class PythonExecutionServiceAdapter extends ExecutionService {
   private pythonService: PythonExecutionService;
   private activeHandle?: ExecutionHandle;
 

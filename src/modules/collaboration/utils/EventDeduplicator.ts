@@ -320,6 +320,7 @@ export class EventDeduplicator {
   
   /**
    * Stop periodic cleanup
+   * Bug #35 Fix: Ensure cleanup interval is always properly cleared
    */
   private stopCleanup(): void {
     if (this.cleanupInterval) {

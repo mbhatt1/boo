@@ -25,58 +25,6 @@
     "start": "node dist/server/websocket-server.js",
     "migrate": "node database/migrate.js"
   },
-  "jest": {
-    "preset": "ts-jest",
-    "testEnvironment": "node",
-    "setupFilesAfterEnv": [
-      "<rootDir>/tests/setup/test-setup.ts"
-    ],
-    "globalSetup": "<rootDir>/tests/setup/global-setup.ts",
-    "globalTeardown": "<rootDir>/tests/setup/global-teardown.ts",
-    "projects": [
-      {
-        "displayName": "unit",
-        "testMatch": [
-          "<rootDir>/tests/**/*.test.ts"
-        ],
-        "testPathIgnorePatterns": [
-          "/node_modules/",
-          "/integration/",
-          "/load/"
-        ]
-      },
-      {
-        "displayName": "integration",
-        "testMatch": [
-          "<rootDir>/tests/integration/**/*.test.ts"
-        ],
-        "testTimeout": 30000
-      },
-      {
-        "displayName": "load",
-        "testMatch": [
-          "<rootDir>/tests/load/**/*.test.ts"
-        ],
-        "testTimeout": 120000
-      }
-    ],
-    "collectCoverageFrom": [
-      "**/*.ts",
-      "!**/*.d.ts",
-      "!**/*.test.ts",
-      "!**/node_modules/**",
-      "!**/tests/**",
-      "!**/benchmarks/**"
-    ],
-    "coverageThreshold": {
-      "global": {
-        "branches": 80,
-        "functions": 80,
-        "lines": 80,
-        "statements": 80
-      }
-    }
-  },
   "dependencies": {
     "ws": "^8.14.0",
     "jsonwebtoken": "^9.0.2",

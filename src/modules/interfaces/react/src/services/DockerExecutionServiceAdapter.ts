@@ -29,7 +29,7 @@ const logger = createLogger('DockerExecutionServiceAdapter');
 /**
  * Adapter that wraps DirectDockerService and ContainerManager to implement ExecutionService interface
  */
-export class DockerExecutionServiceAdapter extends EventEmitter implements ExecutionService {
+export class DockerExecutionServiceAdapter extends ExecutionService {
   private dockerService: DirectDockerService;
   private containerManager: ContainerManager;
   private mode: ExecutionMode;

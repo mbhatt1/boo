@@ -12,7 +12,7 @@ import { CollaborationError, CollaborationErrorCode } from '../types/index.js';
 
 // Mock pg Pool
 const mockPool = {
-  query: jest.fn(),
+  query: jest.fn<any>() as any,
   connect: jest.fn(),
   end: jest.fn(),
 };
@@ -64,7 +64,11 @@ describe('AuthService', () => {
     it('should generate a valid JWT token for a user', async () => {
       mockPool.query.mockResolvedValueOnce({
         rows: [mockUser],
-      });
+        command: 'SELECT',
+        rowCount: 1,
+        oid: 0,
+        fields: [],
+      } as any);
 
       const token = await authService.generateToken(mockUser.id, 'operator');
 
@@ -76,7 +80,11 @@ describe('AuthService', () => {
     it('should throw error if user not found', async () => {
       mockPool.query.mockResolvedValueOnce({
         rows: [],
-      });
+        command: 'SELECT',
+        rowCount: 0,
+        oid: 0,
+        fields: [],
+      } as any);
 
       await expect(
         authService.generateToken('nonexistent-id', 'operator')
@@ -86,7 +94,11 @@ describe('AuthService', () => {
     it('should throw error if user is not active', async () => {
       mockPool.query.mockResolvedValueOnce({
         rows: [{ ...mockUser, status: 'inactive' }],
-      });
+        command: 'SELECT',
+        rowCount: 1,
+        oid: 0,
+        fields: [],
+      } as any);
 
       await expect(
         authService.generateToken(mockUser.id, 'operator')
@@ -99,11 +111,15 @@ describe('AuthService', () => {
       // First generate a token
       mockPool.query.mockResolvedValueOnce({
         rows: [mockUser],
-      });
+        command: 'SELECT',
+        rowCount: 1,
+        oid: 0,
+        fields: [],
+      } as any);
 
       const token = await authService.generateToken(mockUser.id, 'operator');
 
-      // Then validate it
+      // Now validate it
       mockPool.query.mockResolvedValueOnce({
         rows: [mockUser],
       });
@@ -154,7 +170,7 @@ describe('AuthService', () => {
         rows: [],
       });
 
-      const user = await authService.authenticateUser('testuser', 'correct-password');
+      const user = await authService.authenticateUser('testuser', 'hashed_password');
 
       expect(user).toBeDefined();
       expect(user?.username).toBe('testuser');
@@ -181,7 +197,7 @@ describe('AuthService', () => {
 
   describe('hasPermission', () => {
     it('should allow admin all permissions', async () => {
-      const adminUser = { ...mockUser, role: 'admin' };
+      const adminUser = { ...mockUser, role: 'admin' as any };
       mockPool.query.mockResolvedValueOnce({
         rows: [adminUser],
       });
@@ -195,8 +211,9 @@ describe('AuthService', () => {
     });
 
     it('should check role-based permissions correctly', async () => {
+      const operatorUser = { ...mockUser, role: 'operator' as any };
       mockPool.query.mockResolvedValueOnce({
-        rows: [{ ...mockUser, role: 'operator' }],
+        rows: [operatorUser],
       });
 
       const hasPermission = await authService.hasPermission(
@@ -221,8 +238,9 @@ describe('AuthService', () => {
     });
 
     it('should return false for inactive user', async () => {
+      const inactiveUser = { ...mockUser, status: 'inactive' as any };
       mockPool.query.mockResolvedValueOnce({
-        rows: [{ ...mockUser, status: 'inactive' }],
+        rows: [inactiveUser],
       });
 
       const hasPermission = await authService.hasPermission(
@@ -236,14 +254,17 @@ describe('AuthService', () => {
 
   describe('refreshToken', () => {
     it('should refresh a valid token', async () => {
-      // Generate initial token
+      // Mock for initial token generation
       mockPool.query.mockResolvedValueOnce({
         rows: [mockUser],
       });
 
       const oldToken = await authService.generateToken(mockUser.id, 'operator');
 
-      // Refresh it
+      // Add a small delay to ensure different timestamps
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Mock for refresh token - getUserById call
       mockPool.query.mockResolvedValueOnce({
         rows: [mockUser],
       });
@@ -270,8 +291,21 @@ describe('AuthService', () => {
         fullName: 'New User',
       };
 
+      const newUserDb = {
+        id: '123e4567-e89b-12d3-a456-426614174000',
+        username: newUser.username,
+        email: newUser.email,
+        password_hash: 'hashed_password',
+        full_name: newUser.fullName,
+        role: 'analyst',
+        status: 'active',
+        created_at: new Date(),
+        updated_at: new Date(),
+        last_login: null,
+      };
+
       mockPool.query.mockResolvedValueOnce({
-        rows: [{ ...mockUser, ...newUser }],
+        rows: [newUserDb],
       });
 
       const user = await authService.createUser(

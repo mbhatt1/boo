@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import types
 
-from modules.agents import boo_autoagent as ca
+from modules.agents import boo_agent as ca
 
 
 def test_tool_router_maps_unknown_tool_to_shell():

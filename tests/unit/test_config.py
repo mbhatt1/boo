@@ -16,7 +16,7 @@ class TestServiceConfig:
     def test_from_env_with_defaults(self, monkeypatch):
         """Test loading service config with default values."""
         # Clear any existing env vars
-        for key in ['LANGFUSE_URL', 'OLLAMA_URL']:
+        for key in ['LANGFUSE_URL', 'OLLAMA_URL', 'LANGFUSE_PUBLIC_KEY', 'LANGFUSE_SECRET_KEY', 'OLLAMA_HOST']:
             monkeypatch.delenv(key, raising=False)
         
         config = ServiceConfig.from_env()
@@ -99,7 +99,7 @@ class TestConfigIntegration:
     def test_load_from_docker_fixture(self, monkeypatch):
         """Test loading configuration from Docker fixture."""
         import dotenv
-        dotenv.load_dotenv('tests/fixtures/.env.docker')
+        dotenv.load_dotenv('tests/fixtures/.env.docker', override=True)
         reset_config()
         
         config = get_config()

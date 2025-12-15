@@ -358,6 +358,9 @@ export interface PresenceUser {
   cursor?: CursorPosition;
 }
 
+// Alias for backward compatibility with tests
+export type PresenceInfo = PresenceUser;
+
 export interface CommentAuthor {
   userId: string;
   username: string;

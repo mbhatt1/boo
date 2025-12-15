@@ -7,8 +7,7 @@ import { EventEmitter } from 'events';
 import { ExecutionService, ExecutionMode, ValidationResult, ExecutionHandle, ExecutionResult, ExecutionCapabilities } from './ExecutionService.js';
 import fs from 'fs';
 
-export class TestExecutionService extends EventEmitter implements ExecutionService {
-  private active = false;
+export class TestExecutionService extends ExecutionService {
   private intervalHandle: NodeJS.Timeout | null = null;
 
   getMode(): ExecutionMode {
@@ -35,7 +34,6 @@ export class TestExecutionService extends EventEmitter implements ExecutionServi
   }
 
   async execute(_params: any, _config: any): Promise<ExecutionHandle> {
-    this.active = true;
     const startTime = Date.now();
 
     const events = this.loadEvents();

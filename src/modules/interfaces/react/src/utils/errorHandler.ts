@@ -223,3 +223,172 @@ export const Errors = {
       recoverable: true,
     }),
 };
+
+/**
+ * ErrorHandler class for processing and handling errors
+ */
+export class ErrorHandler {
+  /**
+   * Process an error and extract relevant information
+   */
+  static process(error: any): {
+    message: string;
+    type: string;
+    stack?: string;
+    severity?: ErrorSeverity;
+    category?: ErrorCategory;
+    context?: ErrorContext;
+  } {
+    // Handle null/undefined
+    if (error == null) {
+      return {
+        message: error === null ? 'Null error' : 'Undefined error',
+        type: 'Error',
+      };
+    }
+
+    // Handle non-Error objects
+    if (!(error instanceof Error)) {
+      return {
+        message: typeof error === 'object' ? JSON.stringify(error) : String(error),
+        type: 'Error',
+      };
+    }
+
+    const result: any = {
+      message: error.message,
+      type: error.name || 'Error',
+      stack: error.stack,
+    };
+
+    if (error instanceof BooAgentError) {
+      result.severity = error.severity;
+      result.category = error.category;
+      result.context = error.context;
+    }
+
+    return result;
+  }
+
+  /**
+   * Classify an error by type
+   */
+  static classify(error: Error): string {
+    if (!error) return 'unknown';
+    
+    const errorName = error.name.toLowerCase();
+    const errorMessage = error.message.toLowerCase();
+
+    if (errorName.includes('network') || errorMessage.includes('network')) {
+      return 'network';
+    }
+    if (errorName.includes('validation') || errorMessage.includes('validation')) {
+      return 'validation';
+    }
+    if (errorName.includes('timeout') || errorMessage.includes('timeout')) {
+      return 'timeout';
+    }
+    if (errorName.includes('permission') || errorMessage.includes('permission')) {
+      return 'permission';
+    }
+    
+    return 'unknown';
+  }
+
+  /**
+   * Log an error with optional context
+   */
+  static log(error: Error | BooAgentError, context?: ErrorContext): void {
+    const timestamp = new Date().toISOString();
+    const processed = ErrorHandler.process(error);
+    
+    console.error(`[${timestamp}] ${processed.type}: ${processed.message}`, {
+      ...processed,
+      context,
+    });
+  }
+
+  /**
+   * Get recovery suggestion for an error
+   */
+  static getRecoverySuggestion(error: Error): string {
+    const type = ErrorHandler.classify(error);
+    
+    switch (type) {
+      case 'network':
+        return 'Check your network connection and try again.';
+      case 'validation':
+        return 'Please check your input and try again.';
+      case 'timeout':
+        return 'The operation timed out. Please try again later.';
+      case 'permission':
+        return 'You do not have permission to perform this action.';
+      default:
+        return 'An error occurred. Please try again or contact support.';
+    }
+  }
+
+  /**
+   * Format error for display
+   */
+  static format(
+    error: Error,
+    options?: { maxLength?: number; includeType?: boolean }
+  ): string {
+    const maxLength = options?.maxLength;
+    const includeType = options?.includeType;
+    
+    let message = error.message;
+    
+    if (maxLength && message.length > maxLength) {
+      message = message.substring(0, maxLength - 3) + '...';
+    }
+    
+    if (includeType) {
+      return `[${error.name}] ${message}`;
+    }
+    
+    return message;
+  }
+
+  /**
+   * Sanitize error by removing sensitive information
+   */
+  static sanitize(error: Error): Error {
+    const sanitized = new Error(error.message);
+    sanitized.name = error.name;
+    sanitized.stack = error.stack;
+    
+    // Remove sensitive patterns
+    const patterns = [
+      /password[:\s]+[^\s]+/gi,
+      /api[_\s]?key[:\s]+[^\s]+/gi,
+      /token[:\s]+[^\s]+/gi,
+      /secret[:\s]+[^\s]+/gi,
+    ];
+    
+    for (const pattern of patterns) {
+      sanitized.message = sanitized.message.replace(pattern, '[REDACTED]');
+    }
+    
+    return sanitized;
+  }
+
+  /**
+   * Handle an error (wrapper around handleError function)
+   */
+  static handle(error: Error | BooAgentError, context?: ErrorContext): void {
+    handleError(error, context);
+  }
+
+  /**
+   * Create a new BooAgentError
+   */
+  static create(
+    message: string,
+    category: ErrorCategory,
+    context?: ErrorContext
+  ): BooAgentError {
+    return createError(message, category, context);
+  }
+}

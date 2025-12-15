@@ -1,6 +1,6 @@
 /**
  * WebSocket Connection Integration Tests
- * 
+ *
  * Integration tests for WebSocket server connection,
  * authentication, and basic message handling.
  */
@@ -10,6 +10,18 @@ import WebSocket from 'ws';
 import { CollaborationWebSocketServer } from '../server/websocket-server.js';
 import { AuthService } from '../services/AuthService.js';
 import type { WebSocketServerConfig, JWTConfig } from '../types/index.js';
+import pg from 'pg';
+
+// Mock pg Pool
+const mockPool = {
+  query: jest.fn<any>() as any,
+  connect: jest.fn(),
+  end: jest.fn(),
+};
+
+jest.mock('pg', () => ({
+  Pool: jest.fn(() => mockPool),
+}));
 
 describe('WebSocket Connection Integration', () => {
   let server: CollaborationWebSocketServer;
@@ -42,7 +54,25 @@ describe('WebSocket Connection Integration', () => {
     password: 'test_password',
   };
 
+  const mockUser = {
+    id: '123e4567-e89b-12d3-a456-426614174000',
+    username: 'testuser',
+    email: 'test@example.com',
+    password_hash: 'hashed_password',
+    full_name: 'Test User',
+    role: 'operator',
+    status: 'active',
+    created_at: new Date(),
+    updated_at: new Date(),
+    last_login: null,
+  };
+
   beforeAll(async () => {
+    // Mock database query to return test user
+    mockPool.query.mockResolvedValue({
+      rows: [mockUser],
+    });
+
     // Create auth service
     authService = new AuthService(dbConfig, jwtConfig);
     
@@ -143,7 +173,7 @@ describe('WebSocket Connection Integration', () => {
         
         if (message.type === 'error' || message.type === 'auth_error') {
           expect(message.code).toBeDefined();
-          expect(message.message).toContain('authentication');
+          expect(message.message).toMatch(/Invalid token|authentication/i);
           done();
         }
       });
@@ -243,8 +273,8 @@ describe('WebSocket Connection Integration', () => {
 
       // Wait for both to connect
       await Promise.all([
-        new Promise((resolve) => ws1.on('open', resolve)),
-        new Promise((resolve) => ws2.on('open', resolve)),
+        new Promise((resolve) => (ws1 as unknown as WebSocket).on('open', resolve)),
+        new Promise((resolve) => (ws2 as unknown as WebSocket).on('open', resolve)),
       ]);
 
       const stats = server.getStats();
@@ -286,7 +316,7 @@ describe('WebSocket Connection Integration', () => {
   describe('Health Check', () => {
     it('should respond to health check endpoint', async () => {
       const response = await fetch(`http://localhost:${testPort}/health`);
-      const data = await response.json();
+      const data = await response.json() as { status: string; connections: number; uptime: number };
       
       expect(response.status).toBe(200);
       expect(data.status).toBe('ok');

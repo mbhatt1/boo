@@ -66,7 +66,7 @@ describe('SessionManager', () => {
       mockRepo.createSession.mockRejectedValueOnce(new Error('DB error'));
 
       await expect(
-        sessionManager.createSession('user-id', 'op_001', {})
+        sessionManager.createSession('user-id', 'op_001', { target: 'test', objective: 'test' })
       ).rejects.toThrow(CollaborationError);
     });
   });
@@ -147,7 +147,18 @@ describe('SessionManager', () => {
     it('should reject if session is full', async () => {
       const session = SessionFactory.createActive();
       mockRepo.getSessionBySessionId.mockResolvedValueOnce(session);
-      mockRepo.getParticipantCount.mockResolvedValueOnce(50);
+      // Mock addParticipant to succeed initially
+      mockRepo.addParticipant.mockResolvedValueOnce({
+        id: 'participant-id',
+        sessionId: session.id,
+        userId: 'user-id',
+        role: 'viewer',
+        joinedAt: new Date()
+      });
+      // Mock getParticipantCount to return 51 (exceeding limit of 50)
+      mockRepo.getParticipantCount.mockResolvedValueOnce(51);
+      // Mock removeParticipant for rollback
+      mockRepo.removeParticipant.mockResolvedValueOnce(undefined);
 
       await expect(
         sessionManager.addParticipant(session.sessionId, 'user-id', 'viewer')
@@ -201,8 +212,9 @@ describe('SessionManager', () => {
   describe('endSession', () => {
     it('should end session and set status to completed', async () => {
       const session = SessionFactory.createActive();
+      const completedSession = { ...session, status: 'completed', ended_at: new Date() };
       mockRepo.getSessionBySessionId.mockResolvedValueOnce(session);
-      mockRepo.updateSession.mockResolvedValueOnce(undefined);
+      mockRepo.updateSession.mockResolvedValueOnce(completedSession as any);
 
       await sessionManager.endSession(session.sessionId);
 
@@ -217,6 +229,8 @@ describe('SessionManager', () => {
     it('should grant all permissions to owner', async () => {
       const session = SessionFactory.create({ ownerId: 'owner-id' });
       mockRepo.getSessionBySessionId.mockResolvedValueOnce(session);
+      // Mock getActiveParticipants to return empty array (owner doesn't need to be participant)
+      mockRepo.getActiveParticipants.mockResolvedValueOnce([]);
 
       const result = await sessionManager.hasPermission(
         session.sessionId,

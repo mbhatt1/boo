@@ -106,6 +106,7 @@ export class SecretsManager {
   private config: SecretsManagerConfig;
   private secrets: Map<string, Secret> = new Map();
   private rotationTimer?: any;
+  private originalConsoleMethods?: Record<string, any>;
 
   constructor(config: Partial<SecretsManagerConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
@@ -336,6 +337,24 @@ export class SecretsManager {
         original.apply(console, filtered);
       };
     });
+    
+    // Bug #38 Fix: Store original methods for restoration
+    if (!this.originalConsoleMethods) {
+      this.originalConsoleMethods = originalMethods;
+    }
+  }
+  
+  /**
+   * Restore original console methods
+   * Bug #38 Fix: Add cleanup method to restore console
+   */
+  private restoreConsole(): void {
+    if (this.originalConsoleMethods) {
+      Object.keys(this.originalConsoleMethods).forEach((method) => {
+        (console as any)[method] = (this.originalConsoleMethods as any)[method];
+      });
+      this.originalConsoleMethods = undefined;
+    }
   }
 
   /**

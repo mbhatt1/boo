@@ -142,7 +142,7 @@ const monitoringStack = new MonitoringStack(app, `${stackPrefix}-Monitoring`, {
   ecsService: computeStack.ecsService,
   ecsCluster: computeStack.ecsCluster,
   database: databaseStack.database,
-  cacheCluster: cacheStack.cacheCluster,
+  _cacheCluster: cacheStack.cacheCluster,
   snsTopicArn: config.monitoring.alarmSnsTopicArn,
   alarmEmail: config.monitoring.alarmEmail,
   description: `Monitoring infrastructure for Boo Collaboration System (${config.environment})`,
@@ -154,7 +154,7 @@ const monitoringStack = new MonitoringStack(app, `${stackPrefix}-Monitoring`, {
  * Only deployed if domain name is provided
  */
 if (config.domainName) {
-  const dnsStack = new DnsStack(app, `${stackPrefix}-DNS`, {
+  const _dnsStack = new DnsStack(app, `${stackPrefix}-DNS`, {
     env,
     config,
     loadBalancer: loadBalancerStack.loadBalancer,

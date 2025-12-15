@@ -11,7 +11,7 @@ import { jest } from '@jest/globals';
  */
 export function createMockPool() {
   return {
-    query: jest.fn(),
+    query: jest.fn<any>(),
     connect: jest.fn(),
     end: jest.fn(),
     on: jest.fn(),
@@ -36,6 +36,7 @@ export function createMockClient() {
 export function createMockRedis() {
   const store = new Map<string, any>();
   const hashes = new Map<string, Map<string, any>>();
+  const sortedSets = new Map<string, Map<string, number>>();
   const expiries = new Map<string, number>();
   
   return {
@@ -53,8 +54,39 @@ export function createMockRedis() {
       let count = 0;
       keys.forEach(key => {
         if (store.delete(key)) count++;
+        if (sortedSets.delete(key)) count++;
       });
       return count;
+    }),
+    zadd: jest.fn(async (key: string, score: number, member: string) => {
+      if (!sortedSets.has(key)) {
+        sortedSets.set(key, new Map());
+      }
+      sortedSets.get(key)!.set(member, score);
+      return 1;
+    }),
+    zrange: jest.fn(async (key: string, start: number, stop: number) => {
+      const set = sortedSets.get(key);
+      if (!set) return [];
+      return Array.from(set.keys());
+    }),
+    zrem: jest.fn(async (key: string, ...members: string[]) => {
+      const set = sortedSets.get(key);
+      if (!set) return 0;
+      let count = 0;
+      members.forEach(member => {
+        if (set.delete(member)) count++;
+      });
+      return count;
+    }),
+    publish: jest.fn(async (channel: string, message: string) => {
+      return 1;
+    }),
+    subscribe: jest.fn(async (channel: string, callback: Function) => {
+      return undefined;
+    }),
+    unsubscribe: jest.fn(async (channel: string) => {
+      return undefined;
     }),
     hset: jest.fn(async (key: string, field: string, value: any) => {
       if (!hashes.has(key)) {
@@ -104,10 +136,13 @@ export function createMockRedis() {
     }),
     quit: jest.fn(async () => 'OK'),
     on: jest.fn(),
+    isReady: jest.fn(() => true),
+    close: jest.fn(async () => undefined),
     
     // Expose internal store for testing
     _store: store,
     _hashes: hashes,
+    _sortedSets: sortedSets,
     _expiries: expiries,
   };
 }

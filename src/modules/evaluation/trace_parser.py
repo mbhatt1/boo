@@ -121,7 +121,7 @@ class TraceParser:
             llm: Optional LLM instance for generating reference topics
             langfuse_client: Langfuse client for fetching observations
         """
-        self.security_tools = {"shell", "http_request", "mem0_memory", "editor", "load_tool", "swarm", "stop"}
+        self.security_tools = {"shell", "http_request", "mem0_memory", "editor", "load_tool", "swarm", "stop", "nmap", "nikto", "sqlmap", "gobuster"}
         self.llm = llm
         self.langfuse = langfuse_client
 
@@ -208,6 +208,10 @@ class TraceParser:
 
         # Method 2: Parse from input
         if hasattr(trace, "input") and trace.input:
+            # Handle direct dict input
+            if isinstance(trace.input, dict) and "objective" in trace.input:
+                return str(trace.input["objective"])
+            
             input_str = str(trace.input)
             # Try structured parse first
             if "objective" in input_str.lower():

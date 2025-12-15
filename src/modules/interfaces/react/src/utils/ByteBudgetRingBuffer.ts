@@ -11,32 +11,81 @@ export class ByteBudgetRingBuffer<T> {
       | ((item: T) => number)
       | { estimator?: (item: T) => number; overflowReducer?: (item: T) => T }
   ) {
-    this.byteLimit = Math.max(1024, byteLimit | 0);
+    if (byteLimit <= 0 || !Number.isFinite(byteLimit)) {
+      throw new Error('ByteBudgetRingBuffer capacity must be > 0');
+    }
+    this.byteLimit = Math.max(1, byteLimit | 0);
     const defaultEstimator = (item: any) => {
-      // Roughly estimate size focusing on common fields
+      // Estimate byte size more accurately
       try {
         if (item == null) return 0;
-        let bytes = 64; // base overhead per item
-        if (typeof item === 'string') return bytes + item.length;
+        
+        // For strings, use length directly (UTF-8 encoding ~= char count for ASCII)
+        if (typeof item === 'string') {
+          return Math.max(1, item.length);
+        }
+        
+        // For objects, recursively estimate size
         if (typeof item === 'object') {
-          const s = item as any;
+          let bytes = 16; // minimal object overhead
+          
+          // Helper to add string length
           const addStr = (v: any) => {
-            if (typeof v === 'string') bytes += v.length;
+            if (typeof v === 'string') {
+              bytes += v.length;
+            }
           };
+          
+          // Helper to recursively count nested objects
+          const addNested = (v: any) => {
+            if (typeof v === 'string') {
+              bytes += v.length;
+            } else if (typeof v === 'object' && v !== null) {
+              // Recursively estimate nested object size
+              try {
+                const jsonStr = JSON.stringify(v);
+                bytes += jsonStr.length;
+              } catch {
+                bytes += 64; // fallback for circular refs
+              }
+            } else if (v != null) {
+              bytes += 8; // primitive overhead
+            }
+          };
+          
+          // Check common field names
+          const s = item as any;
           addStr(s.content);
           addStr(s.command);
           addStr(s.message);
           addStr(s.tool_name);
           addStr(s.tool);
-          // If content is non-string but serializable, add minimal
-          if (s.content && typeof s.content === 'object' && !Array.isArray(s.content)) {
-            bytes += 128;
+          addStr(s.data);
+          addStr(s.id);
+          addStr(s.name);
+          
+          // Check for nested objects
+          if (s.nested && typeof s.nested === 'object') {
+            addNested(s.nested);
           }
-          return bytes;
+          
+          // If we haven't counted much, do a full JSON estimate
+          if (bytes < 32) {
+            try {
+              const jsonStr = JSON.stringify(item);
+              bytes = Math.max(bytes, jsonStr.length);
+            } catch {
+              bytes = 64;
+            }
+          }
+          
+          return Math.max(16, bytes);
         }
-        return 32;
+        
+        // Primitives
+        return 8;
       } catch {
-        return 128;
+        return 64;
       }
     };
 
@@ -48,6 +97,22 @@ export class ByteBudgetRingBuffer<T> {
     } else {
       this.estimator = defaultEstimator;
     }
+  }
+
+  get capacity(): number {
+    return this.byteLimit;
+  }
+
+  get size(): number {
+    return this.items.length;
+  }
+
+  get currentByteSize(): number {
+    return this.currentBytes;
+  }
+
+  isEmpty(): boolean {
+    return this.items.length === 0;
   }
 
   clear() {
@@ -139,10 +204,6 @@ export class ByteBudgetRingBuffer<T> {
 
   toArray(): T[] {
     return this.items.map(entry => entry.item);
-  }
-
-  size(): number {
-    return this.items.length;
   }
 
   bytes(): number {

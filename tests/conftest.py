@@ -26,6 +26,15 @@ for _var in (
     os.environ.pop(_var, None)
 
 
+@pytest.fixture(autouse=True)
+def reset_runtime_config():
+    """Reset runtime configuration before each test to avoid stale cached values."""
+    from modules.config.runtime import reset_config
+    reset_config()
+    yield
+    reset_config()
+
+
 @pytest.fixture
 def temp_data_dir():
     """Create a temporary directory for test data"""
@@ -37,14 +46,14 @@ def temp_data_dir():
 @pytest.fixture
 def mock_ollama_available():
     """Mock Ollama availability"""
-    with patch("modules.agents.boo_autoagent.OLLAMA_AVAILABLE", True):
+    with patch("modules.agents.boo_agent.OLLAMA_AVAILABLE", True):
         yield
 
 
 @pytest.fixture
 def mock_ollama_unavailable():
     """Mock Ollama unavailability"""
-    with patch("modules.agents.boo_autoagent.OLLAMA_AVAILABLE", False):
+    with patch("modules.agents.boo_agent.OLLAMA_AVAILABLE", False):
         yield
 
 
@@ -80,7 +89,7 @@ def mock_no_aws_credentials():
 @pytest.fixture
 def mock_ollama_server_running():
     """Mock Ollama server running successfully"""
-    with patch("modules.agents.boo_autoagent.requests.get") as mock_get:
+    with patch("modules.agents.boo_agent.requests.get") as mock_get:
         mock_response = Mock()
         mock_response.status_code = 200
         mock_get.return_value = mock_response
@@ -90,7 +99,7 @@ def mock_ollama_server_running():
 @pytest.fixture
 def mock_ollama_server_down():
     """Mock Ollama server not running"""
-    with patch("modules.agents.boo_autoagent.requests.get") as mock_get:
+    with patch("modules.agents.boo_agent.requests.get") as mock_get:
         mock_get.side_effect = Exception("Connection refused")
         yield mock_get
 
@@ -98,7 +107,7 @@ def mock_ollama_server_down():
 @pytest.fixture
 def mock_ollama_models_available():
     """Mock Ollama models being available"""
-    with patch("modules.agents.boo_autoagent.ollama.Client") as mock_client:
+    with patch("modules.agents.boo_agent.ollama.Client") as mock_client:
         mock_client_instance = mock_client.return_value
         mock_client_instance.list.return_value = {
             "models": [
@@ -113,7 +122,7 @@ def mock_ollama_models_available():
 @pytest.fixture
 def mock_ollama_models_missing():
     """Mock Ollama models not available"""
-    with patch("modules.agents.boo_autoagent.ollama.list") as mock_list:
+    with patch("modules.agents.boo_agent.ollama.list") as mock_list:
         mock_list.return_value = {"models": [{"name": "some-other-model:latest"}]}
         yield mock_list
 
@@ -121,7 +130,7 @@ def mock_ollama_models_missing():
 @pytest.fixture
 def mock_memory_tools():
     """Mock memory tools module"""
-    with patch("modules.agents.boo_autoagent.memory_tools") as mock_tools:
+    with patch("modules.agents.boo_agent.memory_tools") as mock_tools:
         mock_tools.mem0_instance = None
         mock_tools.operation_id = None
         yield mock_tools
@@ -131,11 +140,11 @@ def mock_memory_tools():
 def mock_strands_components():
     """Mock Strands framework components"""
     with (
-        patch("modules.agents.boo_autoagent.Agent") as mock_agent,
-        patch("modules.agents.boo_autoagent.BedrockModel") as mock_bedrock,
-        patch("modules.agents.boo_autoagent.ReasoningHandler") as mock_handler,
-        patch("modules.agents.boo_autoagent.Memory.from_config") as mock_memory,
-        patch("modules.agents.boo_autoagent.get_system_prompt") as mock_prompt,
+        patch("modules.agents.boo_agent.Agent") as mock_agent,
+        patch("modules.agents.boo_agent.BedrockModel") as mock_bedrock,
+        patch("modules.agents.boo_agent.ReasoningHandler") as mock_handler,
+        patch("modules.agents.boo_agent.Memory.from_config") as mock_memory,
+        patch("modules.agents.boo_agent.get_system_prompt") as mock_prompt,
     ):
         mock_prompt.return_value = "test system prompt"
         yield {
@@ -150,7 +159,7 @@ def mock_strands_components():
 @pytest.fixture
 def mock_ollama_model():
     """Mock OllamaModel when available"""
-    with patch("modules.agents.boo_autoagent.OllamaModel") as mock_model:
+    with patch("modules.agents.boo_agent.OllamaModel") as mock_model:
         yield mock_model
 
 

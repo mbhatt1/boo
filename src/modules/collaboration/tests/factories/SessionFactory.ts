@@ -8,13 +8,16 @@ import { generateUUID, generateSessionId, generatePaperId } from '../setup/test-
 
 export interface SessionFactoryOptions {
   id?: string;
-  paper_id?: string;
-  title?: string;
-  created_by?: string;
+  operationId?: string;
+  sessionId?: string;
+  ownerId?: string;
   status?: 'active' | 'completed' | 'archived';
-  created_at?: Date;
-  updated_at?: Date;
-  ended_at?: Date | null;
+  target?: string;
+  objective?: string;
+  startTime?: Date;
+  endTime?: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
   metadata?: Record<string, any>;
 }
 
@@ -29,13 +32,16 @@ export class SessionFactory {
     
     return {
       id: options.id || generateUUID(),
-      paper_id: options.paper_id || generatePaperId(),
-      title: options.title || `Test Session ${sequence}`,
-      created_by: options.created_by || generateUUID(),
+      operationId: options.operationId || `op_${sequence}`,
+      sessionId: options.sessionId || generateSessionId(),
+      ownerId: options.ownerId || generateUUID(),
       status: options.status || 'active',
-      created_at: options.created_at || new Date(),
-      updated_at: options.updated_at || new Date(),
-      ended_at: options.ended_at === undefined ? null : options.ended_at,
+      target: options.target,
+      objective: options.objective,
+      startTime: options.startTime || new Date(),
+      endTime: options.endTime,
+      createdAt: options.createdAt || new Date(),
+      updatedAt: options.updatedAt || new Date(),
       metadata: options.metadata || {},
     };
   }
@@ -51,7 +57,7 @@ export class SessionFactory {
    * Create an active session
    */
   static createActive(options: SessionFactoryOptions = {}): any {
-    return this.create({ ...options, status: 'active', ended_at: null });
+    return this.create({ ...options, status: 'active', endTime: undefined });
   }
   
   /**
@@ -61,7 +67,7 @@ export class SessionFactory {
     return this.create({
       ...options,
       status: 'completed',
-      ended_at: options.ended_at || new Date(),
+      endTime: options.endTime || new Date(),
     });
   }
   
@@ -72,22 +78,22 @@ export class SessionFactory {
     return this.create({
       ...options,
       status: 'archived',
-      ended_at: options.ended_at || new Date(),
+      endTime: options.endTime || new Date(),
     });
   }
   
   /**
-   * Create a session for a specific paper
+   * Create a session for a specific operation
    */
-  static createForPaper(paperId: string, options: SessionFactoryOptions = {}): any {
-    return this.create({ ...options, paper_id: paperId });
+  static createForOperation(operationId: string, options: SessionFactoryOptions = {}): any {
+    return this.create({ ...options, operationId });
   }
   
   /**
-   * Create a session by a specific user
+   * Create a session by a specific owner
    */
-  static createByUser(userId: string, options: SessionFactoryOptions = {}): any {
-    return this.create({ ...options, created_by: userId });
+  static createByOwner(ownerId: string, options: SessionFactoryOptions = {}): any {
+    return this.create({ ...options, ownerId });
   }
   
   /**

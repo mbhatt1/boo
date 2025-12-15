@@ -31,12 +31,15 @@ class TestMemoryPathIntegration:
                 "vector_store": {"provider": "faiss", "config": {}},
                 "embedder": {
                     "provider": "aws_bedrock",
-                    "config": {"model": "test-model"},
+                    "config": {"model": "amazon.titan-embed-text-v1"},
                 },
-                "llm": {"provider": "aws_bedrock", "config": {"model": "test-llm"}},
+                "llm": {"provider": "aws_bedrock", "config": {"model": "anthropic.claude-3-sonnet-20240229-v1:0"}},
             }
 
-            client = Mem0ServiceClient(config)
+            # Mock the Mem0Memory.from_config to avoid actual AWS calls
+            with patch("modules.tools.memory.Mem0Memory.from_config") as mock_mem0:
+                mock_mem0.return_value = MagicMock()
+                client = Mem0ServiceClient(config)
 
             # The client should have constructed the correct path
             # This tests the internal path construction logic

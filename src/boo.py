@@ -649,7 +649,7 @@ def main():
             )
 
             # Continue until stop condition is met
-            while not interrupted:
+            while not is_interrupted():
                 try:
                     # Execute agent with current message
                     result = agent(current_message)

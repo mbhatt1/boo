@@ -25,11 +25,14 @@ class ServiceConfig:
         Returns:
             ServiceConfig with values from environment or sensible defaults.
         """
+        # Check OLLAMA_HOST first for backward compatibility, then OLLAMA_URL
+        ollama_url = os.getenv('OLLAMA_HOST') or os.getenv('OLLAMA_URL', 'http://localhost:11434')
+        
         return cls(
             langfuse_url=os.getenv('LANGFUSE_URL', 'http://localhost:3000'),
             langfuse_public_key=os.getenv('LANGFUSE_PUBLIC_KEY'),
             langfuse_secret_key=os.getenv('LANGFUSE_SECRET_KEY'),
-            ollama_url=os.getenv('OLLAMA_URL', 'http://localhost:11434')
+            ollama_url=ollama_url
         )
 
 

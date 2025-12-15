@@ -101,6 +101,8 @@ export class InputValidator {
     }
 
     const limit = maxLength || this.config.maxStringLength;
+    
+    // Check length first before processing
     if (input.length > limit) {
       throw new ValidationError(
         'string',
@@ -134,9 +136,10 @@ export class InputValidator {
       '"': '&quot;',
       "'": '&#x27;',
       '/': '&#x2F;',
+      '=': '&#x3D;',
     };
 
-    return input.replace(/[&<>"'/]/g, (char) => htmlEscapeMap[char]);
+    return input.replace(/[&<>"'/=]/g, (char) => htmlEscapeMap[char]);
   }
 
   /**

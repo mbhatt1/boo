@@ -99,7 +99,7 @@ class EventBuffer {
     operationEvents.push(event);
     
     // Trim to max size (keep most recent)
-    if (operationEvents.length > this.maxSize) {
+    while (operationEvents.length > this.maxSize) {
       operationEvents.shift();
     }
   }
@@ -187,13 +187,35 @@ export class EventStore {
    * Store multiple events in batch
    */
   async storeEvents(events: OperationEvent[]): Promise<void> {
-    // Add all to buffer
+    // Group events by operation ID
+    const eventsByOperation = new Map<string, OperationEvent[]>();
     for (const event of events) {
-      this.buffer.add(event.operationId, event);
+      if (!eventsByOperation.has(event.operationId)) {
+        eventsByOperation.set(event.operationId, []);
+      }
+      eventsByOperation.get(event.operationId)!.push(event);
     }
     
-    // Batch persist to Redis
-    await this.persistEvents(events);
+    // Process each operation
+    const eventsToPersist: OperationEvent[] = [];
+    for (const [operationId, opEvents] of eventsByOperation.entries()) {
+      // Add all events to buffer (which will trim automatically)
+      for (const event of opEvents) {
+        this.buffer.add(event.operationId, event);
+      }
+      
+      // Clear Redis for this operation to avoid accumulating excess events
+      await this.redis.del(this.getRedisKey(operationId));
+      
+      // Get the trimmed events from buffer
+      const bufferedEvents = this.buffer.get(operationId);
+      eventsToPersist.push(...bufferedEvents);
+    }
+    
+    // Batch persist only the trimmed events
+    if (eventsToPersist.length > 0) {
+      await this.persistEvents(eventsToPersist);
+    }
   }
   
   /**

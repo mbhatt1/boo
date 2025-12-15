@@ -11,17 +11,17 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
-from modules.agents.boo_autoagent import create_agent
+from modules.agents.boo_agent import create_agent
 
 
 class TestMemoryAwareAgentIntegration:
     """Test memory-aware system prompt integration with agent creation"""
 
-    @patch("modules.agents.boo_autoagent.initialize_memory_system")
-    @patch("modules.agents.boo_autoagent.get_memory_client")
-    @patch("modules.agents.boo_autoagent.check_existing_memories")
-    @patch("modules.agents.boo_autoagent._create_remote_model")
-    @patch("modules.agents.boo_autoagent.get_config_manager")
+    @patch("modules.agents.boo_agent.initialize_memory_system")
+    @patch("modules.agents.boo_agent.get_memory_client")
+    @patch("modules.agents.boo_agent.check_existing_memories")
+    @patch("modules.agents.boo_agent._create_remote_model")
+    @patch("modules.agents.boo_agent.get_config_manager")
     def test_agent_creation_with_memory_overview(
         self,
         mock_config_manager,
@@ -91,11 +91,11 @@ class TestMemoryAwareAgentIntegration:
         assert "Load all memories with mem0_memory" in system_prompt
         assert "**CRITICAL FIRST ACTION**" in system_prompt
 
-    @patch("modules.agents.boo_autoagent.initialize_memory_system")
-    @patch("modules.agents.boo_autoagent.get_memory_client")
-    @patch("modules.agents.boo_autoagent.check_existing_memories")
-    @patch("modules.agents.boo_autoagent._create_remote_model")
-    @patch("modules.agents.boo_autoagent.get_config_manager")
+    @patch("modules.agents.boo_agent.initialize_memory_system")
+    @patch("modules.agents.boo_agent.get_memory_client")
+    @patch("modules.agents.boo_agent.check_existing_memories")
+    @patch("modules.agents.boo_agent._create_remote_model")
+    @patch("modules.agents.boo_agent.get_config_manager")
     def test_agent_creation_fresh_start(
         self,
         mock_config_manager,
@@ -152,11 +152,11 @@ class TestMemoryAwareAgentIntegration:
         assert "reconnaissance and target information gathering" in system_prompt
         assert "Store all findings immediately" in system_prompt
 
-    @patch("modules.agents.boo_autoagent.initialize_memory_system")
-    @patch("modules.agents.boo_autoagent.get_memory_client")
-    @patch("modules.agents.boo_autoagent.check_existing_memories")
-    @patch("modules.agents.boo_autoagent._create_remote_model")
-    @patch("modules.agents.boo_autoagent.get_config_manager")
+    @patch("modules.agents.boo_agent.initialize_memory_system")
+    @patch("modules.agents.boo_agent.get_memory_client")
+    @patch("modules.agents.boo_agent.check_existing_memories")
+    @patch("modules.agents.boo_agent._create_remote_model")
+    @patch("modules.agents.boo_agent.get_config_manager")
     def test_agent_creation_with_memory_path(
         self,
         mock_config_manager,
@@ -226,11 +226,11 @@ class TestMemoryAwareAgentIntegration:
         assert "Continuing assessment with 2 existing memories" in system_prompt
         assert "Load all memories with mem0_memory" in system_prompt
 
-    @patch("modules.agents.boo_autoagent.initialize_memory_system")
-    @patch("modules.agents.boo_autoagent.get_memory_client")
-    @patch("modules.agents.boo_autoagent.check_existing_memories")
-    @patch("modules.agents.boo_autoagent._create_remote_model")
-    @patch("modules.agents.boo_autoagent.get_config_manager")
+    @patch("modules.agents.boo_agent.initialize_memory_system")
+    @patch("modules.agents.boo_agent.get_memory_client")
+    @patch("modules.agents.boo_agent.check_existing_memories")
+    @patch("modules.agents.boo_agent._create_remote_model")
+    @patch("modules.agents.boo_agent.get_config_manager")
     def test_agent_creation_memory_overview_error_handling(
         self,
         mock_config_manager,
@@ -283,11 +283,11 @@ class TestMemoryAwareAgentIntegration:
         assert "## MEMORY CONTEXT" in system_prompt
         assert "Continuing assessment with 0 existing memories" in system_prompt
 
-    @patch("modules.agents.boo_autoagent.initialize_memory_system")
-    @patch("modules.agents.boo_autoagent.get_memory_client")
-    @patch("modules.agents.boo_autoagent.check_existing_memories")
-    @patch("modules.agents.boo_autoagent._create_local_model")
-    @patch("modules.agents.boo_autoagent.get_config_manager")
+    @patch("modules.agents.boo_agent.initialize_memory_system")
+    @patch("modules.agents.boo_agent.get_memory_client")
+    @patch("modules.agents.boo_agent.check_existing_memories")
+    @patch("modules.agents.boo_agent._create_local_model")
+    @patch("modules.agents.boo_agent.get_config_manager")
     def test_agent_creation_local_server_with_memory(
         self,
         mock_config_manager,

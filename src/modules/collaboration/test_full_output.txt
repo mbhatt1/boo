@@ -1,0 +1,1354 @@
+
+> @boo/collaboration@1.0.0 test
+> jest
+
+🚀 Setting up test environment...
+❌ Database setup failed: error: role "postgres" does not exist
+    at /Users/mbhatt/papers/boo/src/modules/collaboration/node_modules/pg-pool/index.js:45:11
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async globalSetup (/Users/mbhatt/papers/boo/src/modules/collaboration/tests/setup/global-setup.ts:67:9)
+    at async /Users/mbhatt/papers/boo/src/modules/collaboration/node_modules/@jest/core/build/runGlobalHook.js:109:13
+    at async waitForPromiseWithCleanup (/Users/mbhatt/papers/boo/src/modules/collaboration/node_modules/@jest/transform/build/ScriptTransformer.js:160:5)
+    at async ScriptTransformer.requireAndTranspileModule (/Users/mbhatt/papers/boo/src/modules/collaboration/node_modules/@jest/transform/build/ScriptTransformer.js:808:16)
+    at async runGlobalHook (/Users/mbhatt/papers/boo/src/modules/collaboration/node_modules/@jest/core/build/runGlobalHook.js:101:9)
+    at async runJest (/Users/mbhatt/papers/boo/src/modules/collaboration/node_modules/@jest/core/build/runJest.js:327:5)
+    at async _run10000 (/Users/mbhatt/papers/boo/src/modules/collaboration/node_modules/@jest/core/build/cli/index.js:343:7)
+    at async runCLI (/Users/mbhatt/papers/boo/src/modules/collaboration/node_modules/@jest/core/build/cli/index.js:198:3) {
+  length: 100,
+  severity: 'FATAL',
+  code: '28000',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'miscinit.c',
+  line: '755',
+  routine: 'InitializeSessionUserId'
+}
+⚠️  Continuing anyway - unit tests with mocked dependencies can still run
+⚠️  To skip this warning, set SKIP_DB_SETUP=true
+✅ Redis test database flushed
+✅ Test environment ready
+PASS unit tests/services/PresenceManager.test.ts
+  ● Console
+
+    console.log
+      [PresenceManager] Set presence for user user-456 in session test-session-123: online
+
+      at PresenceManager.setPresence (services/PresenceManager.ts:128:15)
+
+    console.log
+      [PresenceManager] Set presence for user user-456 in session test-session-123: away
+
+      at PresenceManager.setPresence (services/PresenceManager.ts:128:15)
+
+    console.log
+      [PresenceManager] Set presence for user user-456 in session test-session-123: online
+
+      at PresenceManager.setPresence (services/PresenceManager.ts:128:15)
+
+    console.log
+      [PresenceManager] Removed presence for user user-456 in session test-session-123
+
+      at PresenceManager.removePresence (services/PresenceManager.ts:224:15)
+
+PASS unit tests/services/EventStore.test.ts
+PASS unit tests/services/NotificationService.test.ts
+  ● Console
+
+    console.log
+      [NotificationService] Marked notification fbd6ce76-06ac-4d26-b773-929373e7a598 as read for user 8e4d7e4b-21d2-4075-8aaf-1ad8db00e22b
+
+      at NotificationService.markAsRead (services/NotificationService.ts:137:15)
+
+    console.log
+      [NotificationService] Marked all 5 notifications as read for user 391e1eb8-0726-4ee3-a5f8-c2b3e9a2fcb2
+
+      at NotificationService.markAllAsRead (services/NotificationService.ts:164:15)
+
+    console.log
+      [NotificationService] Marked all 3 notifications as read for user 27589b0b-9e44-43fd-bced-a3a32f6c70e5
+
+      at NotificationService.markAllAsRead (services/NotificationService.ts:164:15)
+
+    console.log
+      [NotificationService] Marked all 0 notifications as read for user cb03459d-6ea3-4592-8fcf-67d0e790bfd1
+
+      at NotificationService.markAllAsRead (services/NotificationService.ts:164:15)
+
+    console.log
+      [NotificationService] Sent real-time notification to user b9f5a50d-f940-4056-8fda-577c27c2a1bf
+
+      at NotificationService.sendNotification (services/NotificationService.ts:196:15)
+
+    console.log
+      [NotificationService] Sent real-time notification to user 91951900-01e3-4392-9d22-34f46d04be3c
+
+      at NotificationService.sendNotification (services/NotificationService.ts:196:15)
+
+    console.error
+      [NotificationService] Error in notification callback: Error: Callback error
+          at /Users/mbhatt/papers/boo/src/modules/collaboration/tests/services/NotificationService.test.ts:338:15
+          at NotificationService.sendNotification (/Users/mbhatt/papers/boo/src/modules/collaboration/services/NotificationService.ts:190:11)
+          at Object.<anonymous> (/Users/mbhatt/papers/boo/src/modules/collaboration/tests/services/NotificationService.test.ts:345:28)
+          at Promise.then.completed (/Users/mbhatt/papers/boo/src/modules/collaboration/node_modules/jest-circus/build/utils.js:298:28)
+          at new Promise (<anonymous>)
+          at callAsyncCircusFn (/Users/mbhatt/papers/boo/src/modules/collaboration/node_modules/jest-circus/build/utils.js:231:10)
+          at _callCircusTest (/Users/mbhatt/papers/boo/src/modules/collaboration/node_modules/jest-circus/build/run.js:316:40)
+          at processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at _runTest (/Users/mbhatt/papers/boo/src/modules/collaboration/node_modules/jest-circus/build/run.js:252:3)
+          at _runTestsForDescribeBlock (/Users/mbhatt/papers/boo/src/modules/collaboration/node_modules/jest-circus/build/run.js:126:9)
+          at _runTestsForDescribeBlock (/Users/mbhatt/papers/boo/src/modules/collaboration/node_modules/jest-circus/build/run.js:121:9)
+          at _runTestsForDescribeBlock (/Users/mbhatt/papers/boo/src/modules/collaboration/node_modules/jest-circus/build/run.js:121:9)
+          at run (/Users/mbhatt/papers/boo/src/modules/collaboration/node_modules/jest-circus/build/run.js:71:3)
+          at runAndTransformResultsToJestFormat (/Users/mbhatt/papers/boo/src/modules/collaboration/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21)
+          at jestAdapter (/Users/mbhatt/papers/boo/src/modules/collaboration/node_modules/jest-circus/build/legacy-code-todo-rewrite/jestAdapter.js:79:19)
+          at runTestInternal (/Users/mbhatt/papers/boo/src/modules/collaboration/node_modules/jest-runner/build/runTest.js:367:16)
+          at runTest (/Users/mbhatt/papers/boo/src/modules/collaboration/node_modules/jest-runner/build/runTest.js:444:34)
+          at Object.worker (/Users/mbhatt/papers/boo/src/modules/collaboration/node_modules/jest-runner/build/testWorker.js:106:12)
+
+      190 |           callback(notification.userId, notification);
+      191 |         } catch (error) {
+    > 192 |           console.error('[NotificationService] Error in notification callback:', error);
+          |                   ^
+      193 |         }
+      194 |       }
+      195 |
+
+      at NotificationService.sendNotification (services/NotificationService.ts:192:19)
+      at Object.<anonymous> (tests/services/NotificationService.test.ts:345:28)
+
+    console.log
+      [NotificationService] Sent real-time notification to user a692f532-a844-4999-be45-718970c386c6
+
+      at NotificationService.sendNotification (services/NotificationService.ts:196:15)
+
+    console.log
+      [NotificationService] Sent real-time notification to user ebdd78cc-9ba1-48ed-852e-03a84ea8840a
+
+      at NotificationService.sendNotification (services/NotificationService.ts:196:15)
+
+    console.log
+      [NotificationService] Sent real-time notification to user 02bcffc9-e31c-45df-b263-1a654776a4a8
+
+      at NotificationService.sendNotification (services/NotificationService.ts:196:15)
+
+    console.log
+      [NotificationService] Sent real-time notification to user 1bb0a133-5029-464b-bc52-42780f8936be
+
+      at NotificationService.sendNotification (services/NotificationService.ts:196:15)
+
+    console.log
+      [NotificationService] Cleanup of notifications older than 30 days would be performed here
+
+      at NotificationService.cleanupOldNotifications (services/NotificationService.ts:267:13)
+
+    console.log
+      [NotificationService] Cleanup of notifications older than 7 days would be performed here
+
+      at NotificationService.cleanupOldNotifications (services/NotificationService.ts:267:13)
+
+PASS unit tests/services/ActivityLogger.test.ts
+  ● Console
+
+    console.log
+      [ActivityLogger] Logged activity: user_joined for session dac37814-b6a3-41ad-a973-6fff554548be
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_joined for session 46150a51-3ce2-4903-aab2-692162ff368b
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: action_taken for session 3b99aee6-b141-446d-9b5e-5a7d6d41f33c
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_joined for session 114a8e45-408e-48be-a510-311f75b3ed09
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_left for session f2b99c83-edca-4e17-9cf8-dd3470edb505
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: comment_added for session 9f734cc7-56d1-40ce-ad29-3d57f77520ee
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: action_taken for session 0208cc04-3734-447b-855c-fd90f797f0a7
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_joined for session afd41f12-111d-4930-a18a-1bc1aee39ade
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: comment_added for session afd41f12-111d-4930-a18a-1bc1aee39ade
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_left for session afd41f12-111d-4930-a18a-1bc1aee39ade
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_joined for session 0b19575e-b03c-452d-8929-315232182852
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_joined for session 0b19575e-b03c-452d-8929-315232182852
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_joined for session 0b19575e-b03c-452d-8929-315232182852
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_joined for session 0b19575e-b03c-452d-8929-315232182852
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_joined for session 0b19575e-b03c-452d-8929-315232182852
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_joined for session 0b19575e-b03c-452d-8929-315232182852
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_joined for session 0b19575e-b03c-452d-8929-315232182852
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_joined for session 0b19575e-b03c-452d-8929-315232182852
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_joined for session 0b19575e-b03c-452d-8929-315232182852
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_joined for session 0b19575e-b03c-452d-8929-315232182852
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_joined for session 7f369841-62a9-4e4d-b43c-5ca176811f4b
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_joined for session 5cf20176-a5b0-4738-b849-9500cf5fe68a
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_joined for session 05478a4b-af9d-4ca2-8f39-1eafd0c41231
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_joined for session 8bd2ce67-f593-4ebb-8fc9-590d1a7f0508
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: comment_added for session 8bd2ce67-f593-4ebb-8fc9-590d1a7f0508
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_left for session 8bd2ce67-f593-4ebb-8fc9-590d1a7f0508
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_joined for session 3323c6c8-bb1c-4d25-9b4e-2197b8d80255
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_joined for session a4e2ff06-a039-4cd2-a801-76e6c7ea3f5e
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: comment_added for session a4e2ff06-a039-4cd2-a801-76e6c7ea3f5e
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_joined for session a4e2ff06-a039-4cd2-a801-76e6c7ea3f5e
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: comment_added for session a4e2ff06-a039-4cd2-a801-76e6c7ea3f5e
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_joined for session a4e2ff06-a039-4cd2-a801-76e6c7ea3f5e
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: comment_added for session a4e2ff06-a039-4cd2-a801-76e6c7ea3f5e
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_joined for session 1916a173-d0c6-48de-a53a-c7507a2c0592
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_joined for session 1916a173-d0c6-48de-a53a-c7507a2c0592
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_joined for session 1916a173-d0c6-48de-a53a-c7507a2c0592
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_joined for session 1916a173-d0c6-48de-a53a-c7507a2c0592
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_joined for session 1916a173-d0c6-48de-a53a-c7507a2c0592
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_joined for session 4d491a49-2fa3-41bb-be44-d4b272eba684
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_joined for session 4d491a49-2fa3-41bb-be44-d4b272eba684
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: comment_added for session 4d491a49-2fa3-41bb-be44-d4b272eba684
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_left for session 4d491a49-2fa3-41bb-be44-d4b272eba684
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_joined for session fb5678cb-ecc2-4f6c-b395-9e026b409637
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_joined for session 7255b72c-1957-456d-9943-d27e0946c489
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_joined for session c7112b92-49b9-4338-b6e6-2fcd78bfee58
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_joined for session b46ba36c-e9f8-4a56-bf7d-3558f6e58953
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: comment_added for session b46ba36c-e9f8-4a56-bf7d-3558f6e58953
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_joined for session 511c3970-f6e7-4366-a0c7-fff56f3c3222
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.warn
+      [ActivityLogger] Could not fetch username for f389e87e-8634-42f8-a173-d8f00a976f6c
+
+      320 |             username = await this.getUserName(activity.userId);
+      321 |           } catch (error) {
+    > 322 |             console.warn(`[ActivityLogger] Could not fetch username for ${activity.userId}`);
+          |                     ^
+      323 |           }
+      324 |         }
+      325 |
+
+      at ActivityLogger.generateAuditTrail (services/ActivityLogger.ts:322:21)
+      at Object.<anonymous> (tests/services/ActivityLogger.test.ts:510:26)
+
+    console.log
+      [ActivityLogger] Logged activity: user_joined for session fcc491f9-3a31-4dfc-886b-67ca5fb05e38
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_left for session fcc491f9-3a31-4dfc-886b-67ca5fb05e38
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: action_taken for session c4bf0275-1e6a-4eb7-b11e-43472bb498f8
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_joined for session 0a6cb2a8-0676-4065-a060-7247c067526c
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: comment_added for session 0a6cb2a8-0676-4065-a060-7247c067526c
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_joined for session 0a6cb2a8-0676-4065-a060-7247c067526c
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: comment_added for session 0a6cb2a8-0676-4065-a060-7247c067526c
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_joined for session 0a6cb2a8-0676-4065-a060-7247c067526c
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: comment_added for session 0a6cb2a8-0676-4065-a060-7247c067526c
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_joined for session 6d97363f-cf62-43ae-9047-ca9d4a20135e
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Logged activity: user_left for session 6d97363f-cf62-43ae-9047-ca9d4a20135e
+
+      at ActivityLogger.logActivity (services/ActivityLogger.ts:89:15)
+
+    console.log
+      [ActivityLogger] Shutdown complete, all activities flushed
+
+      at ActivityLogger.shutdown (services/ActivityLogger.ts:474:15)
+
+PASS unit tests/services/EventStreamingService.test.ts
+  ● Console
+
+    console.log
+      [EventStreaming] User 70a8a33d-54d8-44a3-bda5-c8f912700488 subscribed to operation 4e432fed-526c-4124-8aa1-b5858140829d
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+    console.log
+      [EventStreaming] User 93d5210e-767d-4e0b-8180-7f578ee8a49c subscribed to operation b4142953-6954-47f9-ab39-c6e1bb588480
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+    console.log
+      [EventStreaming] User 6a40c6f7-06de-4170-b26e-d2effe45305c subscribed to operation b4142953-6954-47f9-ab39-c6e1bb588480
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+    console.log
+      [EventStreaming] User f7ff9dff-f4db-47f0-b332-2f33685e3f01 subscribed to operation b4142953-6954-47f9-ab39-c6e1bb588480
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+    console.log
+      [EventStreaming] User 1bb4734a-e923-4b81-8cb3-a4ca25d1b962 subscribed to operation f7971ea9-4815-45ae-8d64-16a98f3c2132
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+    console.log
+      [EventStreaming] User 1112afb1-1d4f-49fb-87fd-2096d8ab60f3 subscribed to operation f7971ea9-4815-45ae-8d64-16a98f3c2132
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+    console.log
+      [EventStreaming] Replaying 3 events to user 1112afb1-1d4f-49fb-87fd-2096d8ab60f3
+
+      at EventStreamingService.replayRecentEvents (services/EventStreamingService.ts:450:13)
+
+    console.log
+      [EventStreaming] User 1c6f0352-ed58-43d6-b713-d3e2a4ce2239 subscribed to operation 69fe671f-f431-40b9-98da-355539111e70
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+    console.log
+      [EventStreaming] User 1c6f0352-ed58-43d6-b713-d3e2a4ce2239 unsubscribed from operation 69fe671f-f431-40b9-98da-355539111e70
+
+      at EventStreamingService.unsubscribe (services/EventStreamingService.ts:197:13)
+
+    console.log
+      [EventStreaming] User 579948c1-fb8e-4be5-b7ca-6cbaeaa8b35a subscribed to operation aaef327f-f4f2-4f22-bc8d-971b115cb130
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+    console.log
+      [EventStreaming] User 579948c1-fb8e-4be5-b7ca-6cbaeaa8b35a unsubscribed from operation aaef327f-f4f2-4f22-bc8d-971b115cb130
+
+      at EventStreamingService.unsubscribe (services/EventStreamingService.ts:197:13)
+
+    console.log
+      [EventStreaming] User b4b8fabc-e9b8-4161-b2d2-3b9bfddf661b subscribed to operation 9dc8058f-ee7f-4343-ae8e-b093b487536a
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+    console.log
+      [EventStreaming] User 72ffda50-3e43-4908-8f75-e0747e8c6e53 subscribed to operation 9dc8058f-ee7f-4343-ae8e-b093b487536a
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+    console.log
+      [EventStreaming] User 4dc2ddbd-34da-4b16-83ff-6d122ada41af subscribed to operation 9dc8058f-ee7f-4343-ae8e-b093b487536a
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+    console.log
+      [EventStreaming] User f3dbb00b-c232-4b54-8fba-cbef92b92411 subscribed to operation 6e0f0d87-732a-4426-9678-6f36d909cbf3
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+    console.log
+      [EventStreaming] Duplicate event a1e756c3-290b-42cc-8bc6-22b01c01450e skipped
+
+      at EventStreamingService.broadcastEvent (services/EventStreamingService.ts:211:15)
+
+    console.log
+      [EventStreaming] User 63ba6029-e608-4e20-b8cd-534e034a5a2f subscribed to operation 82d15704-2ed1-4b74-ba5f-3c165ab6598f
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+    console.warn
+      [EventStreaming] Rate limit exceeded for operation 82d15704-2ed1-4b74-ba5f-3c165ab6598f
+
+      233 |     // Check rate limit
+      234 |     if (!subscription.rateLimiter.canSend()) {
+    > 235 |       console.warn(`[EventStreaming] Rate limit exceeded for operation ${event.operationId}`);
+          |               ^
+      236 |       return;
+      237 |     }
+      238 |     
+
+      at EventStreamingService.broadcastEvent (services/EventStreamingService.ts:235:15)
+      at Object.<anonymous> (tests/services/EventStreamingService.test.ts:363:27)
+
+    console.warn
+      [EventStreaming] Rate limit exceeded for operation 82d15704-2ed1-4b74-ba5f-3c165ab6598f
+
+      233 |     // Check rate limit
+      234 |     if (!subscription.rateLimiter.canSend()) {
+    > 235 |       console.warn(`[EventStreaming] Rate limit exceeded for operation ${event.operationId}`);
+          |               ^
+      236 |       return;
+      237 |     }
+      238 |     
+
+      at EventStreamingService.broadcastEvent (services/EventStreamingService.ts:235:15)
+      at Object.<anonymous> (tests/services/EventStreamingService.test.ts:363:27)
+
+    console.warn
+      [EventStreaming] Rate limit exceeded for operation 82d15704-2ed1-4b74-ba5f-3c165ab6598f
+
+      233 |     // Check rate limit
+      234 |     if (!subscription.rateLimiter.canSend()) {
+    > 235 |       console.warn(`[EventStreaming] Rate limit exceeded for operation ${event.operationId}`);
+          |               ^
+      236 |       return;
+      237 |     }
+      238 |     
+
+      at EventStreamingService.broadcastEvent (services/EventStreamingService.ts:235:15)
+      at Object.<anonymous> (tests/services/EventStreamingService.test.ts:363:27)
+
+    console.log
+      [EventStreaming] User e9b4a6e1-3b84-4281-ae80-78d3dc2a0b34 subscribed to operation 07d5e462-3e99-49bb-8f9d-6e7f1cda6318
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+    console.log
+      [EventStreaming] User 912cc97e-b2f3-4d99-ba6d-a947aa3a3b89 subscribed to operation 5042b860-990c-46dd-8446-c721796221a9
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+    console.log
+      [EventStreaming] User 25e336fb-9afc-46f2-966b-31cec4917715 subscribed to operation c0db0f9b-cd51-4ed9-81c1-7e0697a5c4ce
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+    console.warn
+      [EventStreaming] WebSocket not open for user 25e336fb-9afc-46f2-966b-31cec4917715
+
+      400 |     try {
+      401 |       if (subscriber.ws.readyState !== WebSocket.OPEN) {
+    > 402 |         console.warn(`[EventStreaming] WebSocket not open for user ${subscriber.userId}`);
+          |                 ^
+      403 |         return;
+      404 |       }
+      405 |       
+
+      at EventStreamingService.deliverEventToSubscriber (services/EventStreamingService.ts:402:17)
+      at EventStreamingService.broadcastEvent (services/EventStreamingService.ts:247:16)
+      at Object.<anonymous> (tests/services/EventStreamingService.test.ts:466:7)
+
+    console.log
+      [EventStreaming] User b2086720-5705-49a3-87dd-f43c19dc6919 subscribed to operation ad67d3ff-8cea-4371-87c0-b03c6a79efe1
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+    console.log
+      [EventStreaming] User 26a193bd-8415-42e2-ba84-8c5cbaf4f5e0 subscribed to operation 212f9ffe-d59e-4684-b2d8-b764b28ab3fb
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+    console.log
+      [EventStreaming] User 87e36198-089c-4b44-96ec-09442b56d0c1 subscribed to operation 212f9ffe-d59e-4684-b2d8-b764b28ab3fb
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+    console.log
+      [EventStreaming] User 6b00b87f-8273-4064-9746-f3a5676c27c3 subscribed to operation 212f9ffe-d59e-4684-b2d8-b764b28ab3fb
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+    console.log
+      [EventStreaming] User 574f6a53-204f-456e-a0cc-48e190738e75 subscribed to operation cd36bf88-bacf-4554-b4cc-78ba87515092
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+    console.log
+      [EventStreaming] User f368a912-79de-41a2-a2f6-37a170292a45 subscribed to operation cd36bf88-bacf-4554-b4cc-78ba87515092
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+    console.log
+      [EventStreaming] User 2fb66201-1994-4ebc-b784-bb02a627c276 subscribed to operation cd36bf88-bacf-4554-b4cc-78ba87515092
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+    console.log
+      [EventStreaming] User fee53207-9a98-4b1b-a538-ee46c232dde2 subscribed to operation cd36bf88-bacf-4554-b4cc-78ba87515092
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+    console.log
+      [EventStreaming] User 2da10fe7-28ba-47d8-b6f7-5f646a598623 subscribed to operation cd36bf88-bacf-4554-b4cc-78ba87515092
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+    console.log
+      [EventStreaming] User 8eadfd50-d8d1-4f42-a68e-b121f0b8e6be subscribed to operation cbf722fa-1506-4aaa-853c-129a9bbd0ab2
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+    console.log
+      [EventStreaming] User ee4c359f-5839-462b-8984-f12d7e5b0814 subscribed to operation 132e86d7-326f-4910-9203-0eef02d89aef
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+    console.log
+      [EventStreaming] User ee4c359f-5839-462b-8984-f12d7e5b0814 subscribed to operation 51c7c5cb-2a0a-4a0b-8df0-937633a7fdd2
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+    console.log
+      [EventStreaming] User ee4c359f-5839-462b-8984-f12d7e5b0814 subscribed to operation 66aef648-6776-4365-85c2-bdb9edf16f73
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+    console.log
+      [EventStreaming] User 45524ac0-d77c-47d4-a92d-f25955c1d77e subscribed to operation 442c9bac-1c4f-409a-980a-4df6b211c63a
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+    console.log
+      [EventStreaming] User 561ceccc-486c-41ae-a828-519796c2e14f subscribed to operation 9b6759ed-7524-4136-a6bc-ae8672d54cd2
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+    console.log
+      [EventStreaming] User a114ca62-7b02-4551-98cf-3e38cb82e360 subscribed to operation cf75d509-224d-4dff-bb97-d66a9139109e
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+    console.log
+      [EventStreaming] User 5cf8db6b-74e7-4842-bec9-68387adf50a3 subscribed to operation cf75d509-224d-4dff-bb97-d66a9139109e
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+    console.log
+      [EventStreaming] User da767cb8-2059-4511-b450-65c952930855 subscribed to operation cf75d509-224d-4dff-bb97-d66a9139109e
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+    console.log
+      [EventStreaming] User a114ca62-7b02-4551-98cf-3e38cb82e360 subscribed to operation 6e8ebb75-898f-4ff2-ac70-3c5241bb66b3
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+    console.log
+      [EventStreaming] User 5cf8db6b-74e7-4842-bec9-68387adf50a3 subscribed to operation 6e8ebb75-898f-4ff2-ac70-3c5241bb66b3
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+    console.log
+      [EventStreaming] User da767cb8-2059-4511-b450-65c952930855 subscribed to operation 6e8ebb75-898f-4ff2-ac70-3c5241bb66b3
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+    console.log
+      [EventStreaming] User c6cf4c62-f87b-4352-95c5-2652ad65c2ac subscribed to operation 4c3f8593-631e-40ae-90cd-706175c4bc63
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+    console.log
+      [EventStreaming] User 3f8ee696-67c3-440a-9d99-946adf052a9c subscribed to operation ba0b8dea-f9bb-4130-8194-d682658a5959
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+    console.log
+      [EventStreaming] Cleanup removed 1 inactive subscriptions
+
+      at EventStreamingService.cleanup (services/EventStreamingService.ts:379:13)
+
+    console.log
+      [EventStreaming] User f6e54b47-b7b5-4374-8401-772bcd564f0c subscribed to operation 6809d584-f1c2-4c05-90dd-459d38df13a4
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+    console.log
+      [EventStreaming] Cleanup removed 0 inactive subscriptions
+
+      at EventStreamingService.cleanup (services/EventStreamingService.ts:379:13)
+
+    console.log
+      [EventStreaming] User 475ba4bb-b668-487f-a6ed-cc95caa8b097 subscribed to operation 6e631cdf-fd8c-4525-a19c-dd4f44c6eea3
+
+      at EventStreamingService.subscribe (services/EventStreamingService.ts:181:13)
+
+FAIL unit tests/services/SessionManager.test.ts
+  ● Console
+
+    console.log
+      [SessionManager] Created session SESSION-20251215-LUOY for operation op_001
+
+      at SessionManager.createSession (services/SessionManager.ts:74:15)
+
+    console.log
+      [SessionManager] User 765dbf2b-e5f3-47b9-a82e-59406eb718dd joined session undefined as commenter
+
+      at SessionManager.addParticipant (services/SessionManager.ts:161:17)
+
+    console.log
+      [SessionManager] User user-id joined session undefined as viewer
+
+      at SessionManager.addParticipant (services/SessionManager.ts:161:17)
+
+    console.log
+      [SessionManager] User user-id left session undefined
+
+      at SessionManager.removeParticipant (services/SessionManager.ts:213:15)
+
+    console.log
+      [SessionManager] Updated session undefined status to completed
+
+      at SessionManager.updateSessionStatus (services/SessionManager.ts:276:15)
+
+    console.error
+      [SessionManager] Permission check failed: TypeError: Cannot read properties of undefined (reading 'find')
+          at SessionManager.hasPermission (/Users/mbhatt/papers/boo/src/modules/collaboration/services/SessionManager.ts:346:40)
+          at processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at Object.<anonymous> (/Users/mbhatt/papers/boo/src/modules/collaboration/tests/services/SessionManager.test.ts:222:22)
+
+      366 |       }
+      367 |     } catch (error) {
+    > 368 |       console.error('[SessionManager] Permission check failed:', error);
+          |               ^
+      369 |       return false;
+      370 |     }
+      371 |   }
+
+      at SessionManager.hasPermission (services/SessionManager.ts:368:15)
+      at Object.<anonymous> (tests/services/SessionManager.test.ts:222:22)
+
+  ● SessionManager › addParticipant › should reject if session is full
+
+    expect(received).rejects.toThrow()
+
+    Received promise resolved instead of rejected
+    Resolved to value: undefined
+
+      150 |       mockRepo.getParticipantCount.mockResolvedValueOnce(50);
+      151 |
+    > 152 |       await expect(
+          |                   ^
+      153 |         sessionManager.addParticipant(session.sessionId, 'user-id', 'viewer')
+      154 |       ).rejects.toThrow('maximum participant limit');
+      155 |     });
+
+      at expect (node_modules/expect/build/index.js:113:15)
+      at Object.<anonymous> (tests/services/SessionManager.test.ts:152:19)
+
+  ● SessionManager › hasPermission › should grant all permissions to owner
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      226 |       );
+      227 |
+    > 228 |       expect(result).toBe(true);
+          |                      ^
+      229 |     });
+      230 |
+      231 |     it('should check role-based permissions for participants', async () => {
+
+      at Object.<anonymous> (tests/services/SessionManager.test.ts:228:22)
+
+FAIL integration tests/integration/SessionPresenceIntegration.test.ts
+  ● Console
+
+    console.log
+      [SessionManager] Created session SESSION-20251215-I8XI for operation op_001
+
+      at SessionManager.createSession (services/SessionManager.ts:74:15)
+
+    console.log
+      [PresenceManager] Set presence for user d2d63256-c746-4c1f-af33-d10f144d4b99 in session undefined: online
+
+      at PresenceManager.setPresence (services/PresenceManager.ts:128:15)
+
+    console.log
+      [SessionManager] User 9906920f-0ed7-4236-a02b-e4ab2636b28e joined session 1045b507-3eda-4b63-8147-517c7f28c70e as operator
+
+      at SessionManager.addParticipant (services/SessionManager.ts:161:17)
+
+    console.log
+      [PresenceManager] Set presence for user 9906920f-0ed7-4236-a02b-e4ab2636b28e in session undefined: online
+
+      at PresenceManager.setPresence (services/PresenceManager.ts:128:15)
+
+    console.log
+      [SessionManager] User 4c395521-5861-432c-8b9b-b69c533804c5 joined session 1045b507-3eda-4b63-8147-517c7f28c70e as viewer
+
+      at SessionManager.addParticipant (services/SessionManager.ts:161:17)
+
+    console.log
+      [PresenceManager] Set presence for user 4c395521-5861-432c-8b9b-b69c533804c5 in session undefined: online
+
+      at PresenceManager.setPresence (services/PresenceManager.ts:128:15)
+
+    console.log
+      [PresenceManager] Set presence for user c91b5c1a-ec87-4d75-a4dd-7dbc6bbaf486 in session undefined: online
+
+      at PresenceManager.setPresence (services/PresenceManager.ts:128:15)
+
+    console.log
+      [PresenceManager] Set presence for user c91b5c1a-ec87-4d75-a4dd-7dbc6bbaf486 in session undefined: away
+
+      at PresenceManager.setPresence (services/PresenceManager.ts:128:15)
+
+    console.log
+      [PresenceManager] Set presence for user fe04d2ec-c010-4f33-8fb9-188589b918f8 in session undefined: online
+
+      at PresenceManager.setPresence (services/PresenceManager.ts:128:15)
+
+    console.log
+      [SessionManager] User new-user joined session c4ff68b1-62fd-4ef2-a271-4dfaa8a53d59 as viewer
+
+      at SessionManager.addParticipant (services/SessionManager.ts:161:17)
+
+    console.log
+      [SessionManager] User 21846f0d-77a1-441a-96d2-1d75ad7c9c0a joined session d3fc1a00-64f9-42ed-8693-34a5e20a31be as viewer
+
+      at SessionManager.addParticipant (services/SessionManager.ts:161:17)
+
+    console.log
+      [SessionManager] User 761aea5f-2a84-4d99-be31-793893c69491 joined session bd3aaa59-146b-4636-bc51-cdaefc43967d as operator
+
+      at SessionManager.addParticipant (services/SessionManager.ts:161:17)
+          at async Promise.all (index 0)
+
+    console.log
+      [SessionManager] User 4530c762-a25b-415a-a8ad-1e226fcaac9e joined session bd3aaa59-146b-4636-bc51-cdaefc43967d as viewer
+
+      at SessionManager.addParticipant (services/SessionManager.ts:161:17)
+          at async Promise.all (index 1)
+
+    console.log
+      [SessionManager] User 768c52ed-8931-45ac-8b38-7fb834427686 joined session bd3aaa59-146b-4636-bc51-cdaefc43967d as viewer
+
+      at SessionManager.addParticipant (services/SessionManager.ts:161:17)
+          at async Promise.all (index 2)
+
+    console.log
+      [PresenceManager] Set presence for user 761aea5f-2a84-4d99-be31-793893c69491 in session undefined: online
+
+      at PresenceManager.setPresence (services/PresenceManager.ts:128:15)
+          at async Promise.all (index 0)
+
+    console.log
+      [PresenceManager] Set presence for user 4530c762-a25b-415a-a8ad-1e226fcaac9e in session undefined: online
+
+      at PresenceManager.setPresence (services/PresenceManager.ts:128:15)
+          at async Promise.all (index 1)
+
+    console.log
+      [PresenceManager] Set presence for user 768c52ed-8931-45ac-8b38-7fb834427686 in session undefined: online
+
+      at PresenceManager.setPresence (services/PresenceManager.ts:128:15)
+          at async Promise.all (index 2)
+
+  ● Session and Presence Integration › User Leaving Session › should remove participant and clear presence
+
+    CollaborationError: User is not a participant in this session
+
+      202 |       const isParticipant = await this.sessionRepo.isParticipant(session.id, userId);
+      203 |       if (!isParticipant) {
+    > 204 |         throw new CollaborationError(
+          |               ^
+      205 |           CollaborationErrorCode.PERMISSION_DENIED,
+      206 |           'User is not a participant in this session',
+      207 |           { sessionId, userId }
+
+      at SessionManager.removeParticipant (services/SessionManager.ts:204:15)
+      at Object.<anonymous> (tests/integration/SessionPresenceIntegration.test.ts:136:7)
+
+  ● Session and Presence Integration › User Leaving Session › should handle last user leaving session
+
+    CollaborationError: User is not a participant in this session
+
+      202 |       const isParticipant = await this.sessionRepo.isParticipant(session.id, userId);
+      203 |       if (!isParticipant) {
+    > 204 |         throw new CollaborationError(
+          |               ^
+      205 |           CollaborationErrorCode.PERMISSION_DENIED,
+      206 |           'User is not a participant in this session',
+      207 |           { sessionId, userId }
+
+      at SessionManager.removeParticipant (services/SessionManager.ts:204:15)
+      at Object.<anonymous> (tests/integration/SessionPresenceIntegration.test.ts:159:7)
+
+  ● Session and Presence Integration › Session Capacity › should enforce maximum participant limit
+
+    expect(received).rejects.toThrow()
+
+    Received promise resolved instead of rejected
+    Resolved to value: undefined
+
+      213 |       mockSessionRepo.getParticipantCount.mockResolvedValue(50); // At capacity
+      214 |
+    > 215 |       await expect(
+          |                   ^
+      216 |         sessionManager.addParticipant(session.id, 'new-user', 'viewer')
+      217 |       ).rejects.toThrow('Session is at maximum capacity');
+      218 |     });
+
+      at expect (node_modules/expect/build/index.js:113:15)
+      at Object.<anonymous> (tests/integration/SessionPresenceIntegration.test.ts:215:19)
+
+  ● Session and Presence Integration › Error Handling › should handle Redis connection failure gracefully
+
+    CollaborationError: Redis client is not ready
+
+      74 |     try {
+      75 |       if (!this.redis.isReady()) {
+    > 76 |         throw new CollaborationError(
+         |               ^
+      77 |           CollaborationErrorCode.REDIS_ERROR,
+      78 |           'Redis client is not ready'
+      79 |         );
+
+      at PresenceManager.setPresence (services/PresenceManager.ts:76:15)
+      at Object.<anonymous> (tests/integration/SessionPresenceIntegration.test.ts:242:29)
+
+FAIL unit tests/AuthService.test.ts
+  ● Test suite failed to run
+
+    [96mservices/AuthService.ts[0m:[93m63[0m:[93m25[0m - [91merror[0m[90m TS2769: [0mNo overload matches this call.
+      Overload 1 of 5, '(payload: string | object | Buffer<ArrayBufferLike>, secretOrPrivateKey: null, options?: (SignOptions & { algorithm: "none"; }) | undefined): string', gave the following error.
+        Argument of type 'string' is not assignable to parameter of type 'null'.
+      Overload 2 of 5, '(payload: string | object | Buffer<ArrayBufferLike>, secretOrPrivateKey: Buffer<ArrayBufferLike> | Secret | PrivateKeyInput | JsonWebKeyInput, options?: SignOptions | undefined): string', gave the following error.
+        Type 'string' is not assignable to type 'number | StringValue | undefined'.
+      Overload 3 of 5, '(payload: string | object | Buffer<ArrayBufferLike>, secretOrPrivateKey: Buffer<ArrayBufferLike> | Secret | PrivateKeyInput | JsonWebKeyInput, callback: SignCallback): void', gave the following error.
+        Object literal may only specify known properties, and 'expiresIn' does not exist in type 'SignCallback'.
+
+    [7m63[0m       const token = jwt.sign(payload, this.jwtConfig.secret, {
+    [7m  [0m [91m                        ~~~~[0m
+
+FAIL unit tests/websocket-connection.test.ts
+  ● Test suite failed to run
+
+    [96mservices/AuthService.ts[0m:[93m63[0m:[93m25[0m - [91merror[0m[90m TS2769: [0mNo overload matches this call.
+      Overload 1 of 5, '(payload: string | object | Buffer<ArrayBufferLike>, secretOrPrivateKey: null, options?: (SignOptions & { algorithm: "none"; }) | undefined): string', gave the following error.
+        Argument of type 'string' is not assignable to parameter of type 'null'.
+      Overload 2 of 5, '(payload: string | object | Buffer<ArrayBufferLike>, secretOrPrivateKey: Buffer<ArrayBufferLike> | Secret | PrivateKeyInput | JsonWebKeyInput, options?: SignOptions | undefined): string', gave the following error.
+        Type 'string' is not assignable to type 'number | StringValue | undefined'.
+      Overload 3 of 5, '(payload: string | object | Buffer<ArrayBufferLike>, secretOrPrivateKey: Buffer<ArrayBufferLike> | Secret | PrivateKeyInput | JsonWebKeyInput, callback: SignCallback): void', gave the following error.
+        Object literal may only specify known properties, and 'expiresIn' does not exist in type 'SignCallback'.
+
+    [7m63[0m       const token = jwt.sign(payload, this.jwtConfig.secret, {
+    [7m  [0m [91m                        ~~~~[0m
+
+FAIL unit tests/services/CommentService.test.ts
+  ● Console
+
+    console.log
+      [CommentService] Created comment comment-1 by user 5374c706-9615-4a37-b670-39cf964019cd in session undefined
+
+      at CommentService.createComment (services/CommentService.ts:130:15)
+
+    console.log
+      [CommentService] Created comment comment-1 by user 5374c706-9615-4a37-b670-39cf964019cd in session undefined
+
+      at CommentService.createComment (services/CommentService.ts:130:15)
+
+    console.log
+      [CommentService] Created comment comment-1 by user 5374c706-9615-4a37-b670-39cf964019cd in session undefined
+
+      at CommentService.createComment (services/CommentService.ts:130:15)
+
+    console.log
+      [CommentService] Created comment comment-1 by user 5374c706-9615-4a37-b670-39cf964019cd in session undefined
+
+      at CommentService.createComment (services/CommentService.ts:130:15)
+
+    console.log
+      [CommentService] Created comment comment-1 by user 5374c706-9615-4a37-b670-39cf964019cd in session undefined
+
+      at CommentService.createComment (services/CommentService.ts:130:15)
+
+    console.log
+      [CommentService] Created comment comment-1 by user 5374c706-9615-4a37-b670-39cf964019cd in session undefined
+
+      at CommentService.createComment (services/CommentService.ts:130:15)
+
+    console.log
+      [CommentService] Created comment comment-1 by user 5374c706-9615-4a37-b670-39cf964019cd in session undefined
+
+      at CommentService.createComment (services/CommentService.ts:130:15)
+
+    console.log
+      [CommentService] Created comment comment-1 by user 5374c706-9615-4a37-b670-39cf964019cd in session undefined
+
+      at CommentService.createComment (services/CommentService.ts:130:15)
+
+    console.log
+      [CommentService] Created comment comment-1 by user 5374c706-9615-4a37-b670-39cf964019cd in session undefined
+
+      at CommentService.createComment (services/CommentService.ts:130:15)
+
+    console.log
+      [CommentService] Created comment comment-1 by user 5374c706-9615-4a37-b670-39cf964019cd in session undefined
+
+      at CommentService.createComment (services/CommentService.ts:130:15)
+
+    console.log
+      [CommentService] Created comment comment-1 by user 5374c706-9615-4a37-b670-39cf964019cd in session undefined
+
+      at CommentService.createComment (services/CommentService.ts:130:15)
+
+    console.log
+      [CommentService] Created comment comment-1 by user 5374c706-9615-4a37-b670-39cf964019cd in session undefined
+
+      at CommentService.createComment (services/CommentService.ts:130:15)
+
+    console.log
+      [CommentService] Created comment reply-1 by user 5374c706-9615-4a37-b670-39cf964019cd in session undefined
+
+      at CommentService.createComment (services/CommentService.ts:130:15)
+
+    console.error
+      [CommentService] Error checking edit permission: TypeError: Cannot read properties of undefined (reading 'authorId')
+          at CommentService.canUserEditComment (/Users/mbhatt/papers/boo/src/modules/collaboration/services/CommentService.ts:442:19)
+          at processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at CommentService.editComment (/Users/mbhatt/papers/boo/src/modules/collaboration/services/CommentService.ts:158:23)
+          at Object.<anonymous> (/Users/mbhatt/papers/boo/src/modules/collaboration/tests/services/CommentService.test.ts:292:22)
+
+      450 |       return participant?.role === 'operator';
+      451 |     } catch (error) {
+    > 452 |       console.error('[CommentService] Error checking edit permission:', error);
+          |               ^
+      453 |       return false;
+      454 |     }
+      455 |   }
+
+      at CommentService.canUserEditComment (services/CommentService.ts:452:15)
+      at CommentService.editComment (services/CommentService.ts:158:23)
+      at Object.<anonymous> (tests/services/CommentService.test.ts:292:22)
+
+    console.error
+      [CommentService] Error checking edit permission: TypeError: Cannot read properties of undefined (reading 'authorId')
+          at CommentService.canUserEditComment (/Users/mbhatt/papers/boo/src/modules/collaboration/services/CommentService.ts:442:19)
+          at processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at CommentService.editComment (/Users/mbhatt/papers/boo/src/modules/collaboration/services/CommentService.ts:158:23)
+          at Object.<anonymous> (/Users/mbhatt/papers/boo/src/modules/collaboration/tests/services/CommentService.test.ts:317:7)
+
+      450 |       return participant?.role === 'operator';
+      451 |     } catch (error) {
+    > 452 |       console.error('[CommentService] Error checking edit permission:', error);
+          |               ^
+      453 |       return false;
+      454 |     }
+      455 |   }
+
+      at CommentService.canUserEditComment (services/CommentService.ts:452:15)
+      at CommentService.editComment (services/CommentService.ts:158:23)
+      at Object.<anonymous> (tests/services/CommentService.test.ts:317:7)
+
+    console.error
+      [CommentService] Error checking edit permission: TypeError: Cannot read properties of undefined (reading 'authorId')
+          at CommentService.canUserEditComment (/Users/mbhatt/papers/boo/src/modules/collaboration/services/CommentService.ts:442:19)
+          at processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at CommentService.editComment (/Users/mbhatt/papers/boo/src/modules/collaboration/services/CommentService.ts:158:23)
+          at Object.<anonymous> (/Users/mbhatt/papers/boo/src/modules/collaboration/tests/services/CommentService.test.ts:333:7)
+
+      450 |       return participant?.role === 'operator';
+      451 |     } catch (error) {
+    > 452 |       console.error('[CommentService] Error checking edit permission:', error);
+          |               ^
+      453 |       return false;
+      454 |     }
+      455 |   }
+
+      at CommentService.canUserEditComment (services/CommentService.ts:452:15)
+      at CommentService.editComment (services/CommentService.ts:158:23)
+      at Object.<anonymous> (tests/services/CommentService.test.ts:333:7)
+
+    console.log
+      [CommentService] Deleted comment comment-1 by user 5374c706-9615-4a37-b670-39cf964019cd
+
+      at CommentService.deleteComment (services/CommentService.ts:209:15)
+
+    console.error
+      [CommentService] Error checking delete permission: TypeError: Cannot read properties of undefined (reading 'find')
+          at CommentService.canUserDeleteComment (/Users/mbhatt/papers/boo/src/modules/collaboration/services/CommentService.ts:471:40)
+          at processTicksAndRejections (node:internal/process/task_queues:105:5)
+          at CommentService.deleteComment (/Users/mbhatt/papers/boo/src/modules/collaboration/services/CommentService.ts:198:25)
+          at Object.<anonymous> (/Users/mbhatt/papers/boo/src/modules/collaboration/tests/services/CommentService.test.ts:371:7)
+
+      473 |       return participant?.role === 'operator';
+      474 |     } catch (error) {
+    > 475 |       console.error('[CommentService] Error checking delete permission:', error);
+          |               ^
+      476 |       return false;
+      477 |     }
+      478 |   }
+
+      at CommentService.canUserDeleteComment (services/CommentService.ts:475:15)
+      at CommentService.deleteComment (services/CommentService.ts:198:25)
+      at Object.<anonymous> (tests/services/CommentService.test.ts:371:7)
+
+    console.log
+      [CommentService] User 5374c706-9615-4a37-b670-39cf964019cd added like reaction to comment comment-1
+
+      at CommentService.reactToComment (services/CommentService.ts:248:15)
+
+    console.log
+      [CommentService] User 5374c706-9615-4a37-b670-39cf964019cd removed like reaction to comment comment-1
+
+      at CommentService.reactToComment (services/CommentService.ts:248:15)
+
+    console.log
+      [CommentService] User 5374c706-9615-4a37-b670-39cf964019cd added like reaction to comment comment-1
+
+      at CommentService.reactToComment (services/CommentService.ts:248:15)
+
+    console.log
+      [CommentService] User 5374c706-9615-4a37-b670-39cf964019cd added flag reaction to comment comment-1
+
+      at CommentService.reactToComment (services/CommentService.ts:248:15)
+
+    console.log
+      [CommentService] User 5374c706-9615-4a37-b670-39cf964019cd added resolve reaction to comment comment-1
+
+      at CommentService.reactToComment (services/CommentService.ts:248:15)
+
+    console.log
+      [CommentService] User 5374c706-9615-4a37-b670-39cf964019cd added question reaction to comment comment-1
+
+      at CommentService.reactToComment (services/CommentService.ts:248:15)
+
+    console.log
+      [CommentService] Created comment comment-1 by user 5374c706-9615-4a37-b670-39cf964019cd in session undefined
+
+      at CommentService.createComment (services/CommentService.ts:130:15)
+
+    console.log
+      [CommentService] Created comment comment-1 by user 5374c706-9615-4a37-b670-39cf964019cd in session undefined
+
+      at CommentService.createComment (services/CommentService.ts:130:15)
+          at async Promise.all (index 0)
+
+    console.log
+      [CommentService] Created comment comment-1 by user 5374c706-9615-4a37-b670-39cf964019cd in session undefined
+
+      at CommentService.createComment (services/CommentService.ts:130:15)
+          at async Promise.all (index 1)
+
+    console.log
+      [CommentService] Created comment comment-1 by user 5374c706-9615-4a37-b670-39cf964019cd in session undefined
+
+      at CommentService.createComment (services/CommentService.ts:130:15)
+          at async Promise.all (index 2)
+
+    console.log
+      [CommentService] Created comment comment-1 by user 5374c706-9615-4a37-b670-39cf964019cd in session undefined
+
+      at CommentService.createComment (services/CommentService.ts:130:15)
+          at async Promise.all (index 3)
+
+    console.log
+      [CommentService] Created comment comment-1 by user 5374c706-9615-4a37-b670-39cf964019cd in session undefined
+
+      at CommentService.createComment (services/CommentService.ts:130:15)
+          at async Promise.all (index 4)
+
+  ● CommentService › editComment › should edit comment by author
+
+    CollaborationError: User does not have permission to edit this comment
+
+      158 |       const canEdit = await this.canUserEditComment(commentId, userId);
+      159 |       if (!canEdit) {
+    > 160 |         throw new CollaborationError(
+          |               ^
+      161 |           CollaborationErrorCode.PERMISSION_DENIED,
+      162 |           'User does not have permission to edit this comment',
+      163 |           { commentId, userId }
+
+      at CommentService.editComment (services/CommentService.ts:160:15)
+      at Object.<anonymous> (tests/services/CommentService.test.ts:292:22)
+
+  ● CommentService › editComment › should sanitize HTML in edited content
+
+    CollaborationError: User does not have permission to edit this comment
+
+      158 |       const canEdit = await this.canUserEditComment(commentId, userId);
+      159 |       if (!canEdit) {
+    > 160 |         throw new CollaborationError(
+          |               ^
+      161 |           CollaborationErrorCode.PERMISSION_DENIED,
+      162 |           'User does not have permission to edit this comment',
+      163 |           { commentId, userId }
+
+      at CommentService.editComment (services/CommentService.ts:160:15)
+      at Object.<anonymous> (tests/services/CommentService.test.ts:333:7)
+
+FAIL unit tests/security/InputValidator.test.ts
+  ● InputValidator › Edge Cases › should handle very long inputs efficiently
+
+    expect(received).toThrow(expected)
+
+    Expected constructor: ValidationError
+
+    Received function did not throw
+
+      426 |       const veryLong = 'a'.repeat(5000);
+      427 |       
+    > 428 |       expect(() => validator.sanitizeString(veryLong)).toThrow(ValidationError);
+          |                                                        ^
+      429 |     });
+      430 |
+      431 |     it('should handle nested objects', () => {
+
+      at Object.<anonymous> (tests/security/InputValidator.test.ts:428:56)
+
+PASS unit tests/security/EncryptionService.test.ts
+FAIL unit tests/security/RateLimiter.test.ts (5.914 s)
+  ● RateLimiter › exponential backoff › should apply backoff after violations
+
+    expect(received).toBeGreaterThan(expected)
+
+    Expected: > 100
+    Received:   100
+
+      329 |       const violation2 = await limiter.checkUserLimit('user1', 'viewer');
+      330 |
+    > 331 |       expect(violation2.retryAfter).toBeGreaterThan(violation1.retryAfter!);
+          |                                     ^
+      332 |       
+      333 |       // await limiter.cleanup();
+      334 |     });
+
+      at Object.<anonymous> (tests/security/RateLimiter.test.ts:331:37)
+
+A worker process has failed to exit gracefully and has been force exited. This is likely caused by tests leaking due to improper teardown. Try running with --detectOpenHandles to find leaks. Active timers can also cause this, ensure that .unref() was called on them.
+Test Suites: 7 failed, 6 passed, 13 total
+Tests:       10 failed, 2 skipped, 288 passed, 300 total
+Snapshots:   0 total
+Time:        6.852 s
+Ran all test suites in 2 projects.
+🧹 Cleaning up test environment...
+✅ Redis cleaned up
+⚠️ Database cleanup warning: error: role "postgres" does not exist
+    at /Users/mbhatt/papers/boo/src/modules/collaboration/node_modules/pg-pool/index.js:45:11
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async globalTeardown (/Users/mbhatt/papers/boo/src/modules/collaboration/tests/setup/global-teardown.ts:40:9)
+    at async /Users/mbhatt/papers/boo/src/modules/collaboration/node_modules/@jest/core/build/runGlobalHook.js:109:13
+    at async waitForPromiseWithCleanup (/Users/mbhatt/papers/boo/src/modules/collaboration/node_modules/@jest/transform/build/ScriptTransformer.js:160:5)
+    at async ScriptTransformer.requireAndTranspileModule (/Users/mbhatt/papers/boo/src/modules/collaboration/node_modules/@jest/transform/build/ScriptTransformer.js:808:16)
+    at async runGlobalHook (/Users/mbhatt/papers/boo/src/modules/collaboration/node_modules/@jest/core/build/runGlobalHook.js:101:9)
+    at async runJest (/Users/mbhatt/papers/boo/src/modules/collaboration/node_modules/@jest/core/build/runJest.js:374:5)
+    at async _run10000 (/Users/mbhatt/papers/boo/src/modules/collaboration/node_modules/@jest/core/build/cli/index.js:343:7)
+    at async runCLI (/Users/mbhatt/papers/boo/src/modules/collaboration/node_modules/@jest/core/build/cli/index.js:198:3) {
+  length: 100,
+  severity: 'FATAL',
+  code: '28000',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'miscinit.c',
+  line: '755',
+  routine: 'InitializeSessionUserId'
+}
+✅ Test environment cleaned up

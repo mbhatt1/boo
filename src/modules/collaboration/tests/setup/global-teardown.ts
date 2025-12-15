@@ -25,12 +25,13 @@ export default async function globalTeardown() {
   }
   
   // Drop test database (optional - comment out to preserve for debugging)
+  const currentUser = process.env.USER || process.env.USERNAME || 'mbhatt';
   const pool = new Pool({
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT || '5432'),
     database: 'postgres',
-    user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || 'postgres',
+    user: process.env.DB_USER || currentUser,
+    password: process.env.DB_PASSWORD || '',
   });
   
   try {
