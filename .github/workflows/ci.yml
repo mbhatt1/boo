@@ -29,10 +29,8 @@ jobs:
       run: |
         export PATH="$HOME/.local/bin:$PATH"
         export PYTHONPATH="${PWD}/src:${PYTHONPATH}"
-        # Sync dependencies from lock file
-        uv sync
-        # Add dev dependencies
-        uv add --dev pylint pytest pytest-mock
+        # Sync dependencies from lock file (includes dev dependencies)
+        uv sync --all-extras --dev
         # Install package in editable mode with PYTHONPATH set
         uv pip install -e .
     
