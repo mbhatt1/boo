@@ -601,7 +601,7 @@ describe('Stack Configuration Advanced', () => {
   });
 
   test('Stack can use Fn::Sub', () => {
-    const stack = new cdk.Stack(app, 'TestStack');
+    const _stack = new cdk.Stack(app, 'TestStack');
     
     const sub = cdk.Fn.sub('Hello ${Param}', {
       Param: 'World',
@@ -1046,7 +1046,7 @@ describe('Advanced CDK Features', () => {
   });
 
   test('Stack can use lazy values', () => {
-    const stack = new cdk.Stack(app, 'TestStack');
+    const _stack = new cdk.Stack(app, 'TestStack');
     
     const lazyValue = cdk.Lazy.string({
       produce: () => 'lazy-value',
@@ -1056,7 +1056,7 @@ describe('Advanced CDK Features', () => {
   });
 
   test('Stack can use tokens', () => {
-    const stack = new cdk.Stack(app, 'TestStack');
+    const _stack = new cdk.Stack(app, 'TestStack');
     
     const token = cdk.Token.asString('test-token');
     
@@ -1064,7 +1064,7 @@ describe('Advanced CDK Features', () => {
   });
 
   test('Stack can synthesize without errors', () => {
-    const stack = new cdk.Stack(app, 'TestStack');
+    const _stack = new cdk.Stack(app, 'TestStack');
     
     expect(() => app.synth()).not.toThrow();
   });

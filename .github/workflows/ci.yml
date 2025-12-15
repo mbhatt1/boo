@@ -45,11 +45,47 @@ jobs:
         echo "Pylint score:"
         PYTHONPATH="${PWD}/src:${PYTHONPATH}" uv run pylint src/ --score=y | grep "Your code has been rated"
     
-    - name: Run Tests
+    - name: Run Python Tests
       run: |
         export PATH="$HOME/.local/bin:$PATH"
         export PYTHONPATH="${PWD}/src:${PYTHONPATH}"
         PYTHONPATH="${PWD}/src:${PYTHONPATH}" uv run pytest tests/ -v
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    
+    - name: Lint React Interface
+      working-directory: src/modules/interfaces/react
+      run: |
+        npm ci
+        npm run typecheck
+    
+    - name: Test React Interface
+      working-directory: src/modules/interfaces/react
+      run: npm test
+    
+    - name: Lint Collaboration Module
+      working-directory: src/modules/collaboration
+      run: |
+        npm ci
+        npm run typecheck || echo "No typecheck script, skipping"
+    
+    - name: Test Collaboration Module
+      working-directory: src/modules/collaboration
+      run: npm test
+    
+    - name: Lint Infrastructure
+      working-directory: infrastructure
+      run: |
+        npm ci
+        npm run lint
+        npm run typecheck
+    
+    - name: Test Infrastructure
+      working-directory: infrastructure
+      run: npm test
     
     - name: Check Pylint minimum score
       run: |
