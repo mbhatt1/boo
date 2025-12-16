@@ -36,7 +36,7 @@ module.exports = {
   coverageReporters: ['text', 'lcov', 'html'],
   moduleNameMapper: {
     // Don't strip .js extension from dist folder imports (they're already compiled)
-    '^(\\.{1,2}/(?!dist).*)\\.js$': '$1',
+    '^(?!.*\\/dist\\/)(\\.{1,2}\\/.*)\\.js$': '$1',
     // Force ESM mock for ink
     '^ink$': '<rootDir>/tests/unit/mocks/ink.js',
     '^ink$': '<rootDir>/tests/unit/mocks/ink.js',

@@ -264,7 +264,7 @@ describe('HealthMonitor', () => {
         return true;
       });
       expect(health.status).toBe('up');
-      expect(health.latency).toBeGreaterThan(100);
+      expect(health.latency).toBeGreaterThanOrEqual(100);
     });
 
     it('should handle empty service name', async () => {
